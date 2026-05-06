@@ -4,11 +4,7 @@
   "title": "FeedContext Structured Synthesis",
   "type": "object",
   "additionalProperties": false,
-  "required": [
-    "schema_version",
-    "scope",
-    "units"
-  ],
+  "required": ["schema_version", "scope", "units"],
   "properties": {
     "schema_version": {
       "type": "string",
@@ -17,10 +13,7 @@
     "scope": {
       "type": "object",
       "additionalProperties": false,
-      "required": [
-        "request",
-        "selection_rule"
-      ],
+      "required": ["request", "selection_rule"],
       "properties": {
         "request": {
           "type": "string",
@@ -93,11 +86,7 @@
         },
         "type": {
           "type": "string",
-          "enum": [
-            "insight",
-            "item_roundup",
-            "briefing_section"
-          ]
+          "enum": ["insight", "item_roundup", "briefing_section"]
         },
         "title": {
           "type": "string",
@@ -120,12 +109,7 @@
         },
         "rendering_priority": {
           "type": "string",
-          "enum": [
-            "lead",
-            "main",
-            "secondary",
-            "collapsed"
-          ]
+          "enum": ["lead", "main", "secondary", "collapsed"]
         }
       }
     },
@@ -176,18 +160,11 @@
           "minLength": 1
         },
         "published_at": {
-          "type": [
-            "integer",
-            "null"
-          ]
+          "type": ["integer", "null"]
         },
         "relevance": {
           "type": "string",
-          "enum": [
-            "direct",
-            "supporting",
-            "background"
-          ]
+          "enum": ["direct", "supporting", "background"]
         },
         "reason": {
           "type": "string",
@@ -198,12 +175,7 @@
     "contextual_evidence": {
       "type": "object",
       "additionalProperties": false,
-      "required": [
-        "kind",
-        "label",
-        "relevance",
-        "reason"
-      ],
+      "required": ["kind", "label", "relevance", "reason"],
       "properties": {
         "kind": {
           "type": "string",
@@ -215,11 +187,7 @@
         },
         "relevance": {
           "type": "string",
-          "enum": [
-            "direct",
-            "supporting",
-            "background"
-          ]
+          "enum": ["direct", "supporting", "background"]
         },
         "reason": {
           "type": "string",
@@ -230,13 +198,7 @@
     "external_url_evidence": {
       "type": "object",
       "additionalProperties": false,
-      "required": [
-        "kind",
-        "url",
-        "title",
-        "relevance",
-        "reason"
-      ],
+      "required": ["kind", "url", "title", "relevance", "reason"],
       "properties": {
         "kind": {
           "type": "string",
@@ -252,11 +214,7 @@
         },
         "relevance": {
           "type": "string",
-          "enum": [
-            "direct",
-            "supporting",
-            "background"
-          ]
+          "enum": ["direct", "supporting", "background"]
         },
         "reason": {
           "type": "string",
@@ -267,14 +225,7 @@
     "secondary_item": {
       "type": "object",
       "additionalProperties": false,
-      "required": [
-        "feed_item_id",
-        "url",
-        "title",
-        "subscription_title",
-        "group",
-        "reason"
-      ],
+      "required": ["feed_item_id", "url", "title", "subscription_title", "group", "reason"],
       "properties": {
         "feed_item_id": {
           "type": "string",
@@ -293,18 +244,11 @@
           "minLength": 1
         },
         "published_at": {
-          "type": [
-            "integer",
-            "null"
-          ]
+          "type": ["integer", "null"]
         },
         "group": {
           "type": "string",
-          "enum": [
-            "supplemental",
-            "low_information_gain",
-            "out_of_scope"
-          ]
+          "enum": ["supplemental", "low_information_gain", "out_of_scope"]
         },
         "reason": {
           "type": "string",
