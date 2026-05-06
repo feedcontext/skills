@@ -16,7 +16,7 @@ Read first:
   Entry, and published OpenAPI or contract artifacts.
 - Do not reference parent-directory paths, product-repository private source,
   product-repository workspace packages, or product-repository git submodules.
-- Keep the packed helper at `skills/feedcontext/dist/feedcontext.mjs` committed
+- Keep the packed helper at `skills/feedcontext/scripts/helper.mjs` committed
   because installs clone this repository.
 - The helper must not print OAuth tokens.
 

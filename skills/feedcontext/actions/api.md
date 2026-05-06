@@ -3,14 +3,14 @@
 Use the generated helper:
 
 ```bash
-node dist/feedcontext.mjs version
-node dist/feedcontext.mjs login
-node dist/feedcontext.mjs logout
-node dist/feedcontext.mjs subscriptions:list
-node dist/feedcontext.mjs subscriptions:list-all
-node dist/feedcontext.mjs items:list
-node dist/feedcontext.mjs items:list-all
-node dist/feedcontext.mjs items:get --id item_123
+node scripts/helper.mjs version
+node scripts/helper.mjs login
+node scripts/helper.mjs logout
+node scripts/helper.mjs subscriptions:list
+node scripts/helper.mjs subscriptions:list-all
+node scripts/helper.mjs items:list
+node scripts/helper.mjs items:list-all
+node scripts/helper.mjs items:get --id item_123
 ```
 
 Run `version` before other FeedContext actions in an agent session. The helper
@@ -22,7 +22,7 @@ API responses. It must never print OAuth tokens.
 Run:
 
 ```bash
-node dist/feedcontext.mjs version
+node scripts/helper.mjs version
 ```
 
 The helper prints installed and latest git revisions, whether an upgrade is
@@ -34,7 +34,7 @@ decides whether to notify the user.
 Run:
 
 ```bash
-node dist/feedcontext.mjs login
+node scripts/helper.mjs login
 ```
 
 The helper opens Google login through `api.feedcontext.io`, then exits after
@@ -42,7 +42,7 @@ printing `pair_code_required`. Ask the user to copy the 6-digit pair code from
 the browser, then run:
 
 ```bash
-node dist/feedcontext.mjs login --pair-code '<pair-code>'
+node scripts/helper.mjs login --pair-code '<pair-code>'
 ```
 
 The helper validates OAuth `state`, exchanges the PKCE code, and stores the Skill
@@ -55,7 +55,7 @@ prints a warning.
 Run:
 
 ```bash
-node dist/feedcontext.mjs logout
+node scripts/helper.mjs logout
 ```
 
 The helper removes the local Skill Session from the system credential store when
@@ -68,14 +68,14 @@ expired or invalid.
 High-level read commands:
 
 ```bash
-node dist/feedcontext.mjs subscriptions:list
-node dist/feedcontext.mjs subscriptions:list-all
-node dist/feedcontext.mjs items:list
-node dist/feedcontext.mjs items:list --subscription-id sub_123
-node dist/feedcontext.mjs items:list --limit 100 --cursor '<next_cursor>'
-node dist/feedcontext.mjs items:list-all
-node dist/feedcontext.mjs items:get --id item_123
-node dist/feedcontext.mjs items:get --id item_123 --cursor '<next_content_cursor>'
+node scripts/helper.mjs subscriptions:list
+node scripts/helper.mjs subscriptions:list-all
+node scripts/helper.mjs items:list
+node scripts/helper.mjs items:list --subscription-id sub_123
+node scripts/helper.mjs items:list --limit 100 --cursor '<next_cursor>'
+node scripts/helper.mjs items:list-all
+node scripts/helper.mjs items:get --id item_123
+node scripts/helper.mjs items:get --id item_123 --cursor '<next_content_cursor>'
 ```
 
 `subscriptions:list` returns all RSS/Atom Subscriptions currently exposed by the
@@ -107,15 +107,15 @@ returns a nested `raw` object with `content_raw` and `metadata` alongside
 Supported `items:list` and `items:list-all` filters:
 
 ```bash
-node dist/feedcontext.mjs items:list --limit 100
-node dist/feedcontext.mjs items:list --cursor '<next_cursor>'
-node dist/feedcontext.mjs items:list --subscription-id sub_123
-node dist/feedcontext.mjs items:list --keyword 'agent'
-node dist/feedcontext.mjs items:list --keyword 'agent' --search-content
-node dist/feedcontext.mjs items:list --published-after 1700000000000
-node dist/feedcontext.mjs items:list --published-before 1800000000000
-node dist/feedcontext.mjs items:list --id item_1 --id item_2
-node dist/feedcontext.mjs items:list-all --subscription-id sub_123
+node scripts/helper.mjs items:list --limit 100
+node scripts/helper.mjs items:list --cursor '<next_cursor>'
+node scripts/helper.mjs items:list --subscription-id sub_123
+node scripts/helper.mjs items:list --keyword 'agent'
+node scripts/helper.mjs items:list --keyword 'agent' --search-content
+node scripts/helper.mjs items:list --published-after 1700000000000
+node scripts/helper.mjs items:list --published-before 1800000000000
+node scripts/helper.mjs items:list --id item_1 --id item_2
+node scripts/helper.mjs items:list-all --subscription-id sub_123
 ```
 
 Raw read calls are allowed only for these paths:
@@ -128,7 +128,7 @@ Raw read calls are allowed only for these paths:
 Example:
 
 ```bash
-node dist/feedcontext.mjs raw --method GET --path /v1/items
+node scripts/helper.mjs raw --method GET --path /v1/items
 ```
 
 ## Writes
@@ -145,14 +145,14 @@ Allowed write paths:
 Examples:
 
 ```bash
-node dist/feedcontext.mjs subscriptions:add --feed-url https://example.com/feed.xml --confirm
-node dist/feedcontext.mjs subscriptions:delete --id sub_123 --confirm
+node scripts/helper.mjs subscriptions:add --feed-url https://example.com/feed.xml --confirm
+node scripts/helper.mjs subscriptions:delete --id sub_123 --confirm
 ```
 
 Raw write example after host approval:
 
 ```bash
-node dist/feedcontext.mjs raw \
+node scripts/helper.mjs raw \
   --method POST \
   --path /v1/subscriptions \
   --body '{"feed_url":"https://example.com/feed.xml"}' \

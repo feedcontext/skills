@@ -11,7 +11,7 @@ the packed helper script.
 Before any other FeedContext action in an agent session, run:
 
 ```bash
-node dist/feedcontext.mjs version
+node scripts/helper.mjs version
 ```
 
 The version action prints JSON with installed and latest git revisions,
@@ -19,7 +19,7 @@ The version action prints JSON with installed and latest git revisions,
 Use conversation context to decide whether to surface upgrade availability to
 the user.
 
-Use `node dist/feedcontext.mjs logout` when the user asks to sign out, switch
+Use `node scripts/helper.mjs logout` when the user asks to sign out, switch
 accounts, or clear a stale local session.
 
 ## Actions

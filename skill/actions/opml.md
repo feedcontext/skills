@@ -11,14 +11,14 @@ Procedure:
 4. Run:
 
 ```bash
-node dist/feedcontext.mjs subscriptions:import-opml --file "$OPML_FILE" --confirm
+node scripts/helper.mjs subscriptions:import-opml --file "$OPML_FILE" --confirm
 ```
 
 The default local concurrency is `32`. Override it only when the host asks for a
 smaller or larger fan-out:
 
 ```bash
-node dist/feedcontext.mjs subscriptions:import-opml --file "$OPML_FILE" --concurrency 8 --confirm
+node scripts/helper.mjs subscriptions:import-opml --file "$OPML_FILE" --concurrency 8 --confirm
 ```
 
 If a feed already exists, the API is idempotent and returns the existing active

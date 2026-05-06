@@ -4,7 +4,7 @@
 
 - Confirm the browser opened an `api.feedcontext.io` Google login URL.
 - Confirm the browser shows a FeedContext pair code after Google login.
-- Retry `node dist/feedcontext.mjs login` if the pending pair code expired.
+- Retry `node scripts/helper.mjs login` if the pending pair code expired.
 
 ## Session Storage Warning
 
@@ -17,8 +17,8 @@ and prints a warning. Tokens are not printed.
 Clear the local session, then run login again:
 
 ```bash
-node dist/feedcontext.mjs logout
-node dist/feedcontext.mjs login
+node scripts/helper.mjs logout
+node scripts/helper.mjs login
 ```
 
 Then retry the read or approved write command.
