@@ -39,5 +39,5 @@ follow `actions/briefing-page.md`: create and validate a Structured Synthesis
 JSON sidecar before rendering prose or HTML.
 
 This repository publishes the installable skill from `skills/feedcontext`.
-Source changes must be packed before release so that directory remains
-runnable.
+Helper source changes must refresh `scripts/helper.mjs` before release so this
+directory remains runnable.

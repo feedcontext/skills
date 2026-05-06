@@ -23,7 +23,7 @@ Development commands:
 pnpm install
 pnpm test
 pnpm validate:openapi
-pnpm run pack
+pnpm run build:helper
 ```
 
 Use `OPENAPI_URL` to validate against a non-production OpenAPI document:

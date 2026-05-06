@@ -40,5 +40,5 @@ For FeedContext Skill changes, run:
 ```bash
 pnpm test
 pnpm validate:openapi
-pnpm run pack
+pnpm run build:helper
 ```

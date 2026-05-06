@@ -9,8 +9,8 @@
     "node": ">=20"
   },
   "scripts": {
-    "build": "pnpm run pack && git diff --exit-code -- skills/feedcontext",
-    "pack": "bun run scripts/pack.mjs",
+    "build": "pnpm run build:helper && git diff --exit-code -- skills/feedcontext/scripts/helper.mjs",
+    "build:helper": "bun build src/feedcontext.ts --format esm --packages bundle --target node --outfile skills/feedcontext/scripts/helper.mjs",
     "test": "vitest run tests/*.test.ts",
     "validate:openapi": "tsx scripts/validate-openapi.ts"
   },
