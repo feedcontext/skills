@@ -19,12 +19,19 @@ The version action prints JSON with installed and latest git revisions,
 Use conversation context to decide whether to surface upgrade availability to
 the user.
 
+Use `node dist/feedcontext.mjs logout` when the user asks to sign out, switch
+accounts, or clear a stale local session.
+
 ## Actions
 
 - Read and write FeedContext data through `actions/api.md`.
-- Convert OPML to repeated Subscription creates through `actions/opml.md`.
+- Convert OPML to concurrent Subscription creates through `actions/opml.md`.
 - Troubleshoot OAuth and local Skill Session storage through
   `actions/troubleshooting.md`.
+
+When reading Feed Items, remember that `items:list` is paginated and returns one
+page by default. Use `items:list-all` when the user asks for all matching Feed
+Items.
 
 This skill artifact is generated from `packages/skill` during CI publish. Do
 not hand-edit generated dist.

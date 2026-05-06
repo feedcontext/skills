@@ -2278,11 +2278,26 @@ async function macKeychainWrite(value) {
     execFile("security", ["add-generic-password", "-U", "-s", SERVICE, "-a", ACCOUNT, "-w", value], (error) => resolve(!error));
   });
 }
+async function macKeychainDelete() {
+  if (platform() !== "darwin")
+    return false;
+  return new Promise((resolve) => {
+    execFile("security", ["delete-generic-password", "-s", SERVICE, "-a", ACCOUNT], (error) => resolve(!error));
+  });
+}
 async function readFallbackSession() {
   try {
     return await readFile(FALLBACK_PATH, "utf8");
   } catch {
     return null;
+  }
+}
+async function clearFallbackSession() {
+  try {
+    await unlink(FALLBACK_PATH);
+    return true;
+  } catch {
+    return false;
   }
 }
 async function writeFallbackSession(value) {
@@ -2303,9 +2318,12 @@ async function writePendingLogin(pending) {
   await writeFile(PENDING_LOGIN_PATH, JSON.stringify(pending), { mode: 384 });
 }
 async function clearPendingLogin() {
-  await unlink(PENDING_LOGIN_PATH).catch(() => {
-    return;
-  });
+  try {
+    await unlink(PENDING_LOGIN_PATH);
+    return true;
+  } catch {
+    return false;
+  }
 }
 async function readSession() {
   const raw = await macKeychainRead() ?? await readFallbackSession();
@@ -2316,6 +2334,17 @@ async function writeSession(session) {
   if (!await macKeychainWrite(raw)) {
     await writeFallbackSession(raw);
   }
+}
+async function clearSession() {
+  const [keychain_cleared, fallback_cleared] = await Promise.all([
+    macKeychainDelete(),
+    clearFallbackSession()
+  ]);
+  return {
+    fallback_cleared,
+    keychain_cleared,
+    session_removed: keychain_cleared || fallback_cleared
+  };
 }
 async function refreshSession(session) {
   if (!session.refresh_token || !session.expires_at || session.expires_at > Date.now() + 60000) {
@@ -2353,6 +2382,100 @@ function parsePairCode(pairCode) {
     throw new Error("Invalid pair code. Copy the 6-digit code from the FeedContext pair page.");
   }
   return pairCode;
+}
+function decodeXmlEntities(value) {
+  return value.replaceAll("&amp;", "&").replaceAll("&lt;", "<").replaceAll("&gt;", ">").replaceAll("&quot;", '"').replaceAll("&apos;", "'").replace(/&#(\d+);/g, (_match, code) => String.fromCodePoint(Number(code))).replace(/&#x([\da-f]+);/gi, (_match, code) => String.fromCodePoint(Number.parseInt(code, 16)));
+}
+function attributeFor(tag, name) {
+  const pattern = new RegExp(`\\s${name}\\s*=\\s*(["'])([\\s\\S]*?)\\1`, "i");
+  const match = pattern.exec(tag);
+  return match ? decodeXmlEntities(match[2] ?? "") : null;
+}
+function parseOpmlFeedUrls(document) {
+  const urls = [];
+  const seen = new Set;
+  for (const match of document.matchAll(/<outline\b[^>]*>/gi)) {
+    const rawXmlUrl = attributeFor(match[0], "xmlUrl");
+    if (!rawXmlUrl)
+      continue;
+    try {
+      const feedUrl = normalizeOpmlFeedUrl(rawXmlUrl);
+      if (!seen.has(feedUrl)) {
+        seen.add(feedUrl);
+        urls.push(feedUrl);
+      }
+    } catch {}
+  }
+  return urls;
+}
+function normalizeOpmlFeedUrl(rawFeedUrl) {
+  const url = new URL(rawFeedUrl);
+  if (url.protocol !== "http:" && url.protocol !== "https:") {
+    throw new Error("OPML xmlUrl must use http or https.");
+  }
+  url.hash = "";
+  return url.toString();
+}
+function parseConcurrency(value, defaultValue = 32) {
+  if (value === undefined)
+    return defaultValue;
+  const parsed = typeof value === "number" ? value : Number.parseInt(value, 10);
+  if (!Number.isInteger(parsed) || parsed < 1) {
+    throw new Error("--concurrency must be a positive integer.");
+  }
+  return parsed;
+}
+function parsePositiveIntegerOption(input) {
+  if (input.value === undefined)
+    return input.defaultValue;
+  const parsed = typeof input.value === "number" ? input.value : Number.parseInt(input.value, 10);
+  if (!Number.isInteger(parsed) || parsed < 1) {
+    throw new Error(`${input.name} must be a positive integer.`);
+  }
+  if (input.max !== undefined && parsed > input.max) {
+    throw new Error(`${input.name} must be less than or equal to ${input.max}.`);
+  }
+  return parsed;
+}
+function buildListItemsPath(options = {}) {
+  const params = new URLSearchParams;
+  if (options.subscriptionId)
+    params.set("subscription_id", options.subscriptionId);
+  if (options.keyword)
+    params.set("keyword", options.keyword);
+  if (options.publishedAfter)
+    params.set("published_after", options.publishedAfter);
+  if (options.publishedBefore)
+    params.set("published_before", options.publishedBefore);
+  if (options.limit) {
+    params.set("limit", String(parsePositiveIntegerOption({
+      max: 100,
+      name: "--limit",
+      value: options.limit
+    })));
+  }
+  if (options.cursor)
+    params.set("cursor", options.cursor);
+  for (const id of options.ids ?? []) {
+    params.append("ids", id);
+  }
+  if (options.includeContent)
+    params.set("include_content", "true");
+  const query = params.toString();
+  return `/v1/items${query ? `?${query}` : ""}`;
+}
+async function runWithConcurrency(items, concurrency, worker) {
+  const results = new Array(items.length);
+  let nextIndex = 0;
+  const workers = Array.from({ length: Math.min(concurrency, items.length) }, async () => {
+    while (nextIndex < items.length) {
+      const currentIndex = nextIndex;
+      nextIndex += 1;
+      results[currentIndex] = await worker(items[currentIndex], currentIndex);
+    }
+  });
+  await Promise.all(workers);
+  return results;
 }
 function createAuthorizeUrl(state, challenge) {
   const authorize = new URL(`${AUTH_BASE}/oauth2/authorize`);
@@ -2436,16 +2559,27 @@ async function login(options) {
   }
   await startLogin();
 }
-async function apiCall(input) {
-  if (!isAllowedRawCall(input.method, input.path)) {
-    throw new Error(`API path is not allowlisted: ${input.method.toUpperCase()} ${input.path}`);
-  }
-  enforceConfirmBeforeNetwork(input);
+async function logout() {
+  const session = await clearSession();
+  const pending_login_cleared = await clearPendingLogin();
+  console.log(JSON.stringify({
+    ok: true,
+    ...session,
+    pending_login_cleared
+  }));
+}
+async function getSession() {
   const storedSession = await readSession();
   if (!storedSession) {
     throw new Error("Not logged in. Run `feedcontext login`.");
   }
-  const session = await refreshSession(storedSession);
+  return refreshSession(storedSession);
+}
+async function apiRequest(input, session) {
+  if (!isAllowedRawCall(input.method, input.path)) {
+    throw new Error(`API path is not allowlisted: ${input.method.toUpperCase()} ${input.path}`);
+  }
+  enforceConfirmBeforeNetwork(input);
   const response = await fetch(`${API_ORIGIN}${input.path}`, {
     body: input.body === undefined ? undefined : JSON.stringify(input.body),
     headers: {
@@ -2455,12 +2589,139 @@ async function apiCall(input) {
     method: input.method.toUpperCase()
   });
   if (response.status === 204) {
-    console.log(JSON.stringify({ ok: true }));
-    return;
+    return { ok: true, status: response.status, text: JSON.stringify({ ok: true }) };
   }
   const text = await response.text();
-  process.stdout.write(text || "{}");
-  if (!response.ok) {
+  return { ok: response.ok, status: response.status, text: text || "{}" };
+}
+async function apiCall(input) {
+  const result = await apiRequest(input, await getSession());
+  process.stdout.write(result.text);
+  if (!result.ok) {
+    process.exitCode = 1;
+  }
+}
+function parseListItemsResponse(result) {
+  try {
+    const parsed = JSON.parse(result.text);
+    if (!Array.isArray(parsed.items)) {
+      throw new Error("Missing items array.");
+    }
+    return {
+      items: parsed.items,
+      next_cursor: typeof parsed.next_cursor === "string" ? parsed.next_cursor : null
+    };
+  } catch (error) {
+    throw new Error(`Invalid list items response: ${error instanceof Error ? error.message : String(error)}`);
+  }
+}
+async function listAllItems(options) {
+  const limit = parsePositiveIntegerOption({
+    defaultValue: 100,
+    max: 100,
+    name: "--limit",
+    value: options.limit
+  });
+  const maxPages = parsePositiveIntegerOption({
+    defaultValue: 1000,
+    name: "--max-pages",
+    value: options.maxPages
+  });
+  const session = await getSession();
+  const items = [];
+  let cursor = options.cursor;
+  let pages = 0;
+  while (pages < maxPages) {
+    const result = await apiRequest({
+      method: "GET",
+      path: buildListItemsPath({
+        ...options,
+        cursor,
+        limit: String(limit)
+      })
+    }, session);
+    if (!result.ok) {
+      process.stdout.write(result.text);
+      process.exitCode = 1;
+      return;
+    }
+    const page = parseListItemsResponse(result);
+    items.push(...page.items);
+    pages += 1;
+    if (!page.next_cursor) {
+      console.log(JSON.stringify({
+        items,
+        next_cursor: null,
+        pages,
+        total: items.length
+      }, null, 2));
+      return;
+    }
+    cursor = page.next_cursor;
+  }
+  console.log(JSON.stringify({
+    items,
+    next_cursor: cursor ?? null,
+    pages,
+    total: items.length,
+    truncated: true
+  }, null, 2));
+  process.exitCode = 1;
+}
+async function importOpml(options) {
+  if (!options.confirm) {
+    throw new Error("OPML import creates subscriptions and requires --confirm.");
+  }
+  const concurrency = parseConcurrency(options.concurrency);
+  const feedUrls = parseOpmlFeedUrls(await readFile(options.file, "utf8"));
+  const session = await getSession();
+  const results = await runWithConcurrency(feedUrls, concurrency, async (feedUrl) => {
+    try {
+      const result = await apiRequest({
+        body: { feed_url: feedUrl },
+        confirm: true,
+        method: "POST",
+        path: "/v1/subscriptions"
+      }, session);
+      if (result.ok) {
+        let created2 = result.status === 201;
+        try {
+          const parsed = JSON.parse(result.text);
+          created2 = parsed.created ?? created2;
+        } catch {}
+        return { created: created2, feedUrl, ok: true, status: result.status };
+      }
+      let error = result.text;
+      try {
+        const parsed = JSON.parse(result.text);
+        error = parsed.message ?? result.text;
+      } catch {}
+      return { error, feedUrl, ok: false, status: result.status };
+    } catch (error) {
+      return {
+        error: error instanceof Error ? error.message : "Subscription create request failed.",
+        feedUrl,
+        ok: false
+      };
+    }
+  });
+  const failed = results.filter((result) => !result.ok).map((result) => ({
+    error: result.error,
+    feed_url: result.feedUrl,
+    status: result.status
+  }));
+  const succeeded = results.length - failed.length;
+  const created = results.filter((result) => result.ok && result.created).length;
+  const output = {
+    created,
+    existing: succeeded - created,
+    failed,
+    ok: failed.length === 0,
+    succeeded,
+    total: feedUrls.length
+  };
+  console.log(JSON.stringify(output, null, 2));
+  if (failed.length > 0) {
     process.exitCode = 1;
   }
 }
@@ -2472,6 +2733,7 @@ async function main(argv = process.argv) {
   program2.name("feedcontext").description("FeedContext Skill helper");
   program2.command("version").action(printVersionStatus);
   program2.command("login").option("--pair-code <code>").action((options) => login({ pairCode: options.pairCode }));
+  program2.command("logout").action(logout);
   program2.command("raw").requiredOption("--method <method>").requiredOption("--path <path>").option("--body <json>").option("--confirm").action((options) => apiCall({
     body: options.body ? JSON.parse(options.body) : undefined,
     confirm: options.confirm,
@@ -2479,23 +2741,37 @@ async function main(argv = process.argv) {
     path: options.path
   }));
   program2.command("subscriptions:list").action(() => apiCall({ method: "GET", path: "/v1/subscriptions" }));
+  program2.command("subscriptions:list-all").action(() => apiCall({ method: "GET", path: "/v1/subscriptions" }));
   program2.command("subscriptions:add").requiredOption("--feed-url <url>").option("--confirm").action((options) => apiCall({
     body: { feed_url: options.feedUrl },
     confirm: options.confirm,
     method: "POST",
     path: "/v1/subscriptions"
   }));
+  program2.command("subscriptions:import-opml").requiredOption("--file <path>").option("--concurrency <count>", "Number of concurrent subscription creates", "32").option("--confirm").action((options) => importOpml({
+    concurrency: options.concurrency,
+    confirm: options.confirm,
+    file: options.file
+  }));
   program2.command("subscriptions:delete").requiredOption("--id <id>").option("--confirm").action((options) => apiCall({
     confirm: options.confirm,
     method: "DELETE",
     path: `/v1/subscriptions/${options.id}`
   }));
-  program2.command("items:list").option("--subscription-id <id>").action((options) => {
-    const params = new URLSearchParams;
-    if (options.subscriptionId)
-      params.set("subscription_id", options.subscriptionId);
-    const query = params.toString();
-    return apiCall({ method: "GET", path: `/v1/items${query ? `?${query}` : ""}` });
+  program2.command("items:list").option("--subscription-id <id>").option("--keyword <text>").option("--published-after <timestamp>").option("--published-before <timestamp>").option("--limit <count>").option("--cursor <cursor>").option("--id <id>", "Filter to a Feed Item id; repeatable", (value, previous) => [
+    ...previous ?? [],
+    value
+  ]).option("--include-content").action((options) => {
+    return apiCall({
+      method: "GET",
+      path: buildListItemsPath({ ...options, ids: options.id })
+    });
+  });
+  program2.command("items:list-all").option("--subscription-id <id>").option("--keyword <text>").option("--published-after <timestamp>").option("--published-before <timestamp>").option("--limit <count>", "Page size for each API request; defaults to 100").option("--cursor <cursor>", "Start cursor").option("--id <id>", "Filter to a Feed Item id; repeatable", (value, previous) => [
+    ...previous ?? [],
+    value
+  ]).option("--include-content").option("--max-pages <count>", "Safety cap for cursor traversal", "1000").action((options) => {
+    return listAllItems({ ...options, ids: options.id });
   });
   program2.command("items:get").requiredOption("--id <id>").action((options) => apiCall({ method: "GET", path: `/v1/items/${options.id}` }));
   await program2.parseAsync(argv);
@@ -2507,12 +2783,17 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   });
 }
 export {
+  runWithConcurrency,
+  parsePositiveIntegerOption,
   parsePairCode,
+  parseOpmlFeedUrls,
+  parseConcurrency,
   isMutatingRawCall,
   isAllowedRawCall,
   getVersionStatus,
   enforceConfirmBeforeNetwork,
   buildVersionStatus,
+  buildListItemsPath,
   WEB_ORIGIN,
   SCOPES,
   REDIRECT_URI,

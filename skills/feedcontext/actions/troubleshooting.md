@@ -14,9 +14,10 @@ and prints a warning. Tokens are not printed.
 
 ## Unauthorized API Calls
 
-Run login again:
+Clear the local session, then run login again:
 
 ```bash
+node dist/feedcontext.mjs logout
 node dist/feedcontext.mjs login
 ```
 

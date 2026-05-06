@@ -5,8 +5,11 @@ Use the generated helper:
 ```bash
 node dist/feedcontext.mjs version
 node dist/feedcontext.mjs login
+node dist/feedcontext.mjs logout
 node dist/feedcontext.mjs subscriptions:list
+node dist/feedcontext.mjs subscriptions:list-all
 node dist/feedcontext.mjs items:list
+node dist/feedcontext.mjs items:list-all
 node dist/feedcontext.mjs items:get --id item_123
 ```
 
@@ -47,15 +50,60 @@ Session in the system credential store when available. If the credential store i
 unavailable, it falls back to a local file with restrictive permissions and
 prints a warning.
 
+## Logout
+
+Run:
+
+```bash
+node dist/feedcontext.mjs logout
+```
+
+The helper removes the local Skill Session from the system credential store when
+available, removes the fallback session file, and clears any pending login. It
+does not call the FeedContext API, so it works even when the current token is
+expired or invalid.
+
 ## Reads
 
 High-level read commands:
 
 ```bash
 node dist/feedcontext.mjs subscriptions:list
+node dist/feedcontext.mjs subscriptions:list-all
 node dist/feedcontext.mjs items:list
 node dist/feedcontext.mjs items:list --subscription-id sub_123
+node dist/feedcontext.mjs items:list --limit 100 --cursor '<next_cursor>'
+node dist/feedcontext.mjs items:list-all
 node dist/feedcontext.mjs items:get --id item_123
+```
+
+`subscriptions:list` returns all active RSS/Atom Subscriptions currently exposed
+by the API. It is not paginated. `subscriptions:list-all` is an explicit alias
+for agents responding to "list all subscriptions."
+
+`items:list` is paginated. It returns only one page of Feed Items:
+
+- Default page size is `20`.
+- Maximum page size is `100`.
+- When `--include-content` is used without an explicit `--limit`, the API
+  returns `3` items by default to bound response size.
+- If the JSON response has a non-null `next_cursor`, more Feed Items exist. Use
+  that cursor with `items:list --cursor '<next_cursor>'`.
+- Use `items:list-all` when the user asks for all matching Feed Items. It follows
+  `next_cursor` automatically and uses `--limit 100` per page by default.
+
+Supported `items:list` and `items:list-all` filters:
+
+```bash
+node dist/feedcontext.mjs items:list --limit 100
+node dist/feedcontext.mjs items:list --cursor '<next_cursor>'
+node dist/feedcontext.mjs items:list --subscription-id sub_123
+node dist/feedcontext.mjs items:list --keyword 'agent'
+node dist/feedcontext.mjs items:list --published-after 1700000000000
+node dist/feedcontext.mjs items:list --published-before 1800000000000
+node dist/feedcontext.mjs items:list --id item_1 --id item_2
+node dist/feedcontext.mjs items:list --include-content --limit 10
+node dist/feedcontext.mjs items:list-all --subscription-id sub_123
 ```
 
 Raw read calls are allowed only for these paths:
