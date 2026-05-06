@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
+import structuredSynthesisSchema from "@/structured-synthesis.schema.json" assert { type: "json" };
 import {
   buildGetItemPath,
   buildVersionStatus,
@@ -240,6 +242,14 @@ describe("FeedContext Feed Item list helpers", () => {
 });
 
 describe("FeedContext Structured Synthesis validation", () => {
+  it("keeps the installable schema generated from the source schema", () => {
+    const generatedSchema = JSON.parse(
+      readFileSync("skills/feedcontext/schemas/structured-synthesis.schema.json", "utf8"),
+    );
+
+    expect(generatedSchema).toEqual(structuredSynthesisSchema);
+  });
+
   it("accepts a valid Structured Synthesis", () => {
     expect(
       validateStructuredSynthesis({

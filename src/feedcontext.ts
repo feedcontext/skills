@@ -8,6 +8,7 @@ import { fileURLToPath } from "node:url";
 import { Command } from "commander";
 import { parseOpml } from "feedsmith";
 import allowlist from "@/allowlist.json" assert { type: "json" };
+import structuredSynthesisSchema from "@/structured-synthesis.schema.json" assert { type: "json" };
 
 export type SkillSession = {
   access_token: string;
@@ -1025,6 +1026,10 @@ async function validateSynthesisFile(file: string) {
   console.log(`Structured synthesis is valid: ${file}`);
 }
 
+function printSynthesisSchema() {
+  console.log(JSON.stringify(structuredSynthesisSchema, null, 2));
+}
+
 async function main(argv = process.argv) {
   const program = new Command();
   program.name("feedcontext").description("FeedContext Skill helper");
@@ -1138,6 +1143,10 @@ async function main(argv = process.argv) {
     .command("synthesis:validate")
     .requiredOption("--file <path>")
     .action((options) => validateSynthesisFile(options.file));
+  program
+    .command("synthesis:schema")
+    .description("Print the FeedContext Structured Synthesis JSON Schema")
+    .action(printSynthesisSchema);
 
   await program.parseAsync(argv);
 }

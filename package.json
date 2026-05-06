@@ -9,8 +9,9 @@
     "node": ">=20"
   },
   "scripts": {
-    "build": "pnpm run build:helper && git diff --exit-code -- skills/feedcontext/scripts/helper.mjs",
+    "build": "pnpm run build:schema && pnpm run build:helper && git diff --exit-code -- skills/feedcontext/schemas/structured-synthesis.schema.json skills/feedcontext/scripts/helper.mjs",
     "build:helper": "bun build src/feedcontext.ts --format esm --packages bundle --target node --minify --outfile skills/feedcontext/scripts/helper.mjs",
+    "build:schema": "tsx scripts/write-structured-synthesis-schema.ts",
     "test": "vitest run tests/*.test.ts",
     "typecheck": "tsc --noEmit"
   },

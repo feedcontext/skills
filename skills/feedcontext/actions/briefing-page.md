@@ -40,9 +40,10 @@ Do not generate a briefing, digest, summary, insight set, roundup, or visual
 summary as prose first. First create a Structured Synthesis JSON file that
 captures the units to render and the evidence that supports each unit.
 
-Use `schemas/structured-synthesis.schema.json` as the source schema and
-`node scripts/helper.mjs synthesis:validate --file <path>` as the local validation command. Keep the JSON
-sidecar next to the HTML when practical:
+Use `schemas/structured-synthesis.schema.json` as the generated schema artifact
+and `node scripts/helper.mjs synthesis:schema` as the canonical helper-backed
+schema source. Validate with `node scripts/helper.mjs synthesis:validate --file
+<path>`. Keep the JSON sidecar next to the HTML when practical:
 
 ```text
 feedcontext-briefing-2026-05-06.html

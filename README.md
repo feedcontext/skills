@@ -23,5 +23,6 @@ Development commands:
 pnpm install
 pnpm test
 pnpm typecheck
+pnpm run build:schema
 pnpm run build:helper
 ```
