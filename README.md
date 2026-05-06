@@ -7,8 +7,8 @@ Skill Session, and call FeedContext v1 APIs for RSS/Atom Subscriptions and Feed
 Items. The skill should not expose Source as a public resource.
 
 This repository is installed by cloning. The installable skill artifact is
-published from `skills/feedcontext`, while source files and development tooling
-live at the repository root.
+maintained directly under `skills/feedcontext`, while helper source, tests, and
+development tooling live at the repository root.
 
 Installable action docs:
 

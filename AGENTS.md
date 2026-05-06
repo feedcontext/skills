@@ -7,8 +7,8 @@ cloning, and the installable skill artifact must remain available under
 Read first:
 
 - `README.md`
-- `skill/SKILL.md`
-- Relevant source action docs in `skill/actions/`
+- `skills/feedcontext/SKILL.md`
+- Relevant action docs in `skills/feedcontext/actions/`
 
 ## Boundaries
 
@@ -22,8 +22,8 @@ Read first:
 
 ## Development Norms
 
-- Keep detailed endpoint usage in source action docs, not only in
-  `skill/SKILL.md`.
+- Keep detailed endpoint usage in `skills/feedcontext/actions/`, not only in
+  `skills/feedcontext/SKILL.md`.
 - Run the `version` action before other FeedContext Skill actions in an agent
   session.
 - Keep Write action safety as host approval plus helper `--confirm`; v1 has no

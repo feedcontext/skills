@@ -3,12 +3,9 @@ import {dirname, resolve} from "node:path";
 import {fileURLToPath} from "node:url";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const output = resolve(root, "skills/feedcontext");
-const outputScripts = resolve(output, "scripts");
+const outputScripts = resolve(root, "skills/feedcontext/scripts");
 
-await rm(output, {force: true, recursive: true});
 await mkdir(outputScripts, {recursive: true});
-await cp(resolve(root, "skill"), output, {recursive: true});
 
 const result = await Bun.build({
   entrypoints: [resolve(root, "src/feedcontext.ts")],
@@ -25,5 +22,6 @@ if (!result.success) {
   process.exit(1);
 }
 
+await rm(resolve(outputScripts, "helper.mjs"), {force: true});
 await cp(resolve(outputScripts, "feedcontext.js"), resolve(outputScripts, "helper.mjs"));
 await rm(resolve(outputScripts, "feedcontext.js"));
