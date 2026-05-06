@@ -22,12 +22,5 @@ Development commands:
 ```bash
 pnpm install
 pnpm test
-pnpm validate:openapi
 pnpm run build:helper
-```
-
-Use `OPENAPI_URL` to validate against a non-production OpenAPI document:
-
-```bash
-OPENAPI_URL=http://localhost:8787/openapi.json pnpm validate:openapi
 ```

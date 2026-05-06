@@ -12,8 +12,8 @@ Read first:
 
 ## Boundaries
 
-- The FeedContext Skill consumes `api` only through public `/v1` APIs, the Auth
-  Entry, and published OpenAPI or contract artifacts.
+- The FeedContext Skill consumes `api` only through public `/v1` APIs and the
+  Auth Entry.
 - Do not reference parent-directory paths, product-repository private source,
   product-repository workspace packages, or product-repository git submodules.
 - Keep the packed helper at `skills/feedcontext/scripts/helper.mjs` committed
@@ -39,6 +39,5 @@ For FeedContext Skill changes, run:
 
 ```bash
 pnpm test
-pnpm validate:openapi
 pnpm run build:helper
 ```
