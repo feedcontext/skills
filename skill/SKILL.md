@@ -38,6 +38,6 @@ When composing summaries, roundups, insights, briefings, or briefing pages,
 follow `actions/briefing-page.md`: create and validate a Structured Synthesis
 JSON sidecar before rendering prose or HTML.
 
-This repository is installed by cloning and includes the packed helper at
-`dist/feedcontext.mjs`. Source changes must be packed before release so the
-checkout remains runnable.
+This repository publishes the installable skill from `skills/feedcontext`.
+Source changes must be packed before release so that directory remains
+runnable.

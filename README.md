@@ -6,15 +6,16 @@ The FeedContext Skill lets agents authenticate through `api`, store a local
 Skill Session, and call FeedContext v1 APIs for RSS/Atom Subscriptions and Feed
 Items. The skill should not expose Source as a public resource.
 
-This repository is installed by cloning, so the checkout contains both source
-files and the packed helper at `dist/feedcontext.mjs`.
+This repository is installed by cloning. The installable skill artifact is
+published from `skills/feedcontext`, while source files and development tooling
+live at the repository root.
 
-Action docs:
+Installable action docs:
 
-- `actions/api.md`
-- `actions/briefing-page.md`
-- `actions/opml.md`
-- `actions/troubleshooting.md`
+- `skills/feedcontext/actions/api.md`
+- `skills/feedcontext/actions/briefing-page.md`
+- `skills/feedcontext/actions/opml.md`
+- `skills/feedcontext/actions/troubleshooting.md`
 
 Development commands:
 

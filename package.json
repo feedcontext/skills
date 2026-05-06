@@ -2,14 +2,14 @@
   "name": "feedcontext-skill",
   "private": true,
   "version": "0.0.0",
-  "description": "Source and checkout-runnable artifact for the FeedContext Skill",
+  "description": "Source repository and installable artifact for the FeedContext Skill",
   "type": "module",
   "packageManager": "pnpm@11.0.4",
   "engines": {
     "node": ">=20"
   },
   "scripts": {
-    "build": "pnpm run pack && git diff --exit-code -- dist/feedcontext.mjs",
+    "build": "pnpm run pack && git diff --exit-code -- skills/feedcontext",
     "pack": "bun run scripts/pack.mjs",
     "test": "vitest run tests/*.test.ts",
     "validate:openapi": "tsx scripts/validate-openapi.ts"

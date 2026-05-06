@@ -1,13 +1,14 @@
 ## FeedContext Skill Repository Agent Guidance
 
 This repository is the public FeedContext Skill Repository. It is installed by
-cloning and must remain checkout-runnable.
+cloning, and the installable skill artifact must remain available under
+`skills/feedcontext`.
 
 Read first:
 
 - `README.md`
-- `SKILL.md`
-- Relevant action docs in `actions/`
+- `skill/SKILL.md`
+- Relevant source action docs in `skill/actions/`
 
 ## Boundaries
 
@@ -15,13 +16,14 @@ Read first:
   Entry, and published OpenAPI or contract artifacts.
 - Do not reference parent-directory paths, product-repository private source,
   product-repository workspace packages, or product-repository git submodules.
-- Keep the packed helper at `dist/feedcontext.mjs` committed because installs
-  clone this repository.
+- Keep the packed helper at `skills/feedcontext/dist/feedcontext.mjs` committed
+  because installs clone this repository.
 - The helper must not print OAuth tokens.
 
 ## Development Norms
 
-- Keep detailed endpoint usage in action docs, not only in the root `SKILL.md`.
+- Keep detailed endpoint usage in source action docs, not only in
+  `skill/SKILL.md`.
 - Run the `version` action before other FeedContext Skill actions in an agent
   session.
 - Keep Write action safety as host approval plus helper `--confirm`; v1 has no
