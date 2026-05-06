@@ -427,7 +427,7 @@ export function parsePositiveIntegerOption(input: {
   max?: number;
   name: string;
   value?: string | number;
-}) {
+}): number | undefined {
   if (input.value === undefined) return input.defaultValue;
   const parsed = typeof input.value === "number" ? input.value : Number.parseInt(input.value, 10);
   if (!Number.isInteger(parsed) || parsed < 1) {
@@ -683,11 +683,12 @@ async function listAllItems(options: ListAllItemsOptions) {
     name: "--limit",
     value: options.limit,
   });
-  const maxPages = parsePositiveIntegerOption({
-    defaultValue: 1000,
-    name: "--max-pages",
-    value: options.maxPages,
-  });
+  const maxPages =
+    parsePositiveIntegerOption({
+      defaultValue: 1000,
+      name: "--max-pages",
+      value: options.maxPages,
+    }) ?? 1000;
   const session = await getSession();
   const items: unknown[] = [];
   let cursor = options.cursor;
@@ -966,7 +967,10 @@ export function validateStructuredSynthesis(synthesis: unknown) {
 
     for (const key of ["candidate_count", "active_subscription_count"]) {
       const value = synthesis.scope[key];
-      if (value !== undefined && (!Number.isInteger(value) || value < 0)) {
+      if (
+        value !== undefined &&
+        (typeof value !== "number" || !Number.isInteger(value) || value < 0)
+      ) {
         errors.push(`${synthesisPathOf(["scope", key])}: must be a non-negative integer`);
       }
     }

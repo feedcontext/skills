@@ -22,5 +22,6 @@ Development commands:
 ```bash
 pnpm install
 pnpm test
+pnpm typecheck
 pnpm run build:helper
 ```
