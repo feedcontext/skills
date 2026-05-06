@@ -13,7 +13,10 @@ Feed Item, not an api resource, and not a page hosted by `web`.
 3. Use `items:get` to read the Feed Items that materially support the page.
 4. Curate the page around the user's request. If the user does not give a
    precise scope, choose a coherent recent theme from visible Feed Items.
-5. Write one standalone `.html` file with embedded CSS.
+5. If the page uses images, create a local temporary asset directory and copy,
+   download, or generate the image files there before referencing them from the
+   HTML.
+6. Write one standalone `.html` file with embedded CSS.
 
 The page may contain agent-curated Feed Item selections or agent-synthesized
 insights from visible Feed Items. Do not imply unsupported facts. Important
@@ -53,12 +56,22 @@ material, or generate images when the environment supports it. If no image
 clearly improves the page, rely on typography, borders, hierarchy, and captions
 instead of forcing an unrelated visual.
 
+When using a remote image URL, download the image into a local temporary
+directory before referencing it from the page. This avoids broken rendering from
+cross-origin restrictions, hotlink protection, expiring URLs, or blocked remote
+requests. Prefer a dedicated directory such as `/tmp/feedcontext-briefing-*`;
+store generated images there as well. Reference those local files from the HTML
+with paths that work when the page is opened locally. If the user requires a
+single physical file with no sidecar assets, embed the local image data as a
+data URI instead of linking to the remote URL.
+
 ## Starting Template
 
 Treat this as a starting point. Adapt the module count, ordering, and copy to
 the user's request and the available Feed Items, while preserving the masthead,
 newspaper hierarchy, compact source marks, bottom source index, and single-file
-HTML form.
+HTML document form. If the page uses images, place the image files in a local
+temporary asset directory and update the `src` attributes accordingly.
 
 ```html
 <!doctype html>

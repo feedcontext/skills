@@ -78,9 +78,9 @@ node dist/feedcontext.mjs items:get --id item_123
 node dist/feedcontext.mjs items:get --id item_123 --cursor '<next_content_cursor>'
 ```
 
-`subscriptions:list` returns all active RSS/Atom Subscriptions currently exposed
-by the API. It is not paginated. `subscriptions:list-all` is an explicit alias
-for agents responding to "list all subscriptions."
+`subscriptions:list` returns all RSS/Atom Subscriptions currently exposed by the
+API. It is not paginated. `subscriptions:list-all` is an explicit alias for
+agents responding to "list all subscriptions."
 
 `items:list` is a discovery command. It is paginated and returns only one page
 of Feed Item metadata:
@@ -99,8 +99,10 @@ of Feed Item metadata:
 `items:get` is the reading command. It returns `content_text` as Limited
 Markdown in chunks of up to `12,000` characters by default. If
 `next_content_cursor` is non-null, pass it back with `--cursor` to continue
-reading the same Feed Item. Use `--include-html` only for recovery or debugging;
-it returns `content_html` alongside `content_text`.
+reading the same Feed Item. Use `--include-raw` only for recovery, debugging, or
+local handling of item-level metadata such as podcast audio references; it
+returns a nested `raw` object with `content_raw` and `metadata` alongside
+`content_text`.
 
 Supported `items:list` and `items:list-all` filters:
 
