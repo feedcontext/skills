@@ -14,6 +14,7 @@ import {
   parsePositiveIntegerOption,
   runWithConcurrency,
   SCOPES,
+  validateStructuredSynthesis,
 } from "@/feedcontext";
 
 describe("FeedContext Skill helper safety", () => {
@@ -235,5 +236,49 @@ describe("FeedContext Feed Item list helpers", () => {
         value: "0",
       }),
     ).toThrow(/positive integer/);
+  });
+});
+
+describe("FeedContext Structured Synthesis validation", () => {
+  it("accepts a valid Structured Synthesis", () => {
+    expect(
+      validateStructuredSynthesis({
+        schema_version: "1",
+        scope: {
+          request: "Brief me on agent news.",
+          selection_rule: "Latest relevant Feed Items.",
+        },
+        units: [
+          {
+            claim: "Agent tooling changed this week.",
+            id: "u1",
+            rendering_priority: "lead",
+            selection_rationale: "Directly answers the request.",
+            supporting_evidence: [
+              {
+                feed_item_id: "item_1",
+                kind: "feed_item",
+                reason: "Primary report.",
+                relevance: "direct",
+                subscription_title: "Agent Feed",
+                title: "Agent Update",
+                url: "https://example.com/agent-update",
+              },
+            ],
+            title: "Agent tooling",
+            type: "insight",
+          },
+        ],
+      }),
+    ).toEqual([]);
+  });
+
+  it("reports validation errors", () => {
+    const errors = validateStructuredSynthesis({ schema_version: "2", units: [] });
+
+    expect(errors).toContain('schema_version: must be "1"');
+    expect(errors).toContain(
+      "units: must include at least one synthesis unit",
+    );
   });
 });

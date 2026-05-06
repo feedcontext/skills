@@ -7726,6 +7726,154 @@ async function importOpml(options) {
 async function printVersionStatus() {
   console.log(JSON.stringify(await getVersionStatus()));
 }
+var evidenceRelevanceValues = new Set(["direct", "supporting", "background"]);
+var synthesisUnitTypes = new Set(["insight", "item_roundup", "briefing_section"]);
+var renderingPriorities = new Set(["lead", "main", "secondary", "collapsed"]);
+var secondaryItemGroups = new Set(["supplemental", "low_information_gain", "out_of_scope"]);
+function synthesisPathOf(path) {
+  return path.length ? path.join(".") : "$";
+}
+function isRecord(value) {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+function requireSynthesisRecord(value, path, errors) {
+  if (!isRecord(value)) {
+    errors.push(`${synthesisPathOf(path)}: must be an object`);
+    return false;
+  }
+  return true;
+}
+function requireSynthesisString(record, key, path, errors) {
+  const value = record[key];
+  if (typeof value !== "string" || value.trim() === "") {
+    errors.push(`${synthesisPathOf([...path, key])}: must be a non-empty string`);
+    return null;
+  }
+  return value;
+}
+function requireSynthesisEnum(record, key, values, path, errors) {
+  const value = requireSynthesisString(record, key, path, errors);
+  if (value !== null && !values.has(value)) {
+    errors.push(`${synthesisPathOf([...path, key])}: must be one of: ${Array.from(values).join(", ")}`);
+  }
+}
+function optionalSynthesisInteger(record, key, path, errors) {
+  const value = record[key];
+  if (value !== undefined && value !== null && !Number.isInteger(value)) {
+    errors.push(`${synthesisPathOf([...path, key])}: must be an integer or null`);
+  }
+}
+function validateSynthesisEvidence(evidence, path, errors) {
+  if (!requireSynthesisRecord(evidence, path, errors))
+    return;
+  const kind = evidence.kind;
+  if (kind !== "feed_item" && kind !== "contextual" && kind !== "external_url") {
+    errors.push(`${synthesisPathOf([...path, "kind"])}: must be feed_item, contextual, or external_url`);
+    return;
+  }
+  requireSynthesisEnum(evidence, "relevance", evidenceRelevanceValues, path, errors);
+  requireSynthesisString(evidence, "reason", path, errors);
+  if (kind === "feed_item") {
+    requireSynthesisString(evidence, "feed_item_id", path, errors);
+    requireSynthesisString(evidence, "url", path, errors);
+    requireSynthesisString(evidence, "subscription_title", path, errors);
+    requireSynthesisString(evidence, "title", path, errors);
+    optionalSynthesisInteger(evidence, "published_at", path, errors);
+    return;
+  }
+  if (kind === "contextual") {
+    requireSynthesisString(evidence, "label", path, errors);
+    return;
+  }
+  requireSynthesisString(evidence, "url", path, errors);
+  requireSynthesisString(evidence, "title", path, errors);
+}
+function validateSynthesisUnit(unit, index, errors) {
+  const path = ["units", String(index)];
+  if (!requireSynthesisRecord(unit, path, errors))
+    return;
+  requireSynthesisString(unit, "id", path, errors);
+  requireSynthesisEnum(unit, "type", synthesisUnitTypes, path, errors);
+  requireSynthesisString(unit, "title", path, errors);
+  requireSynthesisString(unit, "claim", path, errors);
+  requireSynthesisString(unit, "selection_rationale", path, errors);
+  requireSynthesisEnum(unit, "rendering_priority", renderingPriorities, path, errors);
+  if (!Array.isArray(unit.supporting_evidence) || unit.supporting_evidence.length === 0) {
+    errors.push(`${synthesisPathOf([...path, "supporting_evidence"])}: must include at least one evidence item`);
+    return;
+  }
+  unit.supporting_evidence.forEach((evidence, evidenceIndex) => {
+    validateSynthesisEvidence(evidence, [
+      ...path,
+      "supporting_evidence",
+      String(evidenceIndex)
+    ], errors);
+  });
+}
+function validateSynthesisSecondaryItem(item, index, errors) {
+  const path = ["secondary_items", String(index)];
+  if (!requireSynthesisRecord(item, path, errors))
+    return;
+  requireSynthesisString(item, "feed_item_id", path, errors);
+  requireSynthesisString(item, "url", path, errors);
+  requireSynthesisString(item, "title", path, errors);
+  requireSynthesisString(item, "subscription_title", path, errors);
+  requireSynthesisEnum(item, "group", secondaryItemGroups, path, errors);
+  requireSynthesisString(item, "reason", path, errors);
+  optionalSynthesisInteger(item, "published_at", path, errors);
+}
+function validateStructuredSynthesis(synthesis) {
+  const errors = [];
+  if (!requireSynthesisRecord(synthesis, [], errors))
+    return errors;
+  if (synthesis.schema_version !== "1") {
+    errors.push('schema_version: must be "1"');
+  }
+  if (requireSynthesisRecord(synthesis.scope, ["scope"], errors)) {
+    requireSynthesisString(synthesis.scope, "request", ["scope"], errors);
+    requireSynthesisString(synthesis.scope, "selection_rule", ["scope"], errors);
+    for (const key of ["candidate_count", "active_subscription_count"]) {
+      const value = synthesis.scope[key];
+      if (value !== undefined && (!Number.isInteger(value) || value < 0)) {
+        errors.push(`${synthesisPathOf(["scope", key])}: must be a non-negative integer`);
+      }
+    }
+    if (synthesis.scope.used_contextual_evidence !== undefined && typeof synthesis.scope.used_contextual_evidence !== "boolean") {
+      errors.push("scope.used_contextual_evidence: must be a boolean");
+    }
+  }
+  if (!Array.isArray(synthesis.units) || synthesis.units.length === 0) {
+    errors.push("units: must include at least one synthesis unit");
+  } else {
+    synthesis.units.forEach((unit, index) => validateSynthesisUnit(unit, index, errors));
+  }
+  if (synthesis.secondary_items !== undefined) {
+    if (!Array.isArray(synthesis.secondary_items)) {
+      errors.push("secondary_items: must be an array");
+    } else {
+      synthesis.secondary_items.forEach((item, index) => validateSynthesisSecondaryItem(item, index, errors));
+    }
+  }
+  return errors;
+}
+async function validateSynthesisFile(file) {
+  let parsed;
+  try {
+    parsed = JSON.parse(await readFile(file, "utf8"));
+  } catch (error) {
+    throw new Error(`Could not read or parse ${file}: ${error instanceof Error ? error.message : String(error)}`);
+  }
+  const errors = validateStructuredSynthesis(parsed);
+  if (errors.length > 0) {
+    console.error(`Structured synthesis validation failed for ${file}:`);
+    for (const error of errors) {
+      console.error(`- ${error}`);
+    }
+    process.exitCode = 1;
+    return;
+  }
+  console.log(`Structured synthesis is valid: ${file}`);
+}
 async function main(argv = process.argv) {
   const program2 = new Command;
   program2.name("feedcontext").description("FeedContext Skill helper");
@@ -7772,6 +7920,7 @@ async function main(argv = process.argv) {
     return listAllItems({ ...options, ids: options.id });
   });
   program2.command("items:get").requiredOption("--id <id>").option("--cursor <cursor>", "Content continuation cursor").option("--max-chars <count>", "Maximum content characters to read").option("--include-raw").action((options) => apiCall({ method: "GET", path: buildGetItemPath(options) }));
+  program2.command("synthesis:validate").requiredOption("--file <path>").action((options) => validateSynthesisFile(options.file));
   await program2.parseAsync(argv);
 }
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
@@ -7781,6 +7930,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   });
 }
 export {
+  validateStructuredSynthesis,
   runWithConcurrency,
   parsePositiveIntegerOption,
   parsePairCode,
