@@ -12,7 +12,7 @@
     "build": "pnpm run build:schema && pnpm run build:helper && git diff --exit-code -- skills/feedcontext/schemas/structured-synthesis.schema.json skills/feedcontext/scripts/helper.mjs",
     "build:helper": "bun build src/feedcontext.ts --format esm --packages bundle --target node --minify --outfile skills/feedcontext/scripts/helper.mjs",
     "build:schema": "tsx scripts/write-structured-synthesis-schema.ts",
-    "lint": "tsx scripts/lint-json-schema.ts",
+    "lint": "eslint \"src/**/*.{ts,json}\" \"scripts/**/*.ts\" \"tests/**/*.ts\" vitest.config.ts \"skills/feedcontext/schemas/**/*.json\"",
     "test": "vitest run tests/*.test.ts",
     "typecheck": "tsc --noEmit"
   },
@@ -21,10 +21,14 @@
     "feedsmith": "^2.9.4"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@types/node": "^20.19.37",
-    "ajv": "^8.20.0",
+    "eslint": "^10.3.0",
+    "eslint-plugin-json-schema-validator": "^6.2.0",
+    "eslint-plugin-jsonc": "^3.1.2",
     "tsx": "^4.21.0",
     "typescript": "^5.7.4",
+    "typescript-eslint": "^8.59.2",
     "vitest": "^4.1.2"
   }
 }

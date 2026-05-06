@@ -673,6 +673,7 @@ function parseListItemsResponse(result: ApiResult) {
   } catch (error) {
     throw new Error(
       `Invalid list items response: ${error instanceof Error ? error.message : String(error)}`,
+      { cause: error },
     );
   }
 }
@@ -1010,6 +1011,7 @@ async function validateSynthesisFile(file: string) {
   } catch (error) {
     throw new Error(
       `Could not read or parse ${file}: ${error instanceof Error ? error.message : String(error)}`,
+      { cause: error },
     );
   }
 
