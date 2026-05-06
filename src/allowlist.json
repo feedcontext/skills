@@ -1,0 +1,10 @@
+{
+  "paths": [
+    {"method": "GET", "path": "/v1/status", "mutating": false},
+    {"method": "GET", "path": "/v1/subscriptions", "mutating": false},
+    {"method": "POST", "path": "/v1/subscriptions", "mutating": true},
+    {"method": "DELETE", "path": "/v1/subscriptions/{subscription_id}", "mutating": true},
+    {"method": "GET", "path": "/v1/items", "mutating": false},
+    {"method": "GET", "path": "/v1/items/{item_id}", "mutating": false}
+  ]
+}

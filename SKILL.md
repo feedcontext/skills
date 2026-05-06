@@ -6,7 +6,7 @@ description: Use FeedContext through the first-party helper to authenticate, rea
 # FeedContext Skill
 
 FeedContext is skill-first. Use this root skill to route to the action docs and
-the generated helper script.
+the packed helper script.
 
 Before any other FeedContext action in an agent session, run:
 
@@ -38,5 +38,6 @@ When composing summaries, roundups, insights, briefings, or briefing pages,
 follow `actions/briefing-page.md`: create and validate a Structured Synthesis
 JSON sidecar before rendering prose or HTML.
 
-This skill artifact is generated from `packages/skill` during CI publish. Do
-not hand-edit generated dist.
+This repository is installed by cloning and includes the packed helper at
+`dist/feedcontext.mjs`. Source changes must be packed before release so the
+checkout remains runnable.

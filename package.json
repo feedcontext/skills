@@ -1,0 +1,27 @@
+{
+  "name": "feedcontext-skill",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Source and checkout-runnable artifact for the FeedContext Skill",
+  "type": "module",
+  "packageManager": "pnpm@11.0.4",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "pnpm run pack && git diff --exit-code -- dist/feedcontext.mjs",
+    "pack": "bun run scripts/pack.mjs",
+    "test": "vitest run tests/*.test.ts",
+    "validate:openapi": "tsx scripts/validate-openapi.ts"
+  },
+  "dependencies": {
+    "commander": "^14.0.2",
+    "feedsmith": "^2.9.4"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.37",
+    "tsx": "^4.21.0",
+    "typescript": "^5.7.4",
+    "vitest": "^4.1.2"
+  }
+}
