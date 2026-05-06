@@ -21,6 +21,7 @@ Development commands:
 
 ```bash
 pnpm install
+pnpm lint
 pnpm test
 pnpm typecheck
 pnpm run build:schema

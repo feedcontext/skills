@@ -38,6 +38,7 @@ Read first:
 For FeedContext Skill changes, run:
 
 ```bash
+pnpm lint
 pnpm test
 pnpm typecheck
 pnpm run build:schema
