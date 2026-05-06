@@ -34,5 +34,9 @@ When reading Feed Items, remember that `items:list` is paginated and returns one
 page by default. Use `items:list-all` when the user asks for all matching Feed
 Items.
 
+When composing summaries, roundups, insights, briefings, or briefing pages,
+follow `actions/briefing-page.md`: create and validate a Structured Synthesis
+JSON sidecar before rendering prose or HTML.
+
 This skill artifact is generated from `packages/skill` during CI publish. Do
 not hand-edit generated dist.
