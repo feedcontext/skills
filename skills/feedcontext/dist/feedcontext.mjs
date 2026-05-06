@@ -2129,8 +2129,7 @@ var require_commander = __commonJS((exports) => {
 // src/feedcontext.ts
 import { execFile, spawn } from "node:child_process";
 import { createHash, randomBytes } from "node:crypto";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
-import { createServer } from "node:http";
+import { mkdir, readFile, unlink, writeFile } from "node:fs/promises";
 import { homedir, platform } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -2164,13 +2163,16 @@ var allowlist_default = {
 
 // src/feedcontext.ts
 var API_ORIGIN = process.env.FEEDCONTEXT_API_ORIGIN ?? "https://api.feedcontext.io";
+var WEB_ORIGIN = process.env.FEEDCONTEXT_WEB_ORIGIN ?? "https://feedcontext.io";
 var AUTH_BASE = `${API_ORIGIN}/api/auth`;
 var CLIENT_ID = "feedcontext-skill";
-var REDIRECT_URI = "http://127.0.0.1:53124/oauth/callback";
+var REDIRECT_URI = `${WEB_ORIGIN}/pair`;
 var SCOPES = "feeds:read subscriptions:read subscriptions:write";
 var SERVICE = "feedcontext.skill";
 var ACCOUNT = "default";
 var FALLBACK_PATH = join(homedir(), ".feedcontext", "skill-session.json");
+var PENDING_LOGIN_PATH = join(homedir(), ".feedcontext", "pending-login.json");
+var PENDING_LOGIN_TTL_MS = 10 * 60 * 1000;
 var ALLOWLIST = allowlist_default.paths;
 var HELPER_DIR = dirname(fileURLToPath(import.meta.url));
 var SKILL_NAME = "feedcontext";
@@ -2288,6 +2290,23 @@ async function writeFallbackSession(value) {
   await writeFile(FALLBACK_PATH, value, { mode: 384 });
   console.error(`Warning: system credential store unavailable; stored session at ${FALLBACK_PATH} with restrictive permissions.`);
 }
+async function readPendingLogin() {
+  try {
+    return JSON.parse(await readFile(PENDING_LOGIN_PATH, "utf8"));
+  } catch {
+    return null;
+  }
+}
+async function writePendingLogin(pending) {
+  await mkdir(dirname(PENDING_LOGIN_PATH), { recursive: true, mode: 448 });
+  await clearPendingLogin();
+  await writeFile(PENDING_LOGIN_PATH, JSON.stringify(pending), { mode: 384 });
+}
+async function clearPendingLogin() {
+  await unlink(PENDING_LOGIN_PATH).catch(() => {
+    return;
+  });
+}
 async function readSession() {
   const raw = await macKeychainRead() ?? await readFallbackSession();
   return raw ? JSON.parse(raw) : null;
@@ -2329,55 +2348,70 @@ async function openBrowser(url) {
   const args = platform() === "win32" ? ["/c", "start", "", url] : [url];
   spawn(command, args, { detached: true, stdio: "ignore" }).unref();
 }
-async function waitForCallback(expectedState) {
-  return new Promise((resolve, reject) => {
-    const server = createServer((request, response) => {
-      const url = new URL(request.url ?? "/", REDIRECT_URI);
-      if (url.pathname !== "/oauth/callback") {
-        response.writeHead(404).end();
-        return;
-      }
-      if (url.searchParams.get("state") !== expectedState) {
-        response.writeHead(400).end("Invalid OAuth state.");
-        reject(new Error("Invalid OAuth state."));
-        server.close();
-        return;
-      }
-      const code = url.searchParams.get("code");
-      if (!code) {
-        response.writeHead(400).end("Missing OAuth code.");
-        reject(new Error("Missing OAuth code."));
-        server.close();
-        return;
-      }
-      response.writeHead(200, { "content-type": "text/plain" }).end("FeedContext login complete. You can close this tab.");
-      resolve(code);
-      server.close();
-    });
-    server.listen(53124, "127.0.0.1");
-  });
+function parsePairCode(pairCode) {
+  if (!/^\d{6}$/.test(pairCode)) {
+    throw new Error("Invalid pair code. Copy the 6-digit code from the FeedContext pair page.");
+  }
+  return pairCode;
 }
-async function login() {
-  const state = base64Url(randomBytes(24));
-  const pkce = createPkce();
+function createAuthorizeUrl(state, challenge) {
   const authorize = new URL(`${AUTH_BASE}/oauth2/authorize`);
   authorize.searchParams.set("client_id", CLIENT_ID);
-  authorize.searchParams.set("code_challenge", pkce.challenge);
+  authorize.searchParams.set("code_challenge", challenge);
   authorize.searchParams.set("code_challenge_method", "S256");
   authorize.searchParams.set("redirect_uri", REDIRECT_URI);
   authorize.searchParams.set("response_type", "code");
   authorize.searchParams.set("scope", SCOPES);
   authorize.searchParams.set("state", state);
-  const codePromise = waitForCallback(state);
+  return authorize;
+}
+async function startLogin() {
+  const state = base64Url(randomBytes(24));
+  const pkce = createPkce();
+  const authorize = createAuthorizeUrl(state, pkce.challenge);
+  await writePendingLogin({
+    created_at: Date.now(),
+    redirect_uri: REDIRECT_URI,
+    state,
+    verifier: pkce.verifier
+  });
   await openBrowser(authorize.toString());
-  const code = await codePromise;
+  console.log(JSON.stringify({
+    ok: true,
+    authorize_url: authorize.toString(),
+    next: "After signing in, copy the pair code from the browser and run `feedcontext login --pair-code <code>`.",
+    status: "pair_code_required"
+  }));
+}
+async function completeLogin(pairCode) {
+  const pending = await readPendingLogin();
+  if (!pending) {
+    throw new Error("No pending FeedContext login. Run `feedcontext login` first.");
+  }
+  if (pending.created_at < Date.now() - PENDING_LOGIN_TTL_MS) {
+    await clearPendingLogin();
+    throw new Error("Pending FeedContext login expired. Run `feedcontext login` again.");
+  }
+  const normalizedPairCode = parsePairCode(pairCode);
+  const pairResponse = await fetch(`${API_ORIGIN}/v1/auth/pair/resolve`, {
+    body: JSON.stringify({ pair_code: normalizedPairCode }),
+    headers: { "content-type": "application/json" },
+    method: "POST"
+  });
+  if (!pairResponse.ok) {
+    throw new Error("Pair code expired or already used. Run `feedcontext login` again.");
+  }
+  const pair = await pairResponse.json();
+  if (pair.state !== pending.state) {
+    throw new Error("Invalid pair code state. Run `feedcontext login` again.");
+  }
   const tokenResponse = await fetch(`${AUTH_BASE}/oauth2/token`, {
     body: new URLSearchParams({
       client_id: CLIENT_ID,
-      code,
-      code_verifier: pkce.verifier,
+      code: pair.code,
+      code_verifier: pending.verifier,
       grant_type: "authorization_code",
-      redirect_uri: REDIRECT_URI
+      redirect_uri: pending.redirect_uri
     }),
     headers: { "content-type": "application/x-www-form-urlencoded" },
     method: "POST"
@@ -2392,7 +2426,15 @@ async function login() {
     refresh_token: token.refresh_token,
     token_type: "Bearer"
   });
+  await clearPendingLogin();
   console.log(JSON.stringify({ ok: true }));
+}
+async function login(options) {
+  if (options.pairCode) {
+    await completeLogin(options.pairCode);
+    return;
+  }
+  await startLogin();
 }
 async function apiCall(input) {
   if (!isAllowedRawCall(input.method, input.path)) {
@@ -2429,7 +2471,7 @@ async function main(argv = process.argv) {
   const program2 = new Command;
   program2.name("feedcontext").description("FeedContext Skill helper");
   program2.command("version").action(printVersionStatus);
-  program2.command("login").action(login);
+  program2.command("login").option("--pair-code <code>").action((options) => login({ pairCode: options.pairCode }));
   program2.command("raw").requiredOption("--method <method>").requiredOption("--path <path>").option("--body <json>").option("--confirm").action((options) => apiCall({
     body: options.body ? JSON.parse(options.body) : undefined,
     confirm: options.confirm,
@@ -2465,11 +2507,13 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   });
 }
 export {
+  parsePairCode,
   isMutatingRawCall,
   isAllowedRawCall,
   getVersionStatus,
   enforceConfirmBeforeNetwork,
   buildVersionStatus,
+  WEB_ORIGIN,
   SCOPES,
   REDIRECT_URI,
   CLIENT_ID,

@@ -34,11 +34,18 @@ Run:
 node dist/feedcontext.mjs login
 ```
 
-The helper opens Google login through `api.feedcontext.io`, starts a callback
-server on `127.0.0.1`, validates OAuth `state`, exchanges the PKCE code, and
-stores the Skill Session in the system credential store when available. If the
-credential store is unavailable, it falls back to a local file with restrictive
-permissions and prints a warning.
+The helper opens Google login through `api.feedcontext.io`, then exits after
+printing `pair_code_required`. Ask the user to copy the 6-digit pair code from
+the browser, then run:
+
+```bash
+node dist/feedcontext.mjs login --pair-code '<pair-code>'
+```
+
+The helper validates OAuth `state`, exchanges the PKCE code, and stores the Skill
+Session in the system credential store when available. If the credential store is
+unavailable, it falls back to a local file with restrictive permissions and
+prints a warning.
 
 ## Reads
 

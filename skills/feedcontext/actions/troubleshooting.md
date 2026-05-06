@@ -3,8 +3,8 @@
 ## Login Does Not Complete
 
 - Confirm the browser opened an `api.feedcontext.io` Google login URL.
-- Confirm the callback is bound to `127.0.0.1`.
-- Retry `node dist/feedcontext.mjs login` if the local callback port is busy.
+- Confirm the browser shows a FeedContext pair code after Google login.
+- Retry `node dist/feedcontext.mjs login` if the pending pair code expired.
 
 ## Session Storage Warning
 
