@@ -7193,7 +7193,7 @@ function createPkce() {
 }
 async function runGit(args, cwd) {
   return new Promise((resolve, reject) => {
-    execFile("git", ["-C", cwd, ...args], { timeout: 3000 }, (error, stdout) => {
+    execFile("git", ["-C", cwd, ...args], { timeout: 1e4 }, (error, stdout) => {
       if (error) {
         reject(error);
         return;

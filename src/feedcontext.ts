@@ -143,7 +143,7 @@ function createPkce() {
 
 async function runGit(args: string[], cwd: string) {
   return new Promise<string>((resolve, reject) => {
-    execFile("git", ["-C", cwd, ...args], { timeout: 3000 }, (error, stdout) => {
+    execFile("git", ["-C", cwd, ...args], { timeout: 10_000 }, (error, stdout) => {
       if (error) {
         reject(error);
         return;
