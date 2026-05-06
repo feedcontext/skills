@@ -12,5 +12,6 @@ part of the skill publish flow.
 Action docs:
 
 - `actions/api.md`
+- `actions/briefing-page.md`
 - `actions/opml.md`
 - `actions/troubleshooting.md`

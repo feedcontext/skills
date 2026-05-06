@@ -2459,10 +2459,26 @@ function buildListItemsPath(options = {}) {
   for (const id of options.ids ?? []) {
     params.append("ids", id);
   }
-  if (options.includeContent)
-    params.set("include_content", "true");
+  if (options.searchContent)
+    params.set("search_content", "true");
   const query = params.toString();
   return `/v1/items${query ? `?${query}` : ""}`;
+}
+function buildGetItemPath(options) {
+  const params = new URLSearchParams;
+  if (options.cursor)
+    params.set("cursor", options.cursor);
+  if (options.maxChars) {
+    params.set("max_chars", String(parsePositiveIntegerOption({
+      max: 20000,
+      name: "--max-chars",
+      value: options.maxChars
+    })));
+  }
+  if (options.includeHtml)
+    params.set("include_html", "true");
+  const query = params.toString();
+  return `/v1/items/${encodeURIComponent(options.id)}${query ? `?${query}` : ""}`;
 }
 async function runWithConcurrency(items, concurrency, worker) {
   const results = new Array(items.length);
@@ -2761,7 +2777,7 @@ async function main(argv = process.argv) {
   program2.command("items:list").option("--subscription-id <id>").option("--keyword <text>").option("--published-after <timestamp>").option("--published-before <timestamp>").option("--limit <count>").option("--cursor <cursor>").option("--id <id>", "Filter to a Feed Item id; repeatable", (value, previous) => [
     ...previous ?? [],
     value
-  ]).option("--include-content").action((options) => {
+  ]).option("--search-content").action((options) => {
     return apiCall({
       method: "GET",
       path: buildListItemsPath({ ...options, ids: options.id })
@@ -2770,10 +2786,10 @@ async function main(argv = process.argv) {
   program2.command("items:list-all").option("--subscription-id <id>").option("--keyword <text>").option("--published-after <timestamp>").option("--published-before <timestamp>").option("--limit <count>", "Page size for each API request; defaults to 100").option("--cursor <cursor>", "Start cursor").option("--id <id>", "Filter to a Feed Item id; repeatable", (value, previous) => [
     ...previous ?? [],
     value
-  ]).option("--include-content").option("--max-pages <count>", "Safety cap for cursor traversal", "1000").action((options) => {
+  ]).option("--search-content").option("--max-pages <count>", "Safety cap for cursor traversal", "1000").action((options) => {
     return listAllItems({ ...options, ids: options.id });
   });
-  program2.command("items:get").requiredOption("--id <id>").action((options) => apiCall({ method: "GET", path: `/v1/items/${options.id}` }));
+  program2.command("items:get").requiredOption("--id <id>").option("--cursor <cursor>", "Content continuation cursor").option("--max-chars <count>", "Maximum content characters to read").option("--include-html").action((options) => apiCall({ method: "GET", path: buildGetItemPath(options) }));
   await program2.parseAsync(argv);
 }
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
@@ -2794,6 +2810,7 @@ export {
   enforceConfirmBeforeNetwork,
   buildVersionStatus,
   buildListItemsPath,
+  buildGetItemPath,
   WEB_ORIGIN,
   SCOPES,
   REDIRECT_URI,

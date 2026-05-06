@@ -25,6 +25,7 @@ accounts, or clear a stale local session.
 ## Actions
 
 - Read and write FeedContext data through `actions/api.md`.
+- Compose editorial HTML briefing pages through `actions/briefing-page.md`.
 - Convert OPML to concurrent Subscription creates through `actions/opml.md`.
 - Troubleshoot OAuth and local Skill Session storage through
   `actions/troubleshooting.md`.

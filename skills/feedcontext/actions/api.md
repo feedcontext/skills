@@ -75,22 +75,32 @@ node dist/feedcontext.mjs items:list --subscription-id sub_123
 node dist/feedcontext.mjs items:list --limit 100 --cursor '<next_cursor>'
 node dist/feedcontext.mjs items:list-all
 node dist/feedcontext.mjs items:get --id item_123
+node dist/feedcontext.mjs items:get --id item_123 --cursor '<next_content_cursor>'
 ```
 
 `subscriptions:list` returns all active RSS/Atom Subscriptions currently exposed
 by the API. It is not paginated. `subscriptions:list-all` is an explicit alias
 for agents responding to "list all subscriptions."
 
-`items:list` is paginated. It returns only one page of Feed Items:
+`items:list` is a discovery command. It is paginated and returns only one page
+of Feed Item metadata:
 
 - Default page size is `20`.
 - Maximum page size is `100`.
-- When `--include-content` is used without an explicit `--limit`, the API
-  returns `3` items by default to bound response size.
+- It does not return Feed Item content.
 - If the JSON response has a non-null `next_cursor`, more Feed Items exist. Use
   that cursor with `items:list --cursor '<next_cursor>'`.
 - Use `items:list-all` when the user asks for all matching Feed Items. It follows
   `next_cursor` automatically and uses `--limit 100` per page by default.
+- Use `--search-content` only when the user explicitly wants to search Feed Item
+  content, not just discovery metadata. It broadens search but still does not
+  return Feed Item content in list responses.
+
+`items:get` is the reading command. It returns `content_text` as Limited
+Markdown in chunks of up to `12,000` characters by default. If
+`next_content_cursor` is non-null, pass it back with `--cursor` to continue
+reading the same Feed Item. Use `--include-html` only for recovery or debugging;
+it returns `content_html` alongside `content_text`.
 
 Supported `items:list` and `items:list-all` filters:
 
@@ -99,10 +109,10 @@ node dist/feedcontext.mjs items:list --limit 100
 node dist/feedcontext.mjs items:list --cursor '<next_cursor>'
 node dist/feedcontext.mjs items:list --subscription-id sub_123
 node dist/feedcontext.mjs items:list --keyword 'agent'
+node dist/feedcontext.mjs items:list --keyword 'agent' --search-content
 node dist/feedcontext.mjs items:list --published-after 1700000000000
 node dist/feedcontext.mjs items:list --published-before 1800000000000
 node dist/feedcontext.mjs items:list --id item_1 --id item_2
-node dist/feedcontext.mjs items:list --include-content --limit 10
 node dist/feedcontext.mjs items:list-all --subscription-id sub_123
 ```
 
