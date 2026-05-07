@@ -37,7 +37,9 @@ Prefer the strongest available mode:
 1. OAuth-native or API-native migration, when the platform exposes a supported
    authorized subscription API and the user can authorize it.
 2. Direct OPML export, when the platform has a stable export URL or documented
-   export endpoint.
+   export endpoint. If the host agent can operate the browser and the user has
+   approved that access, open the export URL directly and capture the downloaded
+   OPML file instead of asking the user to navigate the settings UI.
 3. Browser-assisted export, when the agent has user approval to operate the
    browser or local files.
 4. CLI-guided export, when the agent can only give the user exact instructions

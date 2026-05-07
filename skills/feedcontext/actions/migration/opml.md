@@ -1,7 +1,8 @@
 # OPML Migration
 
 Use this playbook when the user already has an OPML or other subscription export
-file, or when the source platform does not have a dedicated playbook.
+file, has pasted OPML document text, or when the source platform does not have a
+dedicated playbook.
 
 ## OPML
 
@@ -10,10 +11,12 @@ Subscription per RSS or Atom URL with bounded local concurrency.
 
 Procedure:
 
-1. Parse `<outline>` elements.
-2. Keep only unique `xmlUrl` values that are valid `http` or `https` RSS/Atom URLs.
-3. Ask the host for approval before creating subscriptions.
-4. Run:
+1. If the user provided pasted OPML text instead of a file path, save the exact
+   text to a local `.opml` file.
+2. Parse `<outline>` elements.
+3. Keep only unique `xmlUrl` values that are valid `http` or `https` RSS/Atom URLs.
+4. Ask the host for approval before creating subscriptions.
+5. Run:
 
 ```bash
 node scripts/helper.mjs subscription import-opml --file "$OPML_FILE" --confirm
