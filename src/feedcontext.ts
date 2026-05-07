@@ -1,12 +1,15 @@
 #!/usr/bin/env node
 import { execFile, spawn } from "node:child_process";
+import { Buffer } from "node:buffer";
 import { createHash, randomBytes } from "node:crypto";
+import { createWriteStream } from "node:fs";
 import { mkdir, readFile, unlink, writeFile } from "node:fs/promises";
 import { homedir, platform } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Command } from "commander";
 import { parseOpml } from "feedsmith";
+import WebSocket from "ws";
 import allowlist from "@/allowlist.json" assert { type: "json" };
 import showScriptSchema from "@/show-script.schema.json" assert { type: "json" };
 import structuredSynthesisSchema from "@/structured-synthesis.schema.json" assert { type: "json" };
@@ -60,6 +63,61 @@ type ListAllItemsOptions = ListItemsOptions & {
 type GatherInsightFileOptions = ListItemsOptions & {
   out: string;
 };
+
+type AudioProviderId = "bing-edge";
+
+type AudioProviderDiagnostic = {
+  available: boolean;
+  default: boolean;
+  id: AudioProviderId;
+  label: string;
+  notes: string[];
+  privacy_boundary: string;
+  provider_class: "production";
+  reason?: string;
+  setup_hint?: string;
+  invocation?: {
+    command: string;
+    example_args: string[];
+  };
+};
+
+type DetectAudioProvidersOptions = {
+  provider?: AudioProviderId;
+};
+
+const DEFAULT_AUDIO_PROVIDER: AudioProviderId = "bing-edge";
+
+type BingEdgeTtsOptions = {
+  language?: string;
+  out: string;
+  textFile: string;
+  voice?: string;
+};
+
+type BingEdgeTtsSegmentsOptions = {
+  concurrency?: string;
+  language?: string;
+  outDir: string;
+  segmentsFile: string;
+  voice?: string;
+};
+
+type BingEdgeTtsSegment = {
+  id: string;
+  text: string;
+};
+
+type BingEdgeTtsSegmentsFile = {
+  language?: string;
+  segments: BingEdgeTtsSegment[];
+};
+
+type BingEdgeTtsSynthesizer = (options: {
+  out: string;
+  text: string;
+  voice: string;
+}) => Promise<void>;
 
 type GetItemOptions = {
   cursor?: string;
@@ -920,6 +978,324 @@ async function printVersionStatus() {
   console.log(JSON.stringify(await getVersionStatus()));
 }
 
+function bingEdgeProviderDiagnostic(): AudioProviderDiagnostic {
+  return {
+    available: true,
+    default: true,
+    id: "bing-edge" as const,
+    invocation: {
+      command: "node scripts/helper.mjs audio render",
+      example_args: [
+        "--segments-file",
+        "show.segments.json",
+        "--out-dir",
+        "show-segments",
+        "--concurrency",
+        "4",
+        "--out",
+        "show.bing-edge.segments.json",
+      ],
+    },
+    label: "Bing Edge TTS",
+    notes: [
+      "Uses the helper's built-in Edge Read Aloud client to access Microsoft Edge's online text-to-speech service.",
+      "No API key, Python package, or external edge-tts CLI is required.",
+    ],
+    privacy_boundary:
+      "The Show Script text needed for this Audio Brief is sent to Microsoft's Edge online text-to-speech service.",
+    provider_class: "production" as const,
+  };
+}
+
+export async function detectAudioProviders({
+  provider,
+}: DetectAudioProvidersOptions = {}) {
+  const providers: AudioProviderDiagnostic[] = [];
+
+  if (provider === undefined || provider === "bing-edge") {
+    providers.push(bingEdgeProviderDiagnostic());
+  }
+
+  return { default_provider: DEFAULT_AUDIO_PROVIDER, providers };
+}
+
+async function printAudioProviderDoctor(options: { provider?: AudioProviderId }) {
+  console.log(JSON.stringify(await detectAudioProviders({ provider: options.provider }), null, 2));
+}
+
+function escapeSsmlText(input: string) {
+  return input
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;");
+}
+
+function defaultBingEdgeVoiceForLanguage(language?: string) {
+  const normalized = language?.trim().toLowerCase();
+  if (normalized?.startsWith("zh")) return "zh-CN-XiaoxiaoNeural";
+  if (normalized?.startsWith("ja")) return "ja-JP-NanamiNeural";
+  if (normalized?.startsWith("ko")) return "ko-KR-SunHiNeural";
+  if (normalized?.startsWith("es")) return "es-ES-ElviraNeural";
+  if (normalized?.startsWith("fr")) return "fr-FR-DeniseNeural";
+  if (normalized?.startsWith("de")) return "de-DE-KatjaNeural";
+  return "en-US-AvaNeural";
+}
+
+function edgeTtsRequestId() {
+  return randomBytes(16).toString("hex");
+}
+
+function edgeTtsSecMsGec() {
+  const trustedClientToken = "6A5AA1D4EAFF4E9FB37E23D68491D6F4";
+  const ticks = Math.floor(Date.now() / 1000) + 11644473600;
+  const roundedTicks = ticks - (ticks % 300);
+  const windowsTicks = BigInt(roundedTicks) * 10_000_000n;
+  return createHash("sha256")
+    .update(`${windowsTicks}${trustedClientToken}`)
+    .digest("hex")
+    .toUpperCase();
+}
+
+function edgeTtsSpeechConfig() {
+  return `Content-Type:application/json; charset=utf-8\r\nPath:speech.config\r\n\r\n${JSON.stringify({
+    context: {
+      synthesis: {
+        audio: {
+          metadataoptions: {
+            sentenceBoundaryEnabled: "false",
+            wordBoundaryEnabled: "false",
+          },
+          outputFormat: "audio-24khz-96kbitrate-mono-mp3",
+        },
+      },
+    },
+  })}`;
+}
+
+function edgeTtsSsml(voice: string, text: string) {
+  const voiceLocale = /^[a-z]{2}-[A-Z]{2}/.exec(voice)?.[0] ?? "en-US";
+  return `<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xmlns:mstts="https://www.w3.org/2001/mstts" xml:lang="${voiceLocale}">
+  <voice name="${voice}">
+    <prosody pitch="default" rate="default" volume="default">
+      ${escapeSsmlText(text)}
+    </prosody>
+  </voice>
+</speak>`;
+}
+
+async function synthesizeBingEdgeTtsFile({ out, text, voice }: {
+  out: string;
+  text: string;
+  voice: string;
+}) {
+  const trustedClientToken = "6A5AA1D4EAFF4E9FB37E23D68491D6F4";
+  const connectionId = edgeTtsRequestId();
+  const url =
+    `wss://speech.platform.bing.com/consumer/speech/synthesize/readaloud/edge/v1` +
+    `?TrustedClientToken=${trustedClientToken}` +
+    `&Sec-MS-GEC=${edgeTtsSecMsGec()}` +
+    `&Sec-MS-GEC-Version=1-143.0.3650.96` +
+    `&ConnectionId=${connectionId}`;
+  const requestId = edgeTtsRequestId();
+  const writable = createWriteStream(out);
+  let audioBytes = 0;
+
+  await new Promise<void>((resolve, reject) => {
+    const ws = new WebSocket(url, {
+      headers: {
+        Origin: "chrome-extension://jdiccldimpdaibmpdkjnbmckianbfold",
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0",
+      },
+    });
+    let settled = false;
+
+    function fail(error: unknown) {
+      if (settled) return;
+      settled = true;
+      ws.close();
+      writable.destroy(error instanceof Error ? error : new Error(String(error)));
+      reject(error instanceof Error ? error : new Error(String(error)));
+    }
+
+    function finish() {
+      if (settled) return;
+      settled = true;
+      ws.close();
+      writable.end(() => {
+        if (audioBytes > 0) {
+          resolve();
+          return;
+        }
+        reject(new Error("No audio data received from Bing Edge TTS."));
+      });
+    }
+
+    ws.once("open", () => {
+      ws.send(edgeTtsSpeechConfig());
+      ws.send(
+        `X-RequestId:${requestId}\r\nContent-Type:application/ssml+xml\r\nPath:ssml\r\n\r\n${edgeTtsSsml(voice, text)}`,
+      );
+    });
+    ws.once("error", fail);
+    writable.once("error", fail);
+    ws.on("message", (data) => {
+      const buffer = Buffer.isBuffer(data) ? data : Buffer.from(data as ArrayBuffer);
+      const message = buffer.toString();
+      if (message.includes("Path:turn.end")) {
+        finish();
+        return;
+      }
+      if (!message.includes("Path:audio")) return;
+
+      const audioHeader = "Path:audio\r\n";
+      const audioStart = buffer.indexOf(audioHeader) + audioHeader.length;
+      if (audioStart < audioHeader.length) return;
+      const audio = buffer.subarray(audioStart);
+      audioBytes += audio.length;
+      if (!writable.write(audio)) {
+        ws.pause();
+        writable.once("drain", () => ws.resume());
+      }
+    });
+    ws.once("close", () => {
+      if (!settled) finish();
+    });
+  });
+}
+
+export async function renderBingEdgeTts(
+  options: BingEdgeTtsOptions,
+  synthesize: BingEdgeTtsSynthesizer = synthesizeBingEdgeTtsFile,
+) {
+  const text = await readFile(options.textFile, "utf8");
+  const voice = options.voice ?? defaultBingEdgeVoiceForLanguage(options.language);
+  await synthesize({
+    out: options.out,
+    text,
+    voice,
+  });
+  return {
+    ok: true,
+    out: options.out,
+    provider: "bing-edge" as const,
+    voice,
+  };
+}
+
+function parseBingEdgeTtsSegments(value: unknown): BingEdgeTtsSegmentsFile {
+  if (!isRecord(value) || !Array.isArray(value.segments)) {
+    throw new Error("Segments file must contain a segments array.");
+  }
+
+  const language = value.language;
+  if (language !== undefined && (typeof language !== "string" || language.trim() === "")) {
+    throw new Error("language: must be a non-empty string when provided");
+  }
+
+  const segments = value.segments.map((segment, index) => {
+    if (!isRecord(segment)) {
+      throw new Error(`segments.${index}: must be an object`);
+    }
+    const id = segment.id;
+    const text = segment.text;
+    if (typeof id !== "string" || id.trim() === "") {
+      throw new Error(`segments.${index}.id: must be a non-empty string`);
+    }
+    if (typeof text !== "string" || text.trim() === "") {
+      throw new Error(`segments.${index}.text: must be a non-empty string`);
+    }
+    return { id, text } satisfies BingEdgeTtsSegment;
+  });
+
+  return { language, segments };
+}
+
+function segmentFileName(index: number, segment: BingEdgeTtsSegment) {
+  const ordinal = String(index + 1).padStart(3, "0");
+  const slug = segment.id
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  return `${ordinal}-${slug || "segment"}.mp3`;
+}
+
+export async function renderBingEdgeTtsSegments(
+  options: BingEdgeTtsSegmentsOptions,
+  synthesize: BingEdgeTtsSynthesizer = synthesizeBingEdgeTtsFile,
+) {
+  const concurrency = parseConcurrency(options.concurrency, 4);
+  const parsed = JSON.parse(await readFile(options.segmentsFile, "utf8")) as unknown;
+  const parsedSegments = parseBingEdgeTtsSegments(parsed);
+  const language = options.language ?? parsedSegments.language;
+  const voice = options.voice ?? defaultBingEdgeVoiceForLanguage(language);
+  const segments = parsedSegments.segments;
+  await mkdir(options.outDir, { recursive: true });
+  const rendered = await runWithConcurrency(segments, concurrency, async (segment, index) => {
+    const mediaFile = join(options.outDir, segmentFileName(index, segment));
+    await synthesize({
+      out: mediaFile,
+      text: segment.text,
+      voice,
+    });
+    return {
+      id: segment.id,
+      media_file: mediaFile,
+    };
+  });
+
+  return {
+    ok: true,
+    provider: "bing-edge" as const,
+    segments: rendered,
+    voice,
+  };
+}
+
+async function renderAudio(options: {
+  concurrency?: string;
+  language?: string;
+  out: string;
+  outDir?: string;
+  provider?: AudioProviderId;
+  segmentsFile?: string;
+  textFile?: string;
+  voice?: string;
+}) {
+  const provider = options.provider ?? DEFAULT_AUDIO_PROVIDER;
+  if (provider !== "bing-edge") {
+    throw new Error("Unsupported audio provider. Use --provider bing-edge.");
+  }
+
+  if (options.segmentsFile) {
+    if (!options.outDir) {
+      throw new Error("Segmented audio render requires --out-dir.");
+    }
+    const result = await renderBingEdgeTtsSegments({
+      concurrency: options.concurrency,
+      language: options.language,
+      outDir: options.outDir,
+      segmentsFile: options.segmentsFile,
+      voice: options.voice,
+    });
+    await writeFile(options.out, `${JSON.stringify(result, null, 2)}\n`);
+    console.log(JSON.stringify(result, null, 2));
+    return;
+  }
+
+  if (!options.textFile) {
+    throw new Error("Audio render requires --text-file unless --segments-file is provided.");
+  }
+
+  const result = await renderBingEdgeTts({
+    language: options.language,
+    out: options.out,
+    textFile: options.textFile,
+    voice: options.voice,
+  });
+  console.log(JSON.stringify(result, null, 2));
+}
+
 const evidenceRelevanceValues = new Set(["direct", "supporting", "background"]);
 const synthesisUnitTypes = new Set(["insight", "item_roundup", "briefing_section"]);
 const renderingPriorities = new Set(["lead", "main", "secondary", "collapsed"]);
@@ -1464,6 +1840,26 @@ async function main(argv = process.argv) {
     .command("schema")
     .description("Print the FeedContext Show Script JSON Schema")
     .action(printShowScriptSchema);
+
+  const audio = program.command("audio").description("Inspect Audio Brief provider paths");
+  const audioProvider = audio.command("provider").description("Inspect audio providers");
+  audioProvider
+    .command("doctor")
+    .description("Report configured Audio Brief provider availability")
+    .option("--provider <provider>", "Provider id to inspect, such as bing-edge")
+    .action((options) => printAudioProviderDoctor({ provider: options.provider }));
+  audio
+    .command("render")
+    .description("Render spoken text through an Audio Brief provider")
+    .option("--provider <provider>", "Provider id to use; defaults to bing-edge")
+    .option("--text-file <path>", "Plain text file to synthesize")
+    .option("--segments-file <path>", "JSON file with ordered text segments to synthesize")
+    .option("--out-dir <path>", "Output directory for segmented audio files")
+    .option("--concurrency <count>", "Number of TTS segments to render concurrently", "4")
+    .requiredOption("--out <path>", "Output audio file path, or segment manifest path with --segments-file")
+    .option("--language <bcp47>", "Spoken language for provider voice selection, such as zh-CN or en-US")
+    .option("--voice <voice>", "Provider voice id")
+    .action((options) => renderAudio(options));
 
   await program.parseAsync(argv);
 }

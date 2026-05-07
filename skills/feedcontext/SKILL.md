@@ -32,6 +32,11 @@ accounts, or clear a stale local session.
 - Gather Feed Item aggregation sidecars through `actions/artifact/gather.md`.
 - Compose editorial HTML briefing pages through `actions/artifact/briefing-page.md`.
 - Compose Audio Brief scripts and generated audio through `actions/artifact/audio-brief.md`.
+- Inspect Audio Brief provider availability with
+  `node scripts/helper.mjs audio provider doctor`.
+- Render prepared Audio Brief spoken text through supported providers with
+  `node scripts/helper.mjs audio render`; Bing Edge TTS is the default provider
+  path when available.
 - Migrate from existing RSS readers through `actions/migration.md`.
 - Troubleshoot OAuth and local Skill Session storage through
   `actions/troubleshooting.md`.

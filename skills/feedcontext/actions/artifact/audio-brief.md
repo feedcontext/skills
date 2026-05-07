@@ -162,6 +162,20 @@ provider, recommend that provider and state the privacy boundary. If multiple
 production providers are configured, ask which one to use. If only local
 fallback TTS is available, ask before generating audio from it.
 
+When a provider supports voice or speaker selection, select voices that match
+the script's spoken language. Do not read Chinese with an English voice, English
+with a Chinese voice, or any other language through a mismatched default. Prefer
+passing the Show Script `language` into the helper with `--language`; only pass
+`--voice` when the chosen provider voice is known to support that spoken
+language.
+
+FeedContext's default TTS provider path is Bing Edge TTS through the helper's
+built-in Edge Read Aloud client. It follows the same Microsoft Edge Read Aloud
+API shape used by `MsEdgeTTS`, but the installable helper does not require a
+separate Python package, external `edge-tts` CLI, or runtime `node_modules`. If
+the user has not specified another provider, use Bing Edge TTS by default after
+preserving the privacy boundary in the response or artifact notes.
+
 ## Provider Cookbook
 
 Use provider-specific documentation before calling audio provider APIs directly.
@@ -175,9 +189,89 @@ At minimum, provider notes should cover:
   speech request shape, plan or quota errors, and long-script segmentation.
 - OpenAI audio: `OPENAI_API_KEY`, model and voice selection, output format,
   errors, and long-script segmentation.
+- Bing Edge TTS: bundled helper availability, voice selection, output format,
+  external service boundary, and long-script segmentation.
 - Local fallback TTS: platform command availability and the fact that local TTS
   is draft or preview quality unless the user explicitly accepts it.
 
-Until helper-backed rendering exists, provider notes and diagnostics should
-guide the agent. Prefer adding a helper doctor command for provider availability
-before adding provider-specific render commands.
+Use helper diagnostics before rendering. Prefer helper-backed provider rendering
+when it exists, and keep direct provider API calls as a fallback only when the
+provider cookbook explicitly describes the call shape.
+
+## Provider Doctor
+
+Use provider diagnostics before asking the user to choose an Audio Brief
+provider:
+
+```bash
+node scripts/helper.mjs audio provider doctor
+node scripts/helper.mjs audio provider doctor --provider bing-edge
+```
+
+The doctor output reports provider availability, invocation shape, and the
+privacy boundary for each provider path.
+
+## Bing Edge TTS
+
+Provider id: `bing-edge`
+
+Default: yes
+
+Bing Edge TTS uses the helper's built-in Edge Read Aloud client to call
+Microsoft Edge's online text-to-speech service. The implementation follows the
+same Microsoft Edge Read Aloud API shape used by `MsEdgeTTS`, but it is bundled
+directly into `scripts/helper.mjs` so installed skills do not need a Python
+package, an external `edge-tts` CLI, or runtime `node_modules`. It is still an
+external provider path: the Show Script text needed for the Audio Brief is sent
+to Microsoft's Edge online text-to-speech service. Availability is outside
+FeedContext's control and may change.
+
+Diagnostic:
+
+```bash
+node scripts/helper.mjs audio provider doctor --provider bing-edge
+```
+
+Helper-backed generation from a prepared spoken text file:
+
+```bash
+node scripts/helper.mjs audio render \
+  --text-file feedcontext-audio-brief-2026-05-07.spoken.txt \
+  --language zh-CN \
+  --out feedcontext-audio-brief-2026-05-07.bing-edge.mp3
+```
+
+For longer Audio Briefs, prefer segmented rendering so independent sections can
+run concurrently and failed sections can be retried without regenerating the
+whole show:
+
+```bash
+node scripts/helper.mjs audio render \
+  --segments-file feedcontext-audio-brief-2026-05-07.segments.json \
+  --out-dir feedcontext-audio-brief-2026-05-07-segments \
+  --concurrency 4 \
+  --language zh-CN \
+  --out feedcontext-audio-brief-2026-05-07.bing-edge.segments.json
+```
+
+The segments file should contain the spoken `language` and an ordered
+`segments` array:
+
+```json
+{
+  "language": "zh-CN",
+  "segments": [
+    {"id": "opening", "text": "开场口播。"},
+    {"id": "lead", "text": "重点段落口播。"}
+  ]
+}
+```
+
+If `--voice` is omitted, Bing Edge TTS chooses a default voice from the script
+language. Current helper defaults include `zh-CN-XiaoxiaoNeural` for `zh-*` and
+`en-US-AvaNeural` for English fallback.
+
+Use Bing Edge TTS as the default production audio provider when the user accepts
+the external service boundary. For longer Audio Briefs, generate by section and
+assemble the final audio file so a failed section can be retried without
+regenerating the whole show.

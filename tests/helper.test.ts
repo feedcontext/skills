@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import showScriptSchema from "@/show-script.schema.json" assert { type: "json" };
@@ -9,6 +10,7 @@ import {
   buildVersionStatus,
   createSkillAuthUrl,
   buildListItemsPath,
+  detectAudioProviders,
   enforceConfirmBeforeNetwork,
   gatherInsight,
   getVersionStatus,
@@ -18,6 +20,8 @@ import {
   parseOpmlFeedUrls,
   parsePairCode,
   parsePositiveIntegerOption,
+  renderBingEdgeTts,
+  renderBingEdgeTtsSegments,
   runWithConcurrency,
   SCOPES,
   SKILL_PAIR_ENDPOINT,
@@ -140,6 +144,153 @@ describe("FeedContext Show Script validation", () => {
     expect(errors).toContain("hosts: must include at least one host");
     expect(errors).toContain("sections: must include at least one section");
     expect(errors).toContain("provider_requirements.multi_voice: must be a boolean");
+  });
+});
+
+describe("FeedContext Audio provider diagnostics", () => {
+  it("reports bundled Bing Edge TTS as the default provider", async () => {
+    const result = await detectAudioProviders();
+
+    expect(result.default_provider).toBe("bing-edge");
+    expect(result.providers).toContainEqual(
+      expect.objectContaining({
+        available: true,
+        default: true,
+        id: "bing-edge",
+        invocation: expect.objectContaining({
+          command: "node scripts/helper.mjs audio render",
+          example_args: [
+            "--segments-file",
+            "show.segments.json",
+            "--out-dir",
+            "show-segments",
+            "--concurrency",
+            "4",
+            "--out",
+            "show.bing-edge.segments.json",
+          ],
+        }),
+        provider_class: "production",
+      }),
+    );
+  });
+
+  it("renders Bing Edge TTS through the bundled msedge-tts package", async () => {
+    const directory = mkdtempSync(join(tmpdir(), "feedcontext-bing-tts-test-"));
+    const textFile = join(directory, "spoken.txt");
+    const out = join(directory, "audio.mp3");
+    const calls: Array<{ out: string; text: string; voice: string }> = [];
+
+    try {
+      await import("node:fs/promises").then(({ writeFile }) =>
+        writeFile(textFile, "Hello <from> FeedContext & friends."),
+      );
+
+      await renderBingEdgeTts(
+        {
+          out,
+          textFile,
+          voice: "en-US-AvaNeural",
+        },
+        async (input) => {
+          calls.push(input);
+          await writeFile(input.out, `audio:${input.text}`);
+        },
+      );
+
+      expect(calls).toEqual([
+        {
+          out,
+          text: "Hello <from> FeedContext & friends.",
+          voice: "en-US-AvaNeural",
+        },
+      ]);
+      expect(readFileSync(out, "utf8")).toBe("audio:Hello <from> FeedContext & friends.");
+    } finally {
+      rmSync(directory, { force: true, recursive: true });
+    }
+  });
+
+  it("selects a provider voice that matches the spoken language", async () => {
+    const directory = mkdtempSync(join(tmpdir(), "feedcontext-bing-tts-language-test-"));
+    const textFile = join(directory, "spoken.txt");
+    const out = join(directory, "audio.mp3");
+    const calls: Array<{ out: string; text: string; voice: string }> = [];
+
+    try {
+      await writeFile(textFile, "今天的重点是安全更新。");
+
+      await renderBingEdgeTts(
+        {
+          language: "zh-CN",
+          out,
+          textFile,
+        },
+        async (input) => {
+          calls.push(input);
+          await writeFile(input.out, "audio");
+        },
+      );
+
+      expect(calls[0]?.voice).toBe("zh-CN-XiaoxiaoNeural");
+    } finally {
+      rmSync(directory, { force: true, recursive: true });
+    }
+  });
+
+  it("renders Bing Edge TTS segments concurrently", async () => {
+    const directory = mkdtempSync(join(tmpdir(), "feedcontext-bing-tts-segments-test-"));
+    const segmentsFile = join(directory, "segments.json");
+    const calls: Array<{ out: string; text: string; voice: string }> = [];
+    let active = 0;
+    let peak = 0;
+
+    try {
+      await import("node:fs/promises").then(({ writeFile }) =>
+        writeFile(
+          segmentsFile,
+          JSON.stringify({
+            language: "zh-CN",
+            segments: [
+              { id: "intro", text: "开场。" },
+              { id: "lead", text: "重点。" },
+              { id: "close", text: "结束。" },
+            ],
+          }),
+        ),
+      );
+
+      const result = await renderBingEdgeTtsSegments(
+        {
+          concurrency: "2",
+          outDir: directory,
+          segmentsFile,
+        },
+        async (input) => {
+          active += 1;
+          peak = Math.max(peak, active);
+          calls.push(input);
+          await new Promise((resolve) => setTimeout(resolve, 1));
+          await writeFile(input.out, `audio:${input.text}`);
+          active -= 1;
+        },
+      );
+
+      expect(peak).toBe(2);
+      expect(calls.map((call) => call.text)).toEqual(["开场。", "重点。", "结束。"]);
+      expect(calls.every((call) => call.voice === "zh-CN-XiaoxiaoNeural")).toBe(true);
+      expect(result).toMatchObject({
+        ok: true,
+        provider: "bing-edge",
+        segments: [
+          { id: "intro", media_file: join(directory, "001-intro.mp3") },
+          { id: "lead", media_file: join(directory, "002-lead.mp3") },
+          { id: "close", media_file: join(directory, "003-close.mp3") },
+        ],
+      });
+    } finally {
+      rmSync(directory, { force: true, recursive: true });
+    }
   });
 });
 
