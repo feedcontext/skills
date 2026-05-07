@@ -30,8 +30,8 @@ accounts, or clear a stale local session.
 - Troubleshoot OAuth and local Skill Session storage through
   `actions/troubleshooting.md`.
 
-When reading Feed Items, remember that `items:list` is paginated and returns one
-page by default. Use `items:list-all` when the user asks for all matching Feed
+When reading Feed Items, remember that `item list` is paginated and returns one
+page by default. Use `item list --all` when the user asks for all matching Feed
 Items.
 
 When composing summaries, roundups, insights, briefings, or briefing pages,

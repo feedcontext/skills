@@ -9,17 +9,17 @@ Feed Item, not an api resource, and not a page hosted by `web`.
 ## Workflow
 
 1. Run `version` first if this is the first FeedContext action in the session.
-2. Use `items:list` or `items:list-all` to discover candidate Feed Items.
+2. Use `item list` or `item list --all` to discover candidate Feed Items.
 3. Apply deterministic filters with structured fields when possible, such as
    time range, Subscription id, item ids, or keyword filters. Leave semantic
    filtering, importance, user-intent matching, and synthesis quality to the
    agent.
-4. Use `items:get` to read the Feed Items that materially support the page.
+4. Use `item get` to read the Feed Items that materially support the page.
 5. Produce a Structured Synthesis sidecar JSON file before writing prose or
    HTML. Validate it with:
 
    ```bash
-   node scripts/helper.mjs synthesis:validate --file path/to/briefing.synthesis.json
+   node scripts/helper.mjs synthesis validate --file path/to/briefing.synthesis.json
    ```
 
 6. Curate the page around the user's request. If the user does not give a
@@ -41,8 +41,8 @@ summary as prose first. First create a Structured Synthesis JSON file that
 captures the units to render and the evidence that supports each unit.
 
 Use `schemas/structured-synthesis.schema.json` as the generated schema artifact
-and `node scripts/helper.mjs synthesis:schema` as the canonical helper-backed
-schema source. Validate with `node scripts/helper.mjs synthesis:validate --file
+and `node scripts/helper.mjs synthesis schema` as the canonical helper-backed
+schema source. Validate with `node scripts/helper.mjs synthesis validate --file
 <path>`. Keep the JSON sidecar next to the HTML when practical:
 
 ```text

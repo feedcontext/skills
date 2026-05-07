@@ -1036,18 +1036,26 @@ async function main(argv = process.argv) {
   const program = new Command();
   program.name("feedcontext").description("FeedContext Skill helper");
 
-  program.command("version").action(printVersionStatus);
+  program
+    .command("version")
+    .description("Print installed revision, latest revision, and upgrade status")
+    .action(printVersionStatus);
   program
     .command("login")
-    .option("--pair-code <code>")
+    .description("Start browser login or finish login with a pair code")
+    .option("--pair-code <code>", "Resolve a pending browser login with the 6-digit pair code")
     .action((options) => login({ pairCode: options.pairCode }));
-  program.command("logout").action(logout);
+  program
+    .command("logout")
+    .description("Clear the local Skill Session and pending login state")
+    .action(logout);
   program
     .command("raw")
-    .requiredOption("--method <method>")
-    .requiredOption("--path <path>")
-    .option("--body <json>")
-    .option("--confirm")
+    .description("Call an allowlisted public API path directly")
+    .requiredOption("--method <method>", "HTTP method for the allowlisted API request")
+    .requiredOption("--path <path>", "Allowlisted API path, including query string when needed")
+    .option("--body <json>", "JSON request body for allowlisted write requests")
+    .option("--confirm", "Confirm host approval for a mutating request before network access")
     .action((options) =>
       apiCall({
         body: options.body ? JSON.parse(options.body) : undefined,
@@ -1057,16 +1065,16 @@ async function main(argv = process.argv) {
       }),
     );
 
-  program
-    .command("subscriptions:list")
+  const subscription = program.command("subscription").description("Read and manage Subscriptions");
+  subscription
+    .command("list")
+    .description("List all visible Subscriptions")
     .action(() => apiCall({ method: "GET", path: "/v1/subscriptions" }));
-  program
-    .command("subscriptions:list-all")
-    .action(() => apiCall({ method: "GET", path: "/v1/subscriptions" }));
-  program
-    .command("subscriptions:add")
-    .requiredOption("--feed-url <url>")
-    .option("--confirm")
+  subscription
+    .command("add")
+    .description("Create a Subscription from an RSS or Atom feed URL")
+    .requiredOption("--feed-url <url>", "RSS or Atom feed URL to subscribe to")
+    .option("--confirm", "Confirm host approval before creating the Subscription")
     .action((options) =>
       apiCall({
         body: { feed_url: options.feedUrl },
@@ -1075,11 +1083,12 @@ async function main(argv = process.argv) {
         path: "/v1/subscriptions",
       }),
     );
-  program
-    .command("subscriptions:import-opml")
-    .requiredOption("--file <path>")
+  subscription
+    .command("import-opml")
+    .description("Import Subscriptions from an OPML file")
+    .requiredOption("--file <path>", "OPML file to parse for RSS or Atom feed URLs")
     .option("--concurrency <count>", "Number of concurrent subscription creates", "32")
-    .option("--confirm")
+    .option("--confirm", "Confirm host approval before creating Subscriptions")
     .action((options) =>
       importOpml({
         concurrency: options.concurrency,
@@ -1087,10 +1096,11 @@ async function main(argv = process.argv) {
         file: options.file,
       }),
     );
-  program
-    .command("subscriptions:delete")
-    .requiredOption("--id <id>")
-    .option("--confirm")
+  subscription
+    .command("delete")
+    .description("Delete a Subscription by id")
+    .requiredOption("--id <id>", "Subscription id to delete")
+    .option("--confirm", "Confirm host approval before deleting the Subscription")
     .action((options) =>
       apiCall({
         confirm: options.confirm,
@@ -1098,55 +1108,51 @@ async function main(argv = process.argv) {
         path: `/v1/subscriptions/${options.id}`,
       }),
     );
-  program
-    .command("items:list")
-    .option("--subscription-id <id>")
-    .option("--keyword <text>")
-    .option("--published-after <timestamp>")
-    .option("--published-before <timestamp>")
-    .option("--limit <count>")
-    .option("--cursor <cursor>")
+
+  const item = program.command("item").description("Discover and read Feed Items");
+  item
+    .command("list")
+    .description("List Feed Item discovery metadata")
+    .option("--subscription-id <id>", "Filter Feed Items to one Subscription id")
+    .option("--keyword <text>", "Search Feed Item discovery metadata")
+    .option("--published-after <timestamp>", "Only include Feed Items published after this epoch millisecond timestamp")
+    .option("--published-before <timestamp>", "Only include Feed Items published before this epoch millisecond timestamp")
+    .option("--limit <count>", "Page size for Feed Item listing, up to 100")
+    .option("--cursor <cursor>", "Opaque list pagination cursor to continue from")
     .option("--id <id>", "Filter to a Feed Item id; repeatable", (value, previous: string[]) => [
       ...(previous ?? []),
       value,
     ])
-    .option("--search-content")
+    .option("--search-content", "Search Feed Item content as well as discovery metadata")
+    .option("--all", "Follow pagination and return all matching Feed Items")
+    .option("--max-pages <count>", "Safety cap for --all pagination", "1000")
     .action((options) => {
+      if (options.all) {
+        return listAllItems({ ...options, ids: options.id });
+      }
+
       return apiCall({
         method: "GET",
         path: buildListItemsPath({ ...options, ids: options.id }),
       });
     });
-  program
-    .command("items:list-all")
-    .option("--subscription-id <id>")
-    .option("--keyword <text>")
-    .option("--published-after <timestamp>")
-    .option("--published-before <timestamp>")
-    .option("--limit <count>", "Page size for each API request; defaults to 100")
-    .option("--cursor <cursor>", "Start cursor")
-    .option("--id <id>", "Filter to a Feed Item id; repeatable", (value, previous: string[]) => [
-      ...(previous ?? []),
-      value,
-    ])
-    .option("--search-content")
-    .option("--max-pages <count>", "Safety cap for cursor traversal", "1000")
-    .action((options) => {
-      return listAllItems({ ...options, ids: options.id });
-    });
-  program
-    .command("items:get")
-    .requiredOption("--id <id>")
+  item
+    .command("get")
+    .description("Read one Feed Item content chunk")
+    .requiredOption("--id <id>", "Feed Item id to read")
     .option("--cursor <cursor>", "Content continuation cursor")
     .option("--max-chars <count>", "Maximum content characters to read")
-    .option("--include-raw")
+    .option("--include-raw", "Include raw content and Feed Item metadata for debugging or recovery")
     .action((options) => apiCall({ method: "GET", path: buildGetItemPath(options) }));
-  program
-    .command("synthesis:validate")
-    .requiredOption("--file <path>")
+
+  const synthesis = program.command("synthesis").description("Validate Structured Synthesis files");
+  synthesis
+    .command("validate")
+    .description("Validate a Structured Synthesis JSON file")
+    .requiredOption("--file <path>", "Structured Synthesis JSON file to validate")
     .action((options) => validateSynthesisFile(options.file));
-  program
-    .command("synthesis:schema")
+  synthesis
+    .command("schema")
     .description("Print the FeedContext Structured Synthesis JSON Schema")
     .action(printSynthesisSchema);
 
