@@ -27,8 +27,11 @@ After installation, use the skill instructions in `skills/feedcontext/SKILL.md`.
 ## Skill Docs
 
 - `skills/feedcontext/actions/api.md`
+- `skills/feedcontext/actions/auth.md`
 - `skills/feedcontext/actions/briefing-page.md`
+- `skills/feedcontext/actions/feed-items.md`
 - `skills/feedcontext/actions/opml.md`
+- `skills/feedcontext/actions/subscriptions.md`
 - `skills/feedcontext/actions/troubleshooting.md`
 
 ## Core Concepts

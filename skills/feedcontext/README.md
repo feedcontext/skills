@@ -9,6 +9,9 @@ Items. The skill should not expose Source as a public resource.
 Action docs:
 
 - `actions/api.md`
+- `actions/auth.md`
 - `actions/briefing-page.md`
+- `actions/feed-items.md`
 - `actions/opml.md`
+- `actions/subscriptions.md`
 - `actions/troubleshooting.md`

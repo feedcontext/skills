@@ -1,120 +1,28 @@
 # FeedContext API Actions
 
-Use the generated helper:
+Use this action doc as the API boundary map. Prefer the focused action docs for
+normal workflows:
 
-```bash
-node scripts/helper.mjs version
-node scripts/helper.mjs login
-node scripts/helper.mjs logout
-node scripts/helper.mjs subscription list
-node scripts/helper.mjs item list
-node scripts/helper.mjs item list --all
-node scripts/helper.mjs item get --id item_123
-```
+- Authenticate and manage the local Skill Session through `auth.md`.
+- Read Feed Items through `feed-items.md`.
+- Manage Subscriptions through `subscriptions.md`.
+- Compose traceable briefing pages through `briefing-page.md`.
+- Import OPML through `opml.md`.
+- Recover from failures through `troubleshooting.md`.
 
-Run `version` before other FeedContext actions in an agent session. The helper
-starts OAuth login when requested, stores a local Skill Session, and prints JSON
-API responses. It must never print OAuth tokens.
-
-## Version
-
-Run:
+Run `version` before other FeedContext actions in an agent session:
 
 ```bash
 node scripts/helper.mjs version
 ```
 
-The helper prints installed and latest git revisions, whether an upgrade is
-available, and the `npx skills install feedcontext` upgrade command. The agent
-decides whether to notify the user.
+The helper starts OAuth login when requested, stores a local Skill Session, and
+prints JSON API responses. It must never print OAuth tokens.
 
-## Login
+## Raw API Calls
 
-Run:
-
-```bash
-node scripts/helper.mjs login
-```
-
-The helper opens Google login through `api.feedcontext.io`, then exits after
-printing `pair_code_required`. Ask the user to copy the 6-digit pair code from
-the browser, then run:
-
-```bash
-node scripts/helper.mjs login --pair-code '<pair-code>'
-```
-
-The helper validates OAuth `state`, exchanges the PKCE code, and stores the Skill
-Session in the system credential store when available. If the credential store is
-unavailable, it falls back to a local file with restrictive permissions and
-prints a warning.
-
-## Logout
-
-Run:
-
-```bash
-node scripts/helper.mjs logout
-```
-
-The helper removes the local Skill Session from the system credential store when
-available, removes the fallback session file, and clears any pending login. It
-does not call the FeedContext API, so it works even when the current token is
-expired or invalid.
-
-## Reads
-
-High-level read commands:
-
-```bash
-node scripts/helper.mjs subscription list
-node scripts/helper.mjs item list
-node scripts/helper.mjs item list --subscription-id sub_123
-node scripts/helper.mjs item list --limit 100 --cursor '<next_cursor>'
-node scripts/helper.mjs item list --all
-node scripts/helper.mjs item get --id item_123
-node scripts/helper.mjs item get --id item_123 --cursor '<next_content_cursor>'
-```
-
-`subscription list` returns all RSS/Atom Subscriptions currently exposed by the
-API. It is not paginated.
-
-`item list` is a discovery command. It is paginated and returns only one page
-of Feed Item metadata:
-
-- Default page size is `20`.
-- Maximum page size is `100`.
-- It does not return Feed Item content.
-- If the JSON response has a non-null `next_cursor`, more Feed Items exist. Use
-  that cursor with `item list --cursor '<next_cursor>'`.
-- Use `item list --all` when the user asks for all matching Feed Items. It follows
-  `next_cursor` automatically and uses `--limit 100` per page by default.
-- Use `--search-content` only when the user explicitly wants to search Feed Item
-  content, not just discovery metadata. It broadens search but still does not
-  return Feed Item content in list responses.
-
-`item get` is the reading command. It returns `content_text` as Limited
-Markdown in chunks of up to `12,000` characters by default. If
-`next_content_cursor` is non-null, pass it back with `--cursor` to continue
-reading the same Feed Item. Use `--include-raw` only for recovery, debugging, or
-local handling of item-level metadata such as podcast audio references; it
-returns a nested `raw` object with `content_raw` and `metadata` alongside
-`content_text`.
-
-Supported `item list` filters:
-
-```bash
-node scripts/helper.mjs item list --limit 100
-node scripts/helper.mjs item list --cursor '<next_cursor>'
-node scripts/helper.mjs item list --subscription-id sub_123
-node scripts/helper.mjs item list --keyword 'agent'
-node scripts/helper.mjs item list --keyword 'agent' --search-content
-node scripts/helper.mjs item list --published-after 1700000000000
-node scripts/helper.mjs item list --published-before 1800000000000
-node scripts/helper.mjs item list --id item_1 --id item_2
-node scripts/helper.mjs item list --all --subscription-id sub_123
-node scripts/helper.mjs item list --all --max-pages 20
-```
+Prefer high-level helper commands before using `raw`. Raw calls are allowed only
+for the documented public `/v1` Subscription and Feed Item paths.
 
 Raw read calls are allowed only for these paths:
 
@@ -129,25 +37,15 @@ Example:
 node scripts/helper.mjs raw --method GET --path /v1/items
 ```
 
-## Writes
+Raw write calls require host approval and `--confirm`. The helper refuses
+mutating calls before any network request when `--confirm` is missing.
 
-Before write actions, ask the host for approval. After approval, pass
-`--confirm`; the helper refuses mutating calls before any network request when
-`--confirm` is missing.
-
-Allowed write paths:
+Allowed raw write paths:
 
 - `POST /v1/subscriptions`
 - `DELETE /v1/subscriptions/{subscription_id}`
 
-Examples:
-
-```bash
-node scripts/helper.mjs subscription add --feed-url https://example.com/feed.xml --confirm
-node scripts/helper.mjs subscription delete --id sub_123 --confirm
-```
-
-Raw write example after host approval:
+Example after host approval:
 
 ```bash
 node scripts/helper.mjs raw \

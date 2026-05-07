@@ -1,6 +1,6 @@
 ---
 name: feedcontext
-description: Use FeedContext through the first-party helper to authenticate, read Feed Items, and manage RSS/Atom Subscriptions.
+description: Provides first-party FeedContext helper workflows for authentication, Feed Item reading, RSS/Atom Subscription management, OPML import, and traceable briefing pages. Use when the user asks to connect FeedContext, inspect feeds, read Feed Items, manage Subscriptions, import OPML, or create feed-backed briefings.
 ---
 
 # FeedContext Skill
@@ -24,7 +24,10 @@ accounts, or clear a stale local session.
 
 ## Actions
 
-- Read and write FeedContext data through `actions/api.md`.
+- Authenticate and manage the local Skill Session through `actions/auth.md`.
+- Read Feed Items through `actions/feed-items.md`.
+- Manage Subscriptions through `actions/subscriptions.md`.
+- Use raw API calls and public resource boundaries through `actions/api.md`.
 - Compose editorial HTML briefing pages through `actions/briefing-page.md`.
 - Convert OPML to concurrent Subscription creates through `actions/opml.md`.
 - Troubleshoot OAuth and local Skill Session storage through

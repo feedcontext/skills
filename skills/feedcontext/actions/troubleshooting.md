@@ -1,5 +1,8 @@
 # Troubleshooting
 
+Use `auth.md` for the normal `version`, `login`, pair-code, and `logout` flows.
+Use this doc for recovery paths.
+
 ## Login Does Not Complete
 
 - Confirm the browser opened an `api.feedcontext.io` Google login URL.
