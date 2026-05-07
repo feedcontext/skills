@@ -26,12 +26,18 @@ Read first:
   `skills/feedcontext/SKILL.md`.
 - Run the `version` action before other FeedContext Skill actions in an agent
   session.
+- Every source code change must be followed by `pnpm run build` before handoff,
+  staging, commit, or push.
 - Keep Write action safety as host approval plus helper `--confirm`; v1 has no
   server-side dry-run.
 - When API shape changes, update the handwritten raw-action allowlist and
   action docs as needed.
 - OPML import remains helper-local fan-out to individual Subscription creates;
   there is no OPML API endpoint in v1.
+- Keep the Husky `pre-push` hook installed. The hook runs `pnpm run build`;
+  because `build` regenerates skill artifacts and checks their git diff, a push
+  must fail when generated artifacts are not aligned with the source code being
+  submitted.
 
 ## Verification
 
@@ -41,6 +47,5 @@ For FeedContext Skill changes, run:
 pnpm lint
 pnpm test
 pnpm typecheck
-pnpm run build:schema
-pnpm run build:helper
+pnpm run build
 ```

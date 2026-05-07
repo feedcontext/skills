@@ -13,6 +13,7 @@
     "build:helper": "bun build src/feedcontext.ts --format esm --packages bundle --target node --minify --outfile skills/feedcontext/scripts/helper.mjs",
     "build:schema": "mkdir -p skills/feedcontext/schemas && cp src/structured-synthesis.schema.json skills/feedcontext/schemas/structured-synthesis.schema.json",
     "lint": "eslint \"src/**/*.{ts,json}\" \"tests/**/*.ts\" vitest.config.ts \"skills/feedcontext/schemas/**/*.json\"",
+    "prepare": "husky",
     "test": "vitest run tests/*.test.ts",
     "typecheck": "tsc --noEmit"
   },
@@ -26,6 +27,7 @@
     "eslint": "^10.3.0",
     "eslint-plugin-json-schema-validator": "^6.2.0",
     "eslint-plugin-jsonc": "^3.1.2",
+    "husky": "^9.1.7",
     "tsx": "^4.21.0",
     "typescript": "^5.7.4",
     "typescript-eslint": "^8.59.2",
