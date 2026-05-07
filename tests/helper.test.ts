@@ -16,6 +16,7 @@ import {
   parsePositiveIntegerOption,
   runWithConcurrency,
   SCOPES,
+  SKILL_PAIR_ENDPOINT,
   validateStructuredSynthesis,
 } from "@/feedcontext";
 
@@ -31,6 +32,10 @@ describe("FeedContext Skill helper safety", () => {
     expect(authorize.searchParams.get("code_challenge")).toBe("challenge_123");
     expect(authorize.searchParams.has("client_id")).toBe(false);
     expect(authorize.searchParams.get("state")).toBe("state_123");
+  });
+
+  it("resolves skill pair codes through the skill-scoped handoff endpoint", () => {
+    expect(SKILL_PAIR_ENDPOINT).toBe("/v1/auth/skill/pair");
   });
 
   it("allows only documented v1 API paths", () => {

@@ -89,6 +89,7 @@ type PendingLogin = {
 export const API_ORIGIN = process.env.FEEDCONTEXT_API_ORIGIN ?? "https://api.feedcontext.io";
 export const WEB_ORIGIN = process.env.FEEDCONTEXT_WEB_ORIGIN ?? "https://feedcontext.io";
 export const AUTH_BASE = `${API_ORIGIN}/api/auth`;
+export const SKILL_PAIR_ENDPOINT = "/v1/auth/skill/pair";
 export const CLIENT_ID = "feedcontext-skill";
 export const REDIRECT_URI = `${WEB_ORIGIN}/pair`;
 export const SCOPES = "feeds:read subscriptions:read subscriptions:write";
@@ -549,7 +550,7 @@ async function completeLogin(pairCode: string) {
   }
 
   const normalizedPairCode = parsePairCode(pairCode);
-  const pairResponse = await fetch(`${API_ORIGIN}/v1/auth/pair/resolve`, {
+  const pairResponse = await fetch(`${API_ORIGIN}${SKILL_PAIR_ENDPOINT}`, {
     body: JSON.stringify({ pair_code: normalizedPairCode }),
     headers: { "content-type": "application/json" },
     method: "POST",
