@@ -8,6 +8,7 @@ import { fileURLToPath } from "node:url";
 import { Command } from "commander";
 import { parseOpml } from "feedsmith";
 import allowlist from "@/allowlist.json" assert { type: "json" };
+import showScriptSchema from "@/show-script.schema.json" assert { type: "json" };
 import structuredSynthesisSchema from "@/structured-synthesis.schema.json" assert { type: "json" };
 
 export type SkillSession = {
@@ -833,6 +834,13 @@ const evidenceRelevanceValues = new Set(["direct", "supporting", "background"]);
 const synthesisUnitTypes = new Set(["insight", "item_roundup", "briefing_section"]);
 const renderingPriorities = new Set(["lead", "main", "secondary", "collapsed"]);
 const secondaryItemGroups = new Set(["supplemental", "low_information_gain", "out_of_scope"]);
+const showScriptIntents = new Set([
+  "script_only",
+  "script_then_audio",
+  "audio_from_existing_script",
+]);
+const showScriptFormats = new Set(["single_host", "two_host", "sectioned"]);
+const audioOutputFormats = new Set(["mp3", "wav", "m4a"]);
 
 function synthesisPathOf(path: string[]) {
   return path.length ? path.join(".") : "$";
@@ -882,6 +890,34 @@ function optionalSynthesisInteger(record: JsonRecord, key: string, path: string[
   const value = record[key];
   if (value !== undefined && value !== null && !Number.isInteger(value)) {
     errors.push(`${synthesisPathOf([...path, key])}: must be an integer or null`);
+  }
+}
+
+function optionalPositiveInteger(record: JsonRecord, key: string, path: string[], errors: string[]) {
+  const value = record[key];
+  if (value !== undefined && (typeof value !== "number" || !Number.isInteger(value) || value < 1)) {
+    errors.push(`${synthesisPathOf([...path, key])}: must be a positive integer`);
+  }
+}
+
+function optionalStringArray(record: JsonRecord, key: string, path: string[], errors: string[]) {
+  const value = record[key];
+  if (value === undefined) return;
+  if (!Array.isArray(value)) {
+    errors.push(`${synthesisPathOf([...path, key])}: must be an array`);
+    return;
+  }
+  value.forEach((item, index) => {
+    if (typeof item !== "string" || item.trim() === "") {
+      errors.push(`${synthesisPathOf([...path, key, String(index)])}: must be a non-empty string`);
+    }
+  });
+}
+
+function optionalBoolean(record: JsonRecord, key: string, path: string[], errors: string[]) {
+  const value = record[key];
+  if (value !== undefined && typeof value !== "boolean") {
+    errors.push(`${synthesisPathOf([...path, key])}: must be a boolean`);
   }
 }
 
@@ -1005,6 +1041,127 @@ export function validateStructuredSynthesis(synthesis: unknown) {
   return errors;
 }
 
+function validateShowHost(host: unknown, index: number, errors: string[]) {
+  const path = ["hosts", String(index)];
+  if (!requireSynthesisRecord(host, path, errors)) return;
+
+  requireSynthesisString(host, "id", path, errors);
+  requireSynthesisString(host, "name", path, errors);
+  requireSynthesisString(host, "role", path, errors);
+  if (host.voice !== undefined) {
+    requireSynthesisString(host, "voice", path, errors);
+  }
+}
+
+function validateShowTurn(turn: unknown, sectionIndex: number, turnIndex: number, errors: string[]) {
+  const path = ["sections", String(sectionIndex), "turns", String(turnIndex)];
+  if (!requireSynthesisRecord(turn, path, errors)) return;
+
+  requireSynthesisString(turn, "speaker", path, errors);
+  requireSynthesisString(turn, "text", path, errors);
+  optionalStringArray(turn, "synthesis_unit_ids", path, errors);
+  optionalStringArray(turn, "evidence_ids", path, errors);
+  if (turn.pacing !== undefined) {
+    requireSynthesisString(turn, "pacing", path, errors);
+  }
+  if (turn.audio_notes !== undefined) {
+    requireSynthesisString(turn, "audio_notes", path, errors);
+  }
+}
+
+function validateShowSection(section: unknown, index: number, errors: string[]) {
+  const path = ["sections", String(index)];
+  if (!requireSynthesisRecord(section, path, errors)) return;
+
+  requireSynthesisString(section, "id", path, errors);
+  requireSynthesisString(section, "title", path, errors);
+  optionalPositiveInteger(section, "target_duration_seconds", path, errors);
+  optionalStringArray(section, "synthesis_unit_ids", path, errors);
+
+  if (!Array.isArray(section.turns) || section.turns.length === 0) {
+    errors.push(`${synthesisPathOf([...path, "turns"])}: must include at least one turn`);
+    return;
+  }
+  section.turns.forEach((turn, turnIndex) => validateShowTurn(turn, index, turnIndex, errors));
+}
+
+function validatePronunciationNote(note: unknown, index: number, errors: string[]) {
+  const path = ["pronunciation_notes", String(index)];
+  if (!requireSynthesisRecord(note, path, errors)) return;
+
+  requireSynthesisString(note, "term", path, errors);
+  requireSynthesisString(note, "hint", path, errors);
+}
+
+function validateProviderRequirements(value: unknown, errors: string[]) {
+  const path = ["provider_requirements"];
+  if (!requireSynthesisRecord(value, path, errors)) return;
+
+  optionalBoolean(value, "multi_voice", path, errors);
+  optionalBoolean(value, "long_form", path, errors);
+  optionalBoolean(value, "segment_generation", path, errors);
+  for (const key of ["multi_voice", "long_form", "segment_generation"]) {
+    if (value[key] === undefined) {
+      errors.push(`${synthesisPathOf([...path, key])}: must be a boolean`);
+    }
+  }
+  if (value.preferred_output_format !== undefined) {
+    requireSynthesisEnum(value, "preferred_output_format", audioOutputFormats, path, errors);
+  }
+}
+
+export function validateShowScript(showScript: unknown) {
+  const errors: string[] = [];
+
+  if (!requireSynthesisRecord(showScript, [], errors)) return errors;
+
+  if (showScript.schema_version !== "1") {
+    errors.push('schema_version: must be "1"');
+  }
+
+  if (requireSynthesisRecord(showScript.source_synthesis, ["source_synthesis"], errors)) {
+    requireSynthesisString(showScript.source_synthesis, "file", ["source_synthesis"], errors);
+    if (showScript.source_synthesis.id !== undefined) {
+      requireSynthesisString(showScript.source_synthesis, "id", ["source_synthesis"], errors);
+    }
+  }
+
+  requireSynthesisEnum(showScript, "intent", showScriptIntents, [], errors);
+  requireSynthesisEnum(showScript, "format", showScriptFormats, [], errors);
+  requireSynthesisString(showScript, "language", [], errors);
+  requireSynthesisString(showScript, "title", [], errors);
+  if (showScript.listening_context !== undefined) {
+    requireSynthesisString(showScript, "listening_context", [], errors);
+  }
+  optionalPositiveInteger(showScript, "target_duration_seconds", [], errors);
+
+  if (!Array.isArray(showScript.hosts) || showScript.hosts.length === 0) {
+    errors.push("hosts: must include at least one host");
+  } else {
+    showScript.hosts.forEach((host, index) => validateShowHost(host, index, errors));
+  }
+
+  if (!Array.isArray(showScript.sections) || showScript.sections.length === 0) {
+    errors.push("sections: must include at least one section");
+  } else {
+    showScript.sections.forEach((section, index) => validateShowSection(section, index, errors));
+  }
+
+  if (showScript.pronunciation_notes !== undefined) {
+    if (!Array.isArray(showScript.pronunciation_notes)) {
+      errors.push("pronunciation_notes: must be an array");
+    } else {
+      showScript.pronunciation_notes.forEach((note, index) =>
+        validatePronunciationNote(note, index, errors),
+      );
+    }
+  }
+
+  validateProviderRequirements(showScript.provider_requirements, errors);
+
+  return errors;
+}
+
 async function validateSynthesisFile(file: string) {
   let parsed: unknown;
   try {
@@ -1031,6 +1188,34 @@ async function validateSynthesisFile(file: string) {
 
 function printSynthesisSchema() {
   console.log(JSON.stringify(structuredSynthesisSchema, null, 2));
+}
+
+async function validateShowScriptFile(file: string) {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(await readFile(file, "utf8"));
+  } catch (error) {
+    throw new Error(
+      `Could not read or parse ${file}: ${error instanceof Error ? error.message : String(error)}`,
+      { cause: error },
+    );
+  }
+
+  const errors = validateShowScript(parsed);
+  if (errors.length > 0) {
+    console.error(`Show Script validation failed for ${file}:`);
+    for (const error of errors) {
+      console.error(`- ${error}`);
+    }
+    process.exitCode = 1;
+    return;
+  }
+
+  console.log(`Show Script is valid: ${file}`);
+}
+
+function printShowScriptSchema() {
+  console.log(JSON.stringify(showScriptSchema, null, 2));
 }
 
 async function main(argv = process.argv) {
@@ -1156,6 +1341,17 @@ async function main(argv = process.argv) {
     .command("schema")
     .description("Print the FeedContext Structured Synthesis JSON Schema")
     .action(printSynthesisSchema);
+
+  const showScript = program.command("show-script").description("Validate Show Script files");
+  showScript
+    .command("validate")
+    .description("Validate a Show Script JSON file")
+    .requiredOption("--file <path>", "Show Script JSON file to validate")
+    .action((options) => validateShowScriptFile(options.file));
+  showScript
+    .command("schema")
+    .description("Print the FeedContext Show Script JSON Schema")
+    .action(printShowScriptSchema);
 
   await program.parseAsync(argv);
 }

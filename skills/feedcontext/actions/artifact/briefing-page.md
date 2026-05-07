@@ -1,4 +1,4 @@
-# Briefing Page
+# HTML Briefing Page
 
 Use this action when the user asks for a digest, briefing, newspaper, recap,
 roundup, or visual summary from FeedContext.

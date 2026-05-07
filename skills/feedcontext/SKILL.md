@@ -1,6 +1,6 @@
 ---
 name: feedcontext
-description: Provides first-party FeedContext helper workflows for authentication, Feed Item reading, RSS/Atom Subscription management, OPML import, and traceable briefing pages. Use when the user asks to connect FeedContext, inspect feeds, read Feed Items, manage Subscriptions, import OPML, or create feed-backed briefings.
+description: Provides first-party FeedContext helper workflows for authentication, Feed Item reading, RSS/Atom Subscription management, OPML import, and traceable local artifacts. Use when the user asks to connect FeedContext, inspect feeds, read Feed Items, manage Subscriptions, import OPML, or create feed-backed briefings or audio briefs.
 ---
 
 # FeedContext Skill
@@ -28,7 +28,9 @@ accounts, or clear a stale local session.
 - Read Feed Items through `actions/feed-items.md`.
 - Manage Subscriptions through `actions/subscriptions.md`.
 - Use raw API calls and public resource boundaries through `actions/api.md`.
-- Compose editorial HTML briefing pages through `actions/briefing-page.md`.
+- Compose local artifacts through `actions/artifact/README.md`.
+- Compose editorial HTML briefing pages through `actions/artifact/briefing-page.md`.
+- Compose Audio Brief scripts and generated audio through `actions/artifact/audio-brief.md`.
 - Migrate from existing RSS readers through `actions/migration.md`.
 - Troubleshoot OAuth and local Skill Session storage through
   `actions/troubleshooting.md`.
@@ -43,9 +45,11 @@ When reading Feed Items, remember that `item list` is paginated and returns one
 page by default. Use `item list --all` when the user asks for all matching Feed
 Items.
 
-When composing summaries, roundups, insights, briefings, or briefing pages,
-follow `actions/briefing-page.md`: create and validate a Structured Synthesis
-JSON sidecar before rendering prose or HTML.
+When composing summaries, roundups, insights, briefings, briefing pages, or
+audio briefs, follow `actions/artifact/README.md`: create and validate a
+Structured Synthesis JSON sidecar before rendering prose, HTML, scripts, or
+audio. For audio briefs, create and validate a Show Script before generating
+audio.
 
 This repository publishes the installable skill from `skills/feedcontext`.
 Helper source changes must refresh `scripts/helper.mjs` before release so this

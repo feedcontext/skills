@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
+import showScriptSchema from "@/show-script.schema.json" assert { type: "json" };
 import structuredSynthesisSchema from "@/structured-synthesis.schema.json" assert { type: "json" };
 import {
   buildGetItemPath,
@@ -17,6 +18,7 @@ import {
   runWithConcurrency,
   SCOPES,
   SKILL_PAIR_ENDPOINT,
+  validateShowScript,
   validateStructuredSynthesis,
 } from "@/feedcontext";
 
@@ -61,6 +63,79 @@ describe("FeedContext Skill helper safety", () => {
         path: "/v1/subscriptions",
       }),
     ).not.toThrow();
+  });
+});
+
+describe("FeedContext Show Script validation", () => {
+  it("keeps the installable schema generated from the source schema", () => {
+    const generatedSchema = JSON.parse(
+      readFileSync("skills/feedcontext/schemas/show-script.schema.json", "utf8"),
+    );
+
+    expect(generatedSchema).toEqual(showScriptSchema);
+  });
+
+  it("accepts a valid Show Script", () => {
+    expect(
+      validateShowScript({
+        schema_version: "1",
+        source_synthesis: {
+          file: "briefing.synthesis.json",
+        },
+        intent: "script_then_audio",
+        language: "zh-CN",
+        format: "two_host",
+        title: "Daily Audio Brief",
+        hosts: [
+          {
+            id: "host_a",
+            name: "A",
+            role: "narrative_lead",
+          },
+          {
+            id: "host_b",
+            name: "B",
+            role: "clarifier",
+          },
+        ],
+        sections: [
+          {
+            id: "opening",
+            title: "Opening",
+            synthesis_unit_ids: ["u1"],
+            turns: [
+              {
+                speaker: "host_a",
+                text: "Today, the important point is how several signals connect.",
+                synthesis_unit_ids: ["u1"],
+              },
+            ],
+          },
+        ],
+        provider_requirements: {
+          multi_voice: true,
+          long_form: true,
+          segment_generation: true,
+          preferred_output_format: "mp3",
+        },
+      }),
+    ).toEqual([]);
+  });
+
+  it("reports Show Script validation errors", () => {
+    const errors = validateShowScript({
+      schema_version: "2",
+      source_synthesis: {},
+      hosts: [],
+      sections: [],
+      provider_requirements: {},
+    });
+
+    expect(errors).toContain('schema_version: must be "1"');
+    expect(errors).toContain("source_synthesis.file: must be a non-empty string");
+    expect(errors).toContain("hosts: must include at least one host");
+    expect(errors).toContain("sections: must include at least one section");
+    expect(errors).toContain("provider_requirements.multi_voice: must be a boolean");
   });
 });
 

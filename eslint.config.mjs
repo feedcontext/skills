@@ -25,11 +25,12 @@ export default [
   {
     files: [
       "src/structured-synthesis.schema.json",
+      "src/show-script.schema.json",
       "skills/feedcontext/schemas/structured-synthesis.schema.json",
+      "skills/feedcontext/schemas/show-script.schema.json",
     ],
     rules: {
       "json-schema-validator/no-invalid": ["error", { useSchemastoreCatalog: false }],
     },
   },
 ];
-

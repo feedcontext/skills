@@ -6,7 +6,7 @@ normal workflows:
 - Authenticate and manage the local Skill Session through `auth.md`.
 - Read Feed Items through `feed-items.md`.
 - Manage Subscriptions through `subscriptions.md`.
-- Compose traceable briefing pages through `briefing-page.md`.
+- Compose traceable local artifacts through `artifact/README.md`.
 - Migrate or import existing subscriptions through `migration.md`.
 - Use OPML migration through `migration/opml.md` after an OPML or export file is available.
 - Recover from failures through `troubleshooting.md`.

@@ -10,7 +10,9 @@ Action docs:
 
 - `actions/api.md`
 - `actions/auth.md`
-- `actions/briefing-page.md`
+- `actions/artifact/README.md`
+- `actions/artifact/audio-brief.md`
+- `actions/artifact/briefing-page.md`
 - `actions/feed-items.md`
 - `actions/migration.md`
 - `actions/subscriptions.md`

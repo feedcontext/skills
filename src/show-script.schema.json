@@ -1,0 +1,216 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://feedcontext.io/schemas/show-script.schema.json",
+  "title": "FeedContext Show Script",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "source_synthesis",
+    "intent",
+    "language",
+    "format",
+    "title",
+    "hosts",
+    "sections",
+    "provider_requirements"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "1"
+    },
+    "source_synthesis": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["file"],
+      "properties": {
+        "file": {
+          "type": "string",
+          "minLength": 1
+        },
+        "id": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "intent": {
+      "type": "string",
+      "enum": ["script_only", "script_then_audio", "audio_from_existing_script"]
+    },
+    "language": {
+      "type": "string",
+      "minLength": 1
+    },
+    "format": {
+      "type": "string",
+      "enum": ["single_host", "two_host", "sectioned"]
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "listening_context": {
+      "type": "string",
+      "minLength": 1
+    },
+    "target_duration_seconds": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "hosts": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/host"
+      }
+    },
+    "sections": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/section"
+      }
+    },
+    "pronunciation_notes": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/pronunciation_note"
+      }
+    },
+    "provider_requirements": {
+      "$ref": "#/$defs/provider_requirements"
+    }
+  },
+  "$defs": {
+    "host": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "role"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "role": {
+          "type": "string",
+          "minLength": 1
+        },
+        "voice": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "section": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "title", "turns"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "target_duration_seconds": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "synthesis_unit_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "turns": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/turn"
+          }
+        }
+      }
+    },
+    "turn": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["speaker", "text"],
+      "properties": {
+        "speaker": {
+          "type": "string",
+          "minLength": 1
+        },
+        "text": {
+          "type": "string",
+          "minLength": 1
+        },
+        "synthesis_unit_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "evidence_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "pacing": {
+          "type": "string",
+          "minLength": 1
+        },
+        "audio_notes": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "pronunciation_note": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["term", "hint"],
+      "properties": {
+        "term": {
+          "type": "string",
+          "minLength": 1
+        },
+        "hint": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "provider_requirements": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["multi_voice", "long_form", "segment_generation"],
+      "properties": {
+        "multi_voice": {
+          "type": "boolean"
+        },
+        "long_form": {
+          "type": "boolean"
+        },
+        "segment_generation": {
+          "type": "boolean"
+        },
+        "preferred_output_format": {
+          "type": "string",
+          "enum": ["mp3", "wav", "m4a"]
+        }
+      }
+    }
+  }
+}
