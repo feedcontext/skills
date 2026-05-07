@@ -1,0 +1,38 @@
+{
+  "name": "feedcontext",
+  "owner": {
+    "name": "FeedContext"
+  },
+  "metadata": {
+    "description": "Marketplace for the official FeedContext Skill."
+  },
+  "plugins": [
+    {
+      "name": "feedcontext",
+      "source": "./",
+      "description": "First-party FeedContext helper workflows for authentication, Feed Item reading, RSS/Atom Subscription management, OPML import, and traceable briefing pages.",
+      "author": {
+        "name": "FeedContext"
+      },
+      "homepage": "https://feedcontext.io",
+      "repository": "https://github.com/feedcontext/skills",
+      "keywords": [
+        "feeds",
+        "rss",
+        "atom",
+        "briefings",
+        "agent-context"
+      ],
+      "category": "productivity",
+      "tags": [
+        "feeds",
+        "rss",
+        "atom",
+        "briefings",
+        "feedcontext"
+      ],
+      "skills": "./skills",
+      "strict": false
+    }
+  ]
+}
