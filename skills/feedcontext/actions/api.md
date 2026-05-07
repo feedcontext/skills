@@ -7,7 +7,8 @@ normal workflows:
 - Read Feed Items through `feed-items.md`.
 - Manage Subscriptions through `subscriptions.md`.
 - Compose traceable briefing pages through `briefing-page.md`.
-- Import OPML through `opml.md`.
+- Migrate or import existing subscriptions through `migration.md`.
+- Use OPML migration through `migration/opml.md` after an OPML or export file is available.
 - Recover from failures through `troubleshooting.md`.
 
 Run `version` before other FeedContext actions in an agent session:

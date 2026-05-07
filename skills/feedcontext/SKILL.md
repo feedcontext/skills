@@ -29,9 +29,15 @@ accounts, or clear a stale local session.
 - Manage Subscriptions through `actions/subscriptions.md`.
 - Use raw API calls and public resource boundaries through `actions/api.md`.
 - Compose editorial HTML briefing pages through `actions/briefing-page.md`.
-- Convert OPML to concurrent Subscription creates through `actions/opml.md`.
+- Migrate from existing RSS readers through `actions/migration.md`.
 - Troubleshoot OAuth and local Skill Session storage through
   `actions/troubleshooting.md`.
+
+When the user asks to import or migrate existing subscriptions, follow
+`actions/migration.md` first. If the user did not name the source platform and
+did not provide an OPML or export file, ask which RSS reader they are migrating
+from before choosing a platform playbook. Use `actions/migration/opml.md` when
+an OPML or export file is already available.
 
 When reading Feed Items, remember that `item list` is paginated and returns one
 page by default. Use `item list --all` when the user asks for all matching Feed

@@ -12,6 +12,6 @@ Action docs:
 - `actions/auth.md`
 - `actions/briefing-page.md`
 - `actions/feed-items.md`
-- `actions/opml.md`
+- `actions/migration.md`
 - `actions/subscriptions.md`
 - `actions/troubleshooting.md`

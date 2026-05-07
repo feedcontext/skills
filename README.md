@@ -11,6 +11,7 @@ FeedContext Skill helps agents:
 - connect to FeedContext;
 - read RSS/Atom feed items;
 - manage subscriptions with approval;
+- migrate or import subscriptions from existing RSS readers and OPML files;
 - turn feed context into traceable briefings.
 
 It is not a feed reader UI or a product console. It is a skill for agents that
@@ -30,7 +31,7 @@ After installation, use the skill instructions in `skills/feedcontext/SKILL.md`.
 - `skills/feedcontext/actions/auth.md`
 - `skills/feedcontext/actions/briefing-page.md`
 - `skills/feedcontext/actions/feed-items.md`
-- `skills/feedcontext/actions/opml.md`
+- `skills/feedcontext/actions/migration.md`
 - `skills/feedcontext/actions/subscriptions.md`
 - `skills/feedcontext/actions/troubleshooting.md`
 
