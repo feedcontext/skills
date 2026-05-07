@@ -13,10 +13,12 @@ Procedure:
 
 1. If the user provided pasted OPML text instead of a file path, save the exact
    text to a local `.opml` file.
-2. Parse `<outline>` elements.
-3. Keep only unique `xmlUrl` values that are valid `http` or `https` RSS/Atom URLs.
-4. Ask the host for approval before creating subscriptions.
-5. Run:
+2. If the user provided a file path, read only that path. Do not search local
+   directories for OPML or export files.
+3. Parse `<outline>` elements.
+4. Keep only unique `xmlUrl` values that are valid `http` or `https` RSS/Atom URLs.
+5. Ask the host for approval before creating subscriptions.
+6. Run:
 
 ```bash
 node scripts/helper.mjs subscription import-opml --file "$OPML_FILE" --confirm
@@ -35,9 +37,10 @@ the existing Subscription id.
 
 ## Other Export Files
 
-If the file is XML, JSON, CSV, or a backup archive, inspect it locally and look
-for RSS or Atom feed URLs. Convert valid `http` and `https` feed URLs into OPML,
-then import the OPML using the OPML procedure above.
+If the user-specified file is XML, JSON, CSV, or a backup archive, inspect that
+file locally and look for RSS or Atom feed URLs. Convert valid `http` and
+`https` feed URLs into OPML, then import the OPML using the OPML procedure
+above.
 
 Preserve a small local conversion report with:
 

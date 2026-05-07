@@ -32,8 +32,11 @@ After explicit user approval, open the Feedly OPML export page:
 https://feedly.com/i/opml
 ```
 
-Let the user complete any login or consent step. Download the OPML file, then
-import it into FeedContext after host approval.
+Let the user complete any login or consent step. If the browser asks where to
+save the OPML file, use only the user-selected save path. If the file downloads
+without an explicit path visible to the agent, ask the user for the downloaded
+file path. Do not search local directories to find the downloaded file. Import
+the user-specified OPML file into FeedContext after host approval.
 
 ## Notes
 

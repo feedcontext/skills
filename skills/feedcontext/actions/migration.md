@@ -16,6 +16,12 @@ migrating from before giving instructions. If the user did not say whether the
 agent can operate the browser or local files, ask before choosing a
 browser-assisted path.
 
+Do not search the user's filesystem for export files. Only read a local export
+file when the user explicitly provides its path, or when the user explicitly
+chooses a save path during a browser-assisted export. If the browser downloads
+to an unknown location, ask the user for the exact downloaded file path instead
+of scanning Downloads, recent files, the workspace, or temporary directories.
+
 ## Platform Playbooks
 
 Use the closest platform playbook:
@@ -38,8 +44,9 @@ Prefer the strongest available mode:
    authorized subscription API and the user can authorize it.
 2. Direct OPML export, when the platform has a stable export URL or documented
    export endpoint. If the host agent can operate the browser and the user has
-   approved that access, open the export URL directly and capture the downloaded
-   OPML file instead of asking the user to navigate the settings UI.
+   approved that access, open the export URL directly instead of asking the user
+   to navigate the settings UI. Import only from OPML text visible in the
+   browser or from a file path explicitly selected or provided by the user.
 3. Browser-assisted export, when the agent has user approval to operate the
    browser or local files.
 4. CLI-guided export, when the agent can only give the user exact instructions

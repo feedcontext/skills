@@ -41,7 +41,9 @@ directly download or display the OPML export. If the browser asks for login, let
 the user complete login and then reopen the same URL. If the OPML is displayed
 in the browser, copy the complete OPML document from the page or ask the user to
 provide it, save it to a local `.opml` file, then import it into FeedContext
-after host approval.
+after host approval. If the browser downloads a file instead, import only from a
+path explicitly selected or provided by the user. Do not search local
+directories to find the downloaded file.
 
 ## Notes
 
