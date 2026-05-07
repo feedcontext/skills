@@ -29,6 +29,7 @@ accounts, or clear a stale local session.
 - Manage Subscriptions through `actions/subscriptions.md`.
 - Use raw API calls and public resource boundaries through `actions/api.md`.
 - Compose local artifacts through `actions/artifact/README.md`.
+- Gather Feed Item aggregation sidecars through `actions/artifact/gather.md`.
 - Compose editorial HTML briefing pages through `actions/artifact/briefing-page.md`.
 - Compose Audio Brief scripts and generated audio through `actions/artifact/audio-brief.md`.
 - Migrate from existing RSS readers through `actions/migration.md`.

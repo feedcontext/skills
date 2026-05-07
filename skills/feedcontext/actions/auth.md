@@ -26,7 +26,10 @@ node scripts/helper.mjs login
 
 The helper opens Google login through `api.feedcontext.io`, then exits after
 printing `pair_code_required`. Ask the user to copy the 6-digit pair code from
-the browser, then run:
+the browser, then stop and wait for the user's next message. Do not poll,
+continue unrelated FeedContext reads, or infer the login result while waiting
+for the code. When the user sends only the 6-digit code, complete the exchange
+directly:
 
 ```bash
 node scripts/helper.mjs login --pair-code '<pair-code>'

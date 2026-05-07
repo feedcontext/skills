@@ -8,7 +8,10 @@ Feed Items; they are not Feed Items, not api resources, and not pages hosted by
 ## Shared Workflow
 
 1. Run `version` first if this is the first FeedContext action in the session.
-2. Use `item list` or `item list --all` to discover candidate Feed Items.
+2. Use `item list` or `item list --all` to discover candidate Feed Items. For
+   Agent-Composed Feed Aggregation over multiple Feed Items, prefer creating a
+   Gather Sidecar first with `gather.md` so all in-scope Summaries are reviewed
+   before semantic selection.
 3. Apply deterministic filters with structured fields when possible, such as
    time range, Subscription id, item ids, or keyword filters.
 4. Use `item get` to read Feed Items that materially support the artifact.
@@ -29,6 +32,8 @@ artifact docs.
 
 ## Artifact Types
 
+- Use `gather.md` for local Gather Sidecars before semantic Feed Item
+  aggregation.
 - Use `briefing-page.md` for local single-file HTML briefing pages.
 - Use `audio-brief.md` for local Audio Brief scripts and generated audio.
 

@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import showScriptSchema from "@/show-script.schema.json" assert { type: "json" };
 import structuredSynthesisSchema from "@/structured-synthesis.schema.json" assert { type: "json" };
 import {
@@ -8,6 +10,7 @@ import {
   createSkillAuthUrl,
   buildListItemsPath,
   enforceConfirmBeforeNetwork,
+  gatherInsight,
   getVersionStatus,
   isAllowedRawCall,
   isMutatingRawCall,
@@ -20,6 +23,7 @@ import {
   SKILL_PAIR_ENDPOINT,
   validateShowScript,
   validateStructuredSynthesis,
+  writeGatherInsightFile,
 } from "@/feedcontext";
 
 describe("FeedContext Skill helper safety", () => {
@@ -276,6 +280,139 @@ describe("FeedContext OPML import helpers", () => {
 });
 
 describe("FeedContext Feed Item list helpers", () => {
+  it("gathers all in-scope Feed Item summaries before aggregation", async () => {
+    const calls: string[] = [];
+    const session = { access_token: "token", token_type: "Bearer" as const };
+    const responses = new Map([
+      [
+        "/v1/items?published_after=1700000000000&published_before=1700086400000&limit=100",
+        {
+          items: [
+            {
+              id: "item_1",
+              subscription: {
+                feed_url: "https://example.com/feed.xml",
+                id: "sub_1",
+                title: "Example Feed",
+              },
+              title: "First",
+              author: null,
+              url: "https://example.com/first",
+              published_at: 1700000100000,
+              summary: "First summary",
+              created_at: 1700000100000,
+            },
+          ],
+          next_cursor: "1700000100000:item_1",
+        },
+      ],
+      [
+        "/v1/items?published_after=1700000000000&published_before=1700086400000&limit=100&cursor=1700000100000%3Aitem_1",
+        {
+          items: [
+            {
+              id: "item_2",
+              subscription: {
+                feed_url: "https://example.com/feed.xml",
+                id: "sub_1",
+                title: "Example Feed",
+              },
+              title: "Second",
+              author: null,
+              url: "https://example.com/second",
+              published_at: 1700000200000,
+              summary: "Second summary",
+              created_at: 1700000200000,
+            },
+          ],
+          next_cursor: null,
+        },
+      ],
+    ]);
+
+    const gather = await gatherInsight(
+      {
+        publishedAfter: "1700000000000",
+        publishedBefore: "1700086400000",
+      },
+      session,
+      async (input) => {
+        calls.push(input.path);
+        const response = responses.get(input.path);
+        if (!response) {
+          return { ok: false, status: 404, text: "{}" };
+        }
+        return { ok: true, status: 200, text: JSON.stringify(response) };
+      },
+    );
+
+    expect(calls).toEqual([
+      "/v1/items?published_after=1700000000000&published_before=1700086400000&limit=100",
+      "/v1/items?published_after=1700000000000&published_before=1700086400000&limit=100&cursor=1700000100000%3Aitem_1",
+    ]);
+    expect(gather.coverage).toMatchObject({
+      pages: 2,
+      summary_reviewed_count: 2,
+      total: 2,
+    });
+    expect(gather.items).toEqual([
+      expect.objectContaining({ id: "item_1", summary: "First summary", summary_reviewed: true }),
+      expect.objectContaining({ id: "item_2", summary: "Second summary", summary_reviewed: true }),
+    ]);
+  });
+
+  it("writes Gather Sidecar JSON for an insight gather run", async () => {
+    const directory = mkdtempSync(join(tmpdir(), "feedcontext-gather-test-"));
+    const out = join(directory, "today.gather.json");
+
+    try {
+      await writeGatherInsightFile(
+        {
+          out,
+          publishedAfter: "1700000000000",
+          publishedBefore: "1700086400000",
+        },
+        { access_token: "token", token_type: "Bearer" },
+        async () => ({
+          ok: true,
+          status: 200,
+          text: JSON.stringify({
+            items: [
+              {
+                id: "item_1",
+                subscription: {
+                  feed_url: "https://example.com/feed.xml",
+                  id: "sub_1",
+                  title: "Example Feed",
+                },
+                title: "First",
+                author: null,
+                url: "https://example.com/first",
+                published_at: 1700000100000,
+                summary: "First summary",
+                created_at: 1700000100000,
+              },
+            ],
+            next_cursor: null,
+          }),
+        }),
+      );
+
+      const written = JSON.parse(readFileSync(out, "utf8"));
+      expect(written).toMatchObject({
+        schema_version: "1",
+        coverage: {
+          pages: 1,
+          summary_reviewed_count: 1,
+          total: 1,
+        },
+        items: [{ id: "item_1", summary_reviewed: true }],
+      });
+    } finally {
+      rmSync(directory, { force: true, recursive: true });
+    }
+  });
+
   it("builds Feed Item read paths with content chunk options", () => {
     expect(
       buildGetItemPath({

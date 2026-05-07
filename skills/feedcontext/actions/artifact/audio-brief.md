@@ -141,3 +141,43 @@ requests, use a local provider path or stop after script generation.
 If no usable provider is available, the workflow should still complete the
 Structured Synthesis and Show Script artifacts, then stop in a resumable
 ready-to-generate-audio state.
+
+## Provider Classes
+
+Treat provider availability as more than a yes/no check:
+
+- Production audio providers are external or host-agent paths intended for a
+  podcast-like final output, such as a configured high-quality TTS or AI audio
+  service. Before using one, disclose that the Show Script needed for this Audio
+  Brief will be sent to that provider.
+- Local fallback TTS paths, such as operating-system speech commands, are useful
+  for drafts, previews, accessibility checks, or private local-only requests.
+  Do not silently use a local fallback TTS path as the final podcast-like output
+  when the user asked for a podcast or Audio Brief.
+- Unavailable providers should leave the workflow in a resumable state with the
+  Structured Synthesis, machine-readable Show Script, and readable script saved.
+
+If a production provider is configured and the user has not specified a
+provider, recommend that provider and state the privacy boundary. If multiple
+production providers are configured, ask which one to use. If only local
+fallback TTS is available, ask before generating audio from it.
+
+## Provider Cookbook
+
+Use provider-specific documentation before calling audio provider APIs directly.
+This skill should grow concrete provider notes for configured production paths,
+including required environment variables, voice discovery, text-to-speech
+request shape, common error handling, segmentation, and output assembly.
+
+At minimum, provider notes should cover:
+
+- ElevenLabs: `ELEVENLABS_API_KEY` or `XI_API_KEY`, voice discovery, text to
+  speech request shape, plan or quota errors, and long-script segmentation.
+- OpenAI audio: `OPENAI_API_KEY`, model and voice selection, output format,
+  errors, and long-script segmentation.
+- Local fallback TTS: platform command availability and the fact that local TTS
+  is draft or preview quality unless the user explicitly accepts it.
+
+Until helper-backed rendering exists, provider notes and diagnostics should
+guide the agent. Prefer adding a helper doctor command for provider availability
+before adding provider-specific render commands.

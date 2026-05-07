@@ -31,6 +31,8 @@ type ApiResult = {
   text: string;
 };
 
+type ApiRequester = (input: RawCall, session: SkillSession) => Promise<ApiResult>;
+
 type OpmlImportResult = {
   created: number;
   existing: number;
@@ -55,6 +57,10 @@ type ListAllItemsOptions = ListItemsOptions & {
   maxPages?: string;
 };
 
+type GatherInsightFileOptions = ListItemsOptions & {
+  out: string;
+};
+
 type GetItemOptions = {
   cursor?: string;
   id: string;
@@ -67,6 +73,22 @@ type JsonRecord = Record<string, unknown>;
 type ListItemsResponse = {
   items: unknown[];
   next_cursor: string | null;
+};
+
+type GatherInsightItem = JsonRecord & {
+  id?: unknown;
+  summary?: unknown;
+  summary_reviewed: true;
+};
+
+export type GatherInsightResult = {
+  coverage: {
+    pages: number;
+    summary_reviewed_count: number;
+    total: number;
+  };
+  items: GatherInsightItem[];
+  schema_version: "1";
 };
 
 export type VersionStatus = {
@@ -754,6 +776,74 @@ async function listAllItems(options: ListAllItemsOptions) {
   process.exitCode = 1;
 }
 
+export async function gatherInsight(
+  options: ListItemsOptions,
+  session: SkillSession,
+  request: ApiRequester = apiRequest,
+): Promise<GatherInsightResult> {
+  const limit = parsePositiveIntegerOption({
+    defaultValue: 100,
+    max: 100,
+    name: "--limit",
+    value: options.limit,
+  });
+  const items: GatherInsightItem[] = [];
+  let cursor = options.cursor;
+  let pages = 0;
+
+  while (true) {
+    const result = await request(
+      {
+        method: "GET",
+        path: buildListItemsPath({
+          ...options,
+          cursor,
+          limit: String(limit),
+        }),
+      },
+      session,
+    );
+
+    if (!result.ok) {
+      throw new Error(`Feed Item list request failed with ${result.status}: ${result.text}`);
+    }
+
+    const page = parseListItemsResponse(result);
+    for (const item of page.items) {
+      const record = isRecord(item) ? item : { value: item };
+      items.push({
+        ...record,
+        summary_reviewed: true,
+      });
+    }
+    pages += 1;
+
+    if (!page.next_cursor) {
+      return {
+        coverage: {
+          pages,
+          summary_reviewed_count: items.length,
+          total: items.length,
+        },
+        items,
+        schema_version: "1",
+      };
+    }
+
+    cursor = page.next_cursor;
+  }
+}
+
+export async function writeGatherInsightFile(
+  options: GatherInsightFileOptions,
+  session: SkillSession,
+  request: ApiRequester = apiRequest,
+) {
+  const gather = await gatherInsight(options, session, request);
+  await writeFile(options.out, `${JSON.stringify(gather, null, 2)}\n`);
+  return gather;
+}
+
 async function importOpml(options: { concurrency?: string; confirm?: boolean; file: string }) {
   if (!options.confirm) {
     throw new Error("OPML import creates subscriptions and requires --confirm.");
@@ -1330,6 +1420,28 @@ async function main(argv = process.argv) {
     .option("--max-chars <count>", "Maximum content characters to read")
     .option("--include-raw", "Include raw content and Feed Item metadata for debugging or recovery")
     .action((options) => apiCall({ method: "GET", path: buildGetItemPath(options) }));
+
+  const insight = program.command("insight").description("Compose Feed Item aggregation sidecars");
+  insight
+    .command("gather")
+    .description("Gather in-scope Feed Item summaries into a local Gather Sidecar")
+    .option("--published-after <timestamp>", "Only include Feed Items published after this epoch millisecond timestamp")
+    .option("--published-before <timestamp>", "Only include Feed Items published before this epoch millisecond timestamp")
+    .requiredOption("--out <path>", "Path to write the Gather Sidecar JSON")
+    .action(async (options) => {
+      const gather = await writeGatherInsightFile(options, await getSession());
+      console.log(
+        JSON.stringify(
+          {
+            ok: true,
+            out: options.out,
+            ...gather.coverage,
+          },
+          null,
+          2,
+        ),
+      );
+    });
 
   const synthesis = program.command("synthesis").description("Validate Structured Synthesis files");
   synthesis
