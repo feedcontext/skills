@@ -7,6 +7,7 @@ import showScriptSchema from "@/show-script.schema.json" assert { type: "json" }
 import structuredSynthesisSchema from "@/structured-synthesis.schema.json" assert { type: "json" };
 import {
   buildGetItemPath,
+  buildAudioSegmentsFromShowScript,
   buildVersionStatus,
   createSkillAuthUrl,
   buildListItemsPath,
@@ -96,13 +97,17 @@ describe("FeedContext Show Script validation", () => {
         title: "Daily Audio Brief",
         hosts: [
           {
+            gender: "female",
             id: "host_a",
             name: "A",
+            provider_voice: "zh-CN-XiaoxiaoNeural",
             role: "narrative_lead",
           },
           {
+            gender: "male",
             id: "host_b",
             name: "B",
+            provider_voice: "zh-CN-YunxiNeural",
             role: "clarifier",
           },
         ],
@@ -115,6 +120,8 @@ describe("FeedContext Show Script validation", () => {
               {
                 speaker: "host_a",
                 text: "Today, the important point is how several signals connect.",
+                emotion: "warm curiosity",
+                transition: "soft bridge from context into the lead",
                 synthesis_unit_ids: ["u1"],
               },
             ],
@@ -144,6 +151,80 @@ describe("FeedContext Show Script validation", () => {
     expect(errors).toContain("hosts: must include at least one host");
     expect(errors).toContain("sections: must include at least one section");
     expect(errors).toContain("provider_requirements.multi_voice: must be a boolean");
+  });
+
+  it("converts Show Script turns into speaker-aware TTS segments without reading speaker labels", () => {
+    const segments = buildAudioSegmentsFromShowScript({
+      schema_version: "1",
+      source_synthesis: {
+        file: "briefing.synthesis.json",
+      },
+      intent: "script_then_audio",
+      language: "zh-CN",
+      format: "two_host",
+      title: "Daily Audio Brief",
+      hosts: [
+        {
+          gender: "female",
+          id: "host_a",
+          name: "女主播",
+          provider_voice: "zh-CN-XiaoxiaoNeural",
+          role: "narrative_lead",
+        },
+        {
+          gender: "male",
+          id: "host_b",
+          name: "男主播",
+          provider_voice: "zh-CN-YunxiNeural",
+          role: "clarifier",
+        },
+      ],
+      sections: [
+        {
+          id: "opening",
+          title: "Opening",
+          turns: [
+            {
+              speaker: "host_a",
+              text: "哈哈，今天这几条新闻看起来分散，但其实有一条暗线。",
+              emotion: "warm",
+              transition: "opening hook",
+            },
+            {
+              speaker: "host_b",
+              text: "我先接一句，这条暗线可能比单条漏洞更值得紧张。",
+              emotion: "concerned",
+            },
+          ],
+        },
+      ],
+      provider_requirements: {
+        multi_voice: true,
+        long_form: true,
+        segment_generation: true,
+        preferred_output_format: "mp3",
+      },
+    });
+
+    expect(segments).toEqual({
+      language: "zh-CN",
+      segments: [
+        {
+          id: "opening-01",
+          speaker: "host_a",
+          text: "哈哈，今天这几条新闻看起来分散，但其实有一条暗线。",
+          voice: "zh-CN-XiaoxiaoNeural",
+        },
+        {
+          id: "opening-02",
+          speaker: "host_b",
+          text: "我先接一句，这条暗线可能比单条漏洞更值得紧张。",
+          voice: "zh-CN-YunxiNeural",
+        },
+      ],
+    });
+    expect(segments.segments.map((segment) => segment.text).join("")).not.toContain("女主播");
+    expect(segments.segments.map((segment) => segment.text).join("")).not.toContain("男主播");
   });
 });
 
@@ -286,6 +367,74 @@ describe("FeedContext Audio provider diagnostics", () => {
           { id: "intro", media_file: join(directory, "001-intro.mp3") },
           { id: "lead", media_file: join(directory, "002-lead.mp3") },
           { id: "close", media_file: join(directory, "003-close.mp3") },
+        ],
+      });
+    } finally {
+      rmSync(directory, { force: true, recursive: true });
+    }
+  });
+
+  it("renders speaker voices per segment and assembles a final podcast file with music", async () => {
+    const directory = mkdtempSync(join(tmpdir(), "feedcontext-bing-tts-final-test-"));
+    const segmentsFile = join(directory, "segments.json");
+    const finalOut = join(directory, "final.mp3");
+    const intro = join(directory, "intro.mp3");
+    const outro = join(directory, "outro.mp3");
+    const calls: Array<{ out: string; text: string; voice: string }> = [];
+    const concatCalls: Array<{ files: string[]; out: string }> = [];
+
+    try {
+      await writeFile(intro, "intro");
+      await writeFile(outro, "outro");
+      await writeFile(
+        segmentsFile,
+        JSON.stringify({
+          language: "zh-CN",
+          segments: [
+            { id: "opening", speaker: "host_a", text: "开场。", voice: "zh-CN-XiaoxiaoNeural" },
+            { id: "reply", speaker: "host_b", text: "回应。", voice: "zh-CN-YunxiNeural" },
+          ],
+        }),
+      );
+
+      const result = await renderBingEdgeTtsSegments(
+        {
+          finalOut,
+          introAudio: intro,
+          outDir: directory,
+          outroAudio: outro,
+          segmentsFile,
+        },
+        async (input) => {
+          calls.push(input);
+          await writeFile(input.out, `audio:${input.voice}:${input.text}`);
+        },
+        async (files, out) => {
+          concatCalls.push({ files, out });
+          await writeFile(out, files.join("\n"));
+        },
+      );
+
+      expect(calls.map((call) => call.voice)).toEqual([
+        "zh-CN-XiaoxiaoNeural",
+        "zh-CN-YunxiNeural",
+      ]);
+      expect(concatCalls).toEqual([
+        {
+          files: [
+            intro,
+            join(directory, "001-opening.mp3"),
+            join(directory, "002-reply.mp3"),
+            outro,
+          ],
+          out: finalOut,
+        },
+      ]);
+      expect(result).toMatchObject({
+        final_out: finalOut,
+        segments: [
+          { speaker: "host_a", voice: "zh-CN-XiaoxiaoNeural" },
+          { speaker: "host_b", voice: "zh-CN-YunxiNeural" },
         ],
       });
     } finally {

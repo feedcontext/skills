@@ -37,6 +37,8 @@ accounts, or clear a stale local session.
 - Render prepared Audio Brief spoken text through supported providers with
   `node scripts/helper.mjs audio render`; Bing Edge TTS is the default provider
   path when available.
+- Convert Show Script JSON into speaker-aware TTS segments with
+  `node scripts/helper.mjs audio segments` before multi-host rendering.
 - Migrate from existing RSS readers through `actions/migration.md`.
 - Troubleshoot OAuth and local Skill Session storage through
   `actions/troubleshooting.md`.

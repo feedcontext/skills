@@ -41,6 +41,13 @@ an api or web resource.
 - The spoken content should explain the story, context, and implications for
   listening. Do not make the audio a source-by-source recap, article read-aloud,
   or mechanical summary.
+- Write the spoken text like people talking, not like a numbered report. Avoid
+  rigid ordinal labels unless the user explicitly requested a ranked list. Use
+  soft transitions, emotional texture, brief reactions, and natural
+  conversational bridges appropriate to the spoken language.
+- `speaker`, host names, roles, gender, and voice labels are script metadata.
+  They must not be copied into spoken text. Do not generate audio that reads
+  speaker labels, host labels, gender labels, or role labels aloud.
 - Default to the user's requested language, or the current conversation language
   when no language is specified. Do not automatically follow Feed Item source
   language.
@@ -76,35 +83,41 @@ Minimum shape:
     "file": "feedcontext-audio-brief-2026-05-07.synthesis.json"
   },
   "intent": "script_then_audio",
-  "language": "zh-CN",
+  "language": "en-US",
   "format": "two_host",
-  "title": "今日早间简报",
+  "title": "Daily Audio Brief",
   "listening_context": "morning commute",
   "hosts": [
     {
       "id": "host_a",
-      "name": "主持人 A",
+      "name": "Host A",
       "role": "narrative_lead",
-      "voice": "calm, clear, analytical"
+      "gender": "female",
+      "voice": "calm, clear, analytical",
+      "provider_voice": "en-US-AvaNeural"
     },
     {
       "id": "host_b",
-      "name": "主持人 B",
+      "name": "Host B",
       "role": "clarifier",
-      "voice": "curious, concise"
+      "gender": "male",
+      "voice": "curious, concise",
+      "provider_voice": "en-US-GuyNeural"
     }
   ],
   "sections": [
     {
       "id": "opening",
-      "title": "开场",
+      "title": "Opening",
       "target_duration_seconds": 60,
       "synthesis_unit_ids": ["lead-ai-shift"],
       "turns": [
         {
           "speaker": "host_a",
-          "text": "今天最值得注意的，不是一条单独新闻，而是几个信号正在指向同一个变化。",
+          "text": "The most important part today is not one isolated headline. A few separate signals are starting to point in the same direction.",
           "synthesis_unit_ids": ["lead-ai-shift"],
+          "emotion": "warm curiosity",
+          "transition": "soft opening hook",
           "pacing": "measured"
         }
       ]
@@ -163,11 +176,15 @@ production providers are configured, ask which one to use. If only local
 fallback TTS is available, ask before generating audio from it.
 
 When a provider supports voice or speaker selection, select voices that match
-the script's spoken language. Do not read Chinese with an English voice, English
-with a Chinese voice, or any other language through a mismatched default. Prefer
-passing the Show Script `language` into the helper with `--language`; only pass
-`--voice` when the chosen provider voice is known to support that spoken
-language.
+the script's spoken language. Do not read one language with a voice intended for
+another language. Prefer passing the Show Script `language` into the helper with
+`--language`; only pass `--voice` when the chosen provider voice is known to
+support that spoken language.
+
+For multi-host scripts, preserve each turn as a separate TTS segment and switch
+voices by `speaker`. Use host `provider_voice` when present; otherwise let the
+helper choose language-appropriate defaults by host `gender`. Do not flatten a
+two-host script into one text file with speaker labels.
 
 FeedContext's default TTS provider path is Bing Edge TTS through the helper's
 built-in Edge Read Aloud client. It follows the same Microsoft Edge Read Aloud
@@ -237,8 +254,16 @@ Helper-backed generation from a prepared spoken text file:
 ```bash
 node scripts/helper.mjs audio render \
   --text-file feedcontext-audio-brief-2026-05-07.spoken.txt \
-  --language zh-CN \
+  --language en-US \
   --out feedcontext-audio-brief-2026-05-07.bing-edge.mp3
+```
+
+Convert a Show Script into speaker-aware TTS segments:
+
+```bash
+node scripts/helper.mjs audio segments \
+  --script-file feedcontext-audio-brief-2026-05-07.script.json \
+  --out feedcontext-audio-brief-2026-05-07.segments.json
 ```
 
 For longer Audio Briefs, prefer segmented rendering so independent sections can
@@ -250,7 +275,10 @@ node scripts/helper.mjs audio render \
   --segments-file feedcontext-audio-brief-2026-05-07.segments.json \
   --out-dir feedcontext-audio-brief-2026-05-07-segments \
   --concurrency 4 \
-  --language zh-CN \
+  --language en-US \
+  --intro-audio intro.mp3 \
+  --outro-audio outro.mp3 \
+  --final-out feedcontext-audio-brief-2026-05-07.bing-edge.mp3 \
   --out feedcontext-audio-brief-2026-05-07.bing-edge.segments.json
 ```
 
@@ -259,17 +287,32 @@ The segments file should contain the spoken `language` and an ordered
 
 ```json
 {
-  "language": "zh-CN",
+  "language": "en-US",
   "segments": [
-    {"id": "opening", "text": "开场口播。"},
-    {"id": "lead", "text": "重点段落口播。"}
+    {
+      "id": "opening-01",
+      "speaker": "host_a",
+      "text": "At first these stories look separate, but there is a shared thread underneath them.",
+      "voice": "en-US-AvaNeural"
+    },
+    {
+      "id": "opening-02",
+      "speaker": "host_b",
+      "text": "And that thread may matter more than any single headline on its own.",
+      "voice": "en-US-GuyNeural"
+    }
   ]
 }
 ```
 
 If `--voice` is omitted, Bing Edge TTS chooses a default voice from the script
-language. Current helper defaults include `zh-CN-XiaoxiaoNeural` for `zh-*` and
-`en-US-AvaNeural` for English fallback.
+language and host gender metadata.
+
+Use intro and outro music when the user asks for a podcast-like final output and
+music assets are available. The helper can prepend `--intro-audio` and append
+`--outro-audio` while assembling `--final-out`. If music assets are not
+available, preserve the speech segments and state that the final bed/jingle
+asset is missing instead of pretending the audio has a podcast opening.
 
 Use Bing Edge TTS as the default production audio provider when the user accepts
 the external service boundary. For longer Audio Briefs, generate by section and

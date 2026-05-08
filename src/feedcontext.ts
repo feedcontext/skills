@@ -97,7 +97,10 @@ type BingEdgeTtsOptions = {
 
 type BingEdgeTtsSegmentsOptions = {
   concurrency?: string;
+  finalOut?: string;
+  introAudio?: string;
   language?: string;
+  outroAudio?: string;
   outDir: string;
   segmentsFile: string;
   voice?: string;
@@ -105,7 +108,9 @@ type BingEdgeTtsSegmentsOptions = {
 
 type BingEdgeTtsSegment = {
   id: string;
+  speaker?: string;
   text: string;
+  voice?: string;
 };
 
 type BingEdgeTtsSegmentsFile = {
@@ -118,6 +123,8 @@ type BingEdgeTtsSynthesizer = (options: {
   text: string;
   voice: string;
 }) => Promise<void>;
+
+type CommandRunner = (command: string, args: string[]) => Promise<void>;
 
 type GetItemOptions = {
   cursor?: string;
@@ -1031,14 +1038,31 @@ function escapeSsmlText(input: string) {
 }
 
 function defaultBingEdgeVoiceForLanguage(language?: string) {
+  return defaultBingEdgeVoiceForLanguageAndGender(language, "neutral");
+}
+
+function defaultBingEdgeVoiceForLanguageAndGender(language?: string, gender?: string) {
   const normalized = language?.trim().toLowerCase();
-  if (normalized?.startsWith("zh")) return "zh-CN-XiaoxiaoNeural";
-  if (normalized?.startsWith("ja")) return "ja-JP-NanamiNeural";
-  if (normalized?.startsWith("ko")) return "ko-KR-SunHiNeural";
-  if (normalized?.startsWith("es")) return "es-ES-ElviraNeural";
-  if (normalized?.startsWith("fr")) return "fr-FR-DeniseNeural";
-  if (normalized?.startsWith("de")) return "de-DE-KatjaNeural";
-  return "en-US-AvaNeural";
+  const normalizedGender = gender === "male" || gender === "female" ? gender : "neutral";
+  if (normalized?.startsWith("zh")) {
+    return normalizedGender === "male" ? "zh-CN-YunxiNeural" : "zh-CN-XiaoxiaoNeural";
+  }
+  if (normalized?.startsWith("ja")) {
+    return normalizedGender === "male" ? "ja-JP-KeitaNeural" : "ja-JP-NanamiNeural";
+  }
+  if (normalized?.startsWith("ko")) {
+    return normalizedGender === "male" ? "ko-KR-InJoonNeural" : "ko-KR-SunHiNeural";
+  }
+  if (normalized?.startsWith("es")) {
+    return normalizedGender === "male" ? "es-ES-AlvaroNeural" : "es-ES-ElviraNeural";
+  }
+  if (normalized?.startsWith("fr")) {
+    return normalizedGender === "male" ? "fr-FR-HenriNeural" : "fr-FR-DeniseNeural";
+  }
+  if (normalized?.startsWith("de")) {
+    return normalizedGender === "male" ? "de-DE-ConradNeural" : "de-DE-KatjaNeural";
+  }
+  return normalizedGender === "male" ? "en-US-GuyNeural" : "en-US-AvaNeural";
 }
 
 function edgeTtsRequestId() {
@@ -1164,6 +1188,52 @@ async function synthesizeBingEdgeTtsFile({ out, text, voice }: {
   });
 }
 
+async function defaultCommandRunner(command: string, args: string[]) {
+  return new Promise<void>((resolve, reject) => {
+    execFile(command, args, { timeout: 120_000 }, (error) => {
+      if (error) {
+        reject(error);
+        return;
+      }
+      resolve();
+    });
+  });
+}
+
+async function concatAudioFiles(
+  files: string[],
+  out: string,
+  run: CommandRunner = defaultCommandRunner,
+) {
+  if (files.length === 0) {
+    throw new Error("Audio concat requires at least one input file.");
+  }
+  const listFile = `${out}.concat.txt`;
+  const content = files
+    .map((file) => `file '${file.replaceAll("'", "'\\''")}'`)
+    .join("\n");
+  await writeFile(listFile, `${content}\n`);
+  try {
+    await run("ffmpeg", [
+      "-y",
+      "-hide_banner",
+      "-loglevel",
+      "error",
+      "-f",
+      "concat",
+      "-safe",
+      "0",
+      "-i",
+      listFile,
+      "-c",
+      "copy",
+      out,
+    ]);
+  } finally {
+    await unlink(listFile).catch(() => undefined);
+  }
+}
+
 export async function renderBingEdgeTts(
   options: BingEdgeTtsOptions,
   synthesize: BingEdgeTtsSynthesizer = synthesizeBingEdgeTtsFile,
@@ -1198,14 +1268,22 @@ function parseBingEdgeTtsSegments(value: unknown): BingEdgeTtsSegmentsFile {
       throw new Error(`segments.${index}: must be an object`);
     }
     const id = segment.id;
+    const speaker = segment.speaker;
     const text = segment.text;
+    const voice = segment.voice;
     if (typeof id !== "string" || id.trim() === "") {
       throw new Error(`segments.${index}.id: must be a non-empty string`);
+    }
+    if (speaker !== undefined && (typeof speaker !== "string" || speaker.trim() === "")) {
+      throw new Error(`segments.${index}.speaker: must be a non-empty string when provided`);
     }
     if (typeof text !== "string" || text.trim() === "") {
       throw new Error(`segments.${index}.text: must be a non-empty string`);
     }
-    return { id, text } satisfies BingEdgeTtsSegment;
+    if (voice !== undefined && (typeof voice !== "string" || voice.trim() === "")) {
+      throw new Error(`segments.${index}.voice: must be a non-empty string when provided`);
+    }
+    return { id, speaker, text, voice } satisfies BingEdgeTtsSegment;
   });
 
   return { language, segments };
@@ -1223,6 +1301,7 @@ function segmentFileName(index: number, segment: BingEdgeTtsSegment) {
 export async function renderBingEdgeTtsSegments(
   options: BingEdgeTtsSegmentsOptions,
   synthesize: BingEdgeTtsSynthesizer = synthesizeBingEdgeTtsFile,
+  concat: typeof concatAudioFiles = concatAudioFiles,
 ) {
   const concurrency = parseConcurrency(options.concurrency, 4);
   const parsed = JSON.parse(await readFile(options.segmentsFile, "utf8")) as unknown;
@@ -1236,15 +1315,29 @@ export async function renderBingEdgeTtsSegments(
     await synthesize({
       out: mediaFile,
       text: segment.text,
-      voice,
+      voice: segment.voice ?? voice,
     });
     return {
       id: segment.id,
       media_file: mediaFile,
+      speaker: segment.speaker,
+      voice: segment.voice ?? voice,
     };
   });
 
+  if (options.finalOut) {
+    await concat(
+      [
+        ...(options.introAudio ? [options.introAudio] : []),
+        ...rendered.map((segment) => segment.media_file),
+        ...(options.outroAudio ? [options.outroAudio] : []),
+      ],
+      options.finalOut,
+    );
+  }
+
   return {
+    final_out: options.finalOut,
     ok: true,
     provider: "bing-edge" as const,
     segments: rendered,
@@ -1252,11 +1345,69 @@ export async function renderBingEdgeTtsSegments(
   };
 }
 
+function hostGender(host: JsonRecord, index: number, hostCount: number) {
+  if (host.gender === "female" || host.gender === "male" || host.gender === "neutral") {
+    return host.gender;
+  }
+  if (hostCount > 1) return index % 2 === 0 ? "female" : "male";
+  return "neutral";
+}
+
+export function buildAudioSegmentsFromShowScript(showScript: unknown) {
+  const errors = validateShowScript(showScript);
+  if (errors.length > 0) {
+    throw new Error(`Show Script is invalid: ${errors.join("; ")}`);
+  }
+  if (!isRecord(showScript)) {
+    throw new Error("Show Script must be an object.");
+  }
+
+  const language = String(showScript.language);
+  const hosts = showScript.hosts as JsonRecord[];
+  const hostById = new Map<string, { gender: string; providerVoice?: string }>();
+  hosts.forEach((host, index) => {
+    hostById.set(String(host.id), {
+      gender: hostGender(host, index, hosts.length),
+      providerVoice: typeof host.provider_voice === "string" ? host.provider_voice : undefined,
+    });
+  });
+
+  const segments: BingEdgeTtsSegment[] = [];
+  (showScript.sections as JsonRecord[]).forEach((section) => {
+    (section.turns as JsonRecord[]).forEach((turn, turnIndex) => {
+      const speaker = String(turn.speaker);
+      const host = hostById.get(speaker);
+      const text = String(turn.text);
+      segments.push({
+        id: `${String(section.id)}-${String(turnIndex + 1).padStart(2, "0")}`,
+        speaker,
+        text,
+        voice: host?.providerVoice ?? defaultBingEdgeVoiceForLanguageAndGender(language, host?.gender),
+      });
+    });
+  });
+
+  return {
+    language,
+    segments,
+  };
+}
+
+async function writeAudioSegmentsFromShowScript(options: { out: string; scriptFile: string }) {
+  const parsed = JSON.parse(await readFile(options.scriptFile, "utf8")) as unknown;
+  const segments = buildAudioSegmentsFromShowScript(parsed);
+  await writeFile(options.out, `${JSON.stringify(segments, null, 2)}\n`);
+  console.log(JSON.stringify({ ok: true, out: options.out, segments: segments.segments.length }, null, 2));
+}
+
 async function renderAudio(options: {
   concurrency?: string;
+  finalOut?: string;
+  introAudio?: string;
   language?: string;
   out: string;
   outDir?: string;
+  outroAudio?: string;
   provider?: AudioProviderId;
   segmentsFile?: string;
   textFile?: string;
@@ -1273,7 +1424,10 @@ async function renderAudio(options: {
     }
     const result = await renderBingEdgeTtsSegments({
       concurrency: options.concurrency,
+      finalOut: options.finalOut,
+      introAudio: options.introAudio,
       language: options.language,
+      outroAudio: options.outroAudio,
       outDir: options.outDir,
       segmentsFile: options.segmentsFile,
       voice: options.voice,
@@ -1517,6 +1671,12 @@ function validateShowHost(host: unknown, index: number, errors: string[]) {
   if (host.voice !== undefined) {
     requireSynthesisString(host, "voice", path, errors);
   }
+  if (host.gender !== undefined) {
+    requireSynthesisEnum(host, "gender", new Set(["female", "male", "neutral"]), path, errors);
+  }
+  if (host.provider_voice !== undefined) {
+    requireSynthesisString(host, "provider_voice", path, errors);
+  }
 }
 
 function validateShowTurn(turn: unknown, sectionIndex: number, turnIndex: number, errors: string[]) {
@@ -1529,6 +1689,12 @@ function validateShowTurn(turn: unknown, sectionIndex: number, turnIndex: number
   optionalStringArray(turn, "evidence_ids", path, errors);
   if (turn.pacing !== undefined) {
     requireSynthesisString(turn, "pacing", path, errors);
+  }
+  if (turn.emotion !== undefined) {
+    requireSynthesisString(turn, "emotion", path, errors);
+  }
+  if (turn.transition !== undefined) {
+    requireSynthesisString(turn, "transition", path, errors);
   }
   if (turn.audio_notes !== undefined) {
     requireSynthesisString(turn, "audio_notes", path, errors);
@@ -1849,6 +2015,12 @@ async function main(argv = process.argv) {
     .option("--provider <provider>", "Provider id to inspect, such as bing-edge")
     .action((options) => printAudioProviderDoctor({ provider: options.provider }));
   audio
+    .command("segments")
+    .description("Convert a Show Script JSON file into speaker-aware TTS segments")
+    .requiredOption("--script-file <path>", "Show Script JSON file to convert")
+    .requiredOption("--out <path>", "Path to write the TTS segments JSON")
+    .action((options) => writeAudioSegmentsFromShowScript(options));
+  audio
     .command("render")
     .description("Render spoken text through an Audio Brief provider")
     .option("--provider <provider>", "Provider id to use; defaults to bing-edge")
@@ -1857,6 +2029,9 @@ async function main(argv = process.argv) {
     .option("--out-dir <path>", "Output directory for segmented audio files")
     .option("--concurrency <count>", "Number of TTS segments to render concurrently", "4")
     .requiredOption("--out <path>", "Output audio file path, or segment manifest path with --segments-file")
+    .option("--final-out <path>", "Optional final audio file assembled from rendered segments")
+    .option("--intro-audio <path>", "Optional intro music/audio file to prepend when --final-out is used")
+    .option("--outro-audio <path>", "Optional outro music/audio file to append when --final-out is used")
     .option("--language <bcp47>", "Spoken language for provider voice selection, such as zh-CN or en-US")
     .option("--voice <voice>", "Provider voice id")
     .action((options) => renderAudio(options));

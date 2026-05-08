@@ -104,6 +104,14 @@
         "voice": {
           "type": "string",
           "minLength": 1
+        },
+        "gender": {
+          "type": "string",
+          "enum": ["female", "male", "neutral"]
+        },
+        "provider_voice": {
+          "type": "string",
+          "minLength": 1
         }
       }
     },
@@ -168,6 +176,14 @@
           }
         },
         "pacing": {
+          "type": "string",
+          "minLength": 1
+        },
+        "emotion": {
+          "type": "string",
+          "minLength": 1
+        },
+        "transition": {
           "type": "string",
           "minLength": 1
         },
