@@ -133,11 +133,41 @@ type GetItemOptions = {
   maxChars?: string;
 };
 
+type GetManyItemsOptions = {
+  concurrency?: string;
+  ids?: string[];
+  idsFile?: string;
+  includeRaw?: boolean;
+  maxChars?: string;
+};
+
 type JsonRecord = Record<string, unknown>;
 
 type ListItemsResponse = {
   items: unknown[];
   next_cursor: string | null;
+};
+
+type GetManyItemsResult = {
+  failed: number;
+  ok: boolean;
+  results: Array<
+    | {
+        id: string;
+        ok: true;
+        response: unknown;
+        status: number;
+      }
+    | {
+        error: string;
+        id: string;
+        ok: false;
+        response?: unknown;
+        status: number;
+      }
+  >;
+  succeeded: number;
+  total: number;
 };
 
 type GatherInsightItem = JsonRecord & {
@@ -512,6 +542,34 @@ export function parseConcurrency(value: string | number | undefined, defaultValu
   return parsed;
 }
 
+export function parseItemIdsFile(content: string) {
+  const trimmed = content.trim();
+  if (!trimmed) return [];
+
+  if (trimmed.startsWith("[")) {
+    const parsed = JSON.parse(trimmed) as unknown;
+    if (!Array.isArray(parsed) || parsed.some((id) => typeof id !== "string" || id.trim() === "")) {
+      throw new Error("--ids-file JSON must be an array of non-empty strings.");
+    }
+    return parsed;
+  }
+
+  return trimmed
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+}
+
+export function normalizeItemIds(options: { ids?: string[]; idsFileContent?: string }) {
+  const ids = [...(options.ids ?? []), ...(options.idsFileContent ? parseItemIdsFile(options.idsFileContent) : [])]
+    .map((id) => id.trim())
+    .filter(Boolean);
+  if (ids.length === 0) {
+    throw new Error("item get-many requires at least one --id or --ids-file entry.");
+  }
+  return ids;
+}
+
 export function parsePositiveIntegerOption(input: {
   defaultValue?: number;
   max?: number;
@@ -839,6 +897,75 @@ async function listAllItems(options: ListAllItemsOptions) {
     ),
   );
   process.exitCode = 1;
+}
+
+export async function getManyItems(
+  options: GetManyItemsOptions,
+  session: SkillSession,
+  request: ApiRequester = apiRequest,
+): Promise<GetManyItemsResult> {
+  const ids = normalizeItemIds({
+    ids: options.ids,
+    idsFileContent: options.idsFile ? await readFile(options.idsFile, "utf8") : undefined,
+  });
+  const concurrency = parseConcurrency(options.concurrency, 8);
+  const results = await runWithConcurrency(ids, concurrency, async (id) => {
+    const result = await request(
+      {
+        method: "GET",
+        path: buildGetItemPath({
+          id,
+          includeRaw: options.includeRaw,
+          maxChars: options.maxChars,
+        }),
+      },
+      session,
+    );
+
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(result.text);
+    } catch {
+      parsed = undefined;
+    }
+
+    if (!result.ok) {
+      return {
+        error:
+          parsed && typeof parsed === "object" && "message" in parsed && typeof parsed.message === "string"
+            ? parsed.message
+            : result.text || `HTTP ${result.status}`,
+        id,
+        ok: false as const,
+        ...(parsed === undefined ? {} : { response: parsed }),
+        status: result.status,
+      };
+    }
+
+    return {
+      id,
+      ok: true as const,
+      response: parsed ?? result.text,
+      status: result.status,
+    };
+  });
+  const succeeded = results.filter((result) => result.ok).length;
+
+  return {
+    failed: results.length - succeeded,
+    ok: succeeded === results.length,
+    results,
+    succeeded,
+    total: results.length,
+  };
+}
+
+async function getManyItemsCommand(options: GetManyItemsOptions) {
+  const result = await getManyItems(options, await getSession());
+  console.log(JSON.stringify(result, null, 2));
+  if (!result.ok) {
+    process.exitCode = 1;
+  }
 }
 
 export async function gatherInsight(
@@ -1962,6 +2089,26 @@ async function main(argv = process.argv) {
     .option("--max-chars <count>", "Maximum content characters to read")
     .option("--include-raw", "Include raw content and Feed Item metadata for debugging or recovery")
     .action((options) => apiCall({ method: "GET", path: buildGetItemPath(options) }));
+  item
+    .command("get-many")
+    .description("Read multiple Feed Item content chunks with bounded local concurrency")
+    .option("--id <id>", "Feed Item id to read; repeatable", (value, previous: string[]) => [
+      ...(previous ?? []),
+      value,
+    ])
+    .option("--ids-file <path>", "File containing Feed Item ids as a JSON array or newline-delimited text")
+    .option("--concurrency <count>", "Number of concurrent Feed Item reads", "8")
+    .option("--max-chars <count>", "Maximum content characters to read per Feed Item")
+    .option("--include-raw", "Include raw content and Feed Item metadata for debugging or recovery")
+    .action((options) =>
+      getManyItemsCommand({
+        concurrency: options.concurrency,
+        ids: options.id,
+        idsFile: options.idsFile,
+        includeRaw: options.includeRaw,
+        maxChars: options.maxChars,
+      }),
+    );
 
   const insight = program.command("insight").description("Compose Feed Item aggregation sidecars");
   insight

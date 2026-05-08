@@ -14,10 +14,13 @@ import {
   detectAudioProviders,
   enforceConfirmBeforeNetwork,
   gatherInsight,
+  getManyItems,
   getVersionStatus,
   isAllowedRawCall,
   isMutatingRawCall,
+  normalizeItemIds,
   parseConcurrency,
+  parseItemIdsFile,
   parseOpmlFeedUrls,
   parsePairCode,
   parsePositiveIntegerOption,
@@ -563,6 +566,13 @@ describe("FeedContext OPML import helpers", () => {
     expect(() => parseConcurrency("0")).toThrow(/positive integer/);
   });
 
+  it("parses Feed Item ids from JSON or newline files", () => {
+    expect(parseItemIdsFile('["item_1","item_2"]')).toEqual(["item_1", "item_2"]);
+    expect(parseItemIdsFile("item_1\n\nitem_2\n")).toEqual(["item_1", "item_2"]);
+    expect(() => parseItemIdsFile('["item_1", 2]')).toThrow(/array of non-empty strings/);
+    expect(() => normalizeItemIds({})).toThrow(/requires at least one/);
+  });
+
   it("runs workers without exceeding the concurrency limit", async () => {
     let active = 0;
     let peak = 0;
@@ -576,6 +586,55 @@ describe("FeedContext OPML import helpers", () => {
 
     expect(results).toEqual([2, 4, 6, 8, 10]);
     expect(peak).toBeLessThanOrEqual(2);
+  });
+
+  it("reads multiple Feed Items with bounded local concurrency", async () => {
+    const session = { access_token: "token", token_type: "Bearer" as const };
+    const calls: string[] = [];
+    let active = 0;
+    let peak = 0;
+
+    const result = await getManyItems(
+      {
+        concurrency: "2",
+        ids: ["item_1", "item_2", "item_3"],
+        maxChars: "8000",
+      },
+      session,
+      async (input) => {
+        active += 1;
+        peak = Math.max(peak, active);
+        calls.push(input.path);
+        await new Promise((resolve) => setTimeout(resolve, 1));
+        active -= 1;
+        if (input.path.includes("item_2")) {
+          return {
+            ok: false,
+            status: 404,
+            text: JSON.stringify({ message: "not found" }),
+          };
+        }
+        return {
+          ok: true,
+          status: 200,
+          text: JSON.stringify({ id: input.path.split("/")[3]?.split("?")[0], content_text: "body" }),
+        };
+      },
+    );
+
+    expect(calls).toEqual([
+      "/v1/items/item_1?max_chars=8000",
+      "/v1/items/item_2?max_chars=8000",
+      "/v1/items/item_3?max_chars=8000",
+    ]);
+    expect(peak).toBeLessThanOrEqual(2);
+    expect(result).toMatchObject({
+      failed: 1,
+      ok: false,
+      succeeded: 2,
+      total: 3,
+    });
+    expect(result.results[1]).toMatchObject({ error: "not found", id: "item_2", ok: false, status: 404 });
   });
 });
 

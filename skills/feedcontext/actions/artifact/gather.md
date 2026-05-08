@@ -24,8 +24,9 @@ limit before reviewing all in-scope Summaries. Page sizes, batches, and
 concurrency are execution details, not selection rules.
 
 After the Gather Sidecar exists, use it to decide which Feed Items need full
-reading through `item get`, then produce and validate Structured Synthesis before
-rendering HTML, scripts, screenshots, or audio.
+reading through `item get` for one item or `item get-many` for several selected
+items, then produce and validate Structured Synthesis before rendering HTML,
+scripts, screenshots, or audio.
 
 ## Current Coverage
 

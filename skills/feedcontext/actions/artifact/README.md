@@ -14,7 +14,9 @@ Feed Items; they are not Feed Items, not api resources, and not pages hosted by
    before semantic selection.
 3. Apply deterministic filters with structured fields when possible, such as
    time range, Subscription id, item ids, or keyword filters.
-4. Use `item get` to read Feed Items that materially support the artifact.
+4. Use `item get` to read one Feed Item, or `item get-many` to read several
+   selected Feed Items with bounded local concurrency, when those Feed Items
+   materially support the artifact.
 5. Create a Structured Synthesis sidecar JSON file before rendering HTML,
    writing a script, or generating audio. Validate it with:
 

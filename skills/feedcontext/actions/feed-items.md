@@ -59,3 +59,23 @@ characters by default. If `next_content_cursor` is non-null, pass it back with
 Use `--include-raw` only for recovery, debugging, or local handling of
 item-level metadata such as podcast audio references. It returns a nested `raw`
 object with `content_raw` and `metadata` alongside `content_text`.
+
+## Concurrent Reading
+
+Use `item get-many` when an agent needs content for several Feed Items. It
+fans out to the existing `item get` API path with bounded local concurrency and
+returns one JSON envelope with per-item results in input order.
+
+```bash
+node scripts/helper.mjs item get-many --id item_1 --id item_2 --id item_3
+node scripts/helper.mjs item get-many --ids-file item-ids.txt --concurrency 8
+node scripts/helper.mjs item get-many --ids-file item-ids.json --max-chars 20000
+```
+
+`--ids-file` may be a JSON array of ids or newline-delimited text. Default
+concurrency is `8`; lower it when the host environment or network is constrained.
+
+Use `item get-many` for agent-composed artifacts after candidate selection, so
+the main agent can read the key supporting Feed Items without issuing slow
+serial `item get` calls. Keep the selection and synthesis decisions in the main
+agent; this command only improves the mechanical content-read fan-out.

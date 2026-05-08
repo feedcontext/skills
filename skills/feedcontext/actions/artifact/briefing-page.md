@@ -14,7 +14,8 @@ Feed Item, not an api resource, and not a page hosted by `web`.
    time range, Subscription id, item ids, or keyword filters. Leave semantic
    filtering, importance, user-intent matching, and synthesis quality to the
    agent.
-4. Use `item get` to read the Feed Items that materially support the page.
+4. Use `item get` for one item or `item get-many` for several selected Feed
+   Items that materially support the page.
 5. Produce a Structured Synthesis sidecar JSON file before writing prose or
    HTML. Validate it with:
 
