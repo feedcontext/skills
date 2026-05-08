@@ -97,6 +97,7 @@ type BingEdgeTtsOptions = {
 
 type BingEdgeTtsSegmentsOptions = {
   concurrency?: string;
+  defaultMusic?: boolean;
   finalOut?: string;
   introAudio?: string;
   language?: string;
@@ -219,6 +220,8 @@ const PENDING_LOGIN_PATH = join(homedir(), ".feedcontext", "pending-login.json")
 const PENDING_LOGIN_TTL_MS = 10 * 60 * 1000;
 const ALLOWLIST = allowlist.paths;
 const HELPER_DIR = dirname(fileURLToPath(import.meta.url));
+const DEFAULT_INTRO_AUDIO = join(HELPER_DIR, "..", "assets", "audio", "intro.mp3");
+const DEFAULT_OUTRO_AUDIO = join(HELPER_DIR, "..", "assets", "audio", "outro.mp3");
 const SKILL_NAME = "feedcontext";
 const UPGRADE_COMMAND = "npx skills install feedcontext";
 
@@ -1453,14 +1456,25 @@ export async function renderBingEdgeTtsSegments(
   });
 
   if (options.finalOut) {
+    const introAudio = options.introAudio ?? (options.defaultMusic === false ? undefined : DEFAULT_INTRO_AUDIO);
+    const outroAudio = options.outroAudio ?? (options.defaultMusic === false ? undefined : DEFAULT_OUTRO_AUDIO);
     await concat(
       [
-        ...(options.introAudio ? [options.introAudio] : []),
+        ...(introAudio ? [introAudio] : []),
         ...rendered.map((segment) => segment.media_file),
-        ...(options.outroAudio ? [options.outroAudio] : []),
+        ...(outroAudio ? [outroAudio] : []),
       ],
       options.finalOut,
     );
+    return {
+      final_out: options.finalOut,
+      intro_audio: introAudio,
+      ok: true,
+      outro_audio: outroAudio,
+      provider: "bing-edge",
+      segments: rendered,
+      voice,
+    };
   }
 
   return {
@@ -1529,6 +1543,7 @@ async function writeAudioSegmentsFromShowScript(options: { out: string; scriptFi
 
 async function renderAudio(options: {
   concurrency?: string;
+  defaultMusic?: boolean;
   finalOut?: string;
   introAudio?: string;
   language?: string;
@@ -1551,6 +1566,7 @@ async function renderAudio(options: {
     }
     const result = await renderBingEdgeTtsSegments({
       concurrency: options.concurrency,
+      defaultMusic: options.defaultMusic,
       finalOut: options.finalOut,
       introAudio: options.introAudio,
       language: options.language,
@@ -2179,6 +2195,7 @@ async function main(argv = process.argv) {
     .option("--final-out <path>", "Optional final audio file assembled from rendered segments")
     .option("--intro-audio <path>", "Optional intro music/audio file to prepend when --final-out is used")
     .option("--outro-audio <path>", "Optional outro music/audio file to append when --final-out is used")
+    .option("--no-default-music", "Do not use bundled intro/outro music when --final-out is used")
     .option("--language <bcp47>", "Spoken language for provider voice selection, such as zh-CN or en-US")
     .option("--voice <voice>", "Provider voice id")
     .action((options) => renderAudio(options));

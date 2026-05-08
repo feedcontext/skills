@@ -16,13 +16,8 @@ Feed Item, not an api resource, and not a page hosted by `web`.
    agent.
 4. Use `item get` for one item or `item get-many` for several selected Feed
    Items that materially support the page.
-5. Produce a Structured Synthesis sidecar JSON file before writing prose or
-   HTML. Validate it with:
-
-   ```bash
-   node scripts/helper.mjs synthesis validate --file path/to/briefing.synthesis.json
-   ```
-
+5. Follow `structured-synthesis.md` to create, validate, and review a
+   Structured Synthesis sidecar JSON file before writing prose or HTML.
 6. Curate the page around the user's request. If the user does not give a
    precise scope, choose a coherent recent theme from visible Feed Items, but
    record the selection rule in the Structured Synthesis.
@@ -37,97 +32,11 @@ claims should be traceable to the Feed Items that support them.
 
 ## Structured Synthesis
 
-Do not generate a briefing, digest, summary, insight set, roundup, or visual
-summary as prose first. First create a Structured Synthesis JSON file that
-captures the units to render and the evidence that supports each unit.
-
-Use `schemas/structured-synthesis.schema.json` as the generated schema artifact
-and `node scripts/helper.mjs synthesis schema` as the canonical helper-backed
-schema source. Validate with `node scripts/helper.mjs synthesis validate --file
-<path>`. Keep the JSON sidecar next to the HTML when practical:
-
-```text
-feedcontext-briefing-2026-05-06.html
-feedcontext-briefing-2026-05-06.synthesis.json
-```
-
-Minimum shape:
-
-```json
-{
-  "schema_version": "1",
-  "scope": {
-    "request": "today's briefing",
-    "time_range": {
-      "published_after": 1777996800000,
-      "label": "Beijing time 2026-05-06"
-    },
-    "candidate_count": 95,
-    "active_subscription_count": 10,
-    "selection_rule": "Grouped today's visible Feed Items by theme, then selected high-information items with direct evidence for the main insights.",
-    "used_contextual_evidence": false
-  },
-  "units": [
-    {
-      "id": "default-ai-compliance",
-      "type": "insight",
-      "title": "Default AI creates default compliance pressure",
-      "claim": "AI is moving into default product surfaces, which makes consent, auditability, and enterprise controls product requirements.",
-      "supporting_evidence": [
-        {
-          "kind": "feed_item",
-          "feed_item_id": "item_123",
-          "url": "https://example.com/story",
-          "subscription_title": "Example Feed",
-          "title": "Example story",
-          "published_at": 1777996800000,
-          "relevance": "direct",
-          "reason": "Reports a default AI deployment that directly supports the claim."
-        }
-      ],
-      "selection_rationale": "This is the lead because multiple Feed Items point to product-default AI and governance friction.",
-      "rendering_priority": "lead"
-    }
-  ],
-  "secondary_items": [
-    {
-      "feed_item_id": "item_456",
-      "url": "https://example.com/brief",
-      "title": "Example secondary item",
-      "subscription_title": "Example Feed",
-      "published_at": 1777996800000,
-      "group": "low_information_gain",
-      "reason": "Relevant but mostly repeats the lead evidence."
-    }
-  ]
-}
-```
-
-Evidence rules:
-
-- Default evidence is `kind: "feed_item"`.
-- Use `kind: "contextual"` only for evidence already present in the current
-  agent context or explicitly supplied by the user.
-- Use `kind: "external_url"` only when the user asked to combine FeedContext
-  with external material.
-- If contextual or external evidence is used, disclose that lightly in the HTML
-  scope note.
-- Relevance labels are coarse: `direct`, `supporting`, or `background`. Do not
-  invent numeric citation scores.
-- Deterministic selections still need a lightweight `selection_rule`, such as
-  "latest five visible Feed Items by publication time."
-- Semantic selections need a real `selection_rationale`, especially when the
-  agent includes, excludes, groups, or down-ranks Feed Items.
-
-For broad briefings from many candidate Feed Items, account for items outside
-the main insights in `secondary_items` when useful. Groups are:
-
-- `supplemental`: useful additional reading that did not shape the main
-  insight;
-- `low_information_gain`: repetitive, promotional, too narrow, or otherwise
-  weak material;
-- `out_of_scope`: visible in the candidate set but weakly related to the
-  requested scope.
+Use `structured-synthesis.md` for the shared JSON shape, validation command,
+evidence rules, secondary item handling, and Synthesis Review gate. For HTML
+Briefing Pages, the reviewed Structured Synthesis is the source for page
+modules, source marks, source index entries, and any collapsed secondary item
+sections.
 
 ## Editorial Shape
 

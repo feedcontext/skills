@@ -22,9 +22,10 @@ text or freeform prose summaries.
   at least a compact factual setup before grouping them into a shared theme.
   If an item is only useful as background, make that role clear instead of
   pretending it supports the main insight.
-- The spoken content should explain the story, context, and implications for
-  listening. Do not make the audio a source-by-source recap, article read-aloud,
-  or mechanical summary.
+- The spoken content should explain the news in a normal human broadcast style:
+  lead with the concrete event, add the useful context, then say why it matters.
+  Do not make the audio a source-by-source recap, article read-aloud,
+  mechanical summary, or abstract insight monologue.
 - When a claim relies on identifiable reporting, include a brief spoken source
   attribution in natural language. Mention the reporting outlet or outlets
   compactly to strengthen factual authority, especially for high-impact claims
@@ -33,10 +34,22 @@ text or freeform prose summaries.
 - Keep evidence-depth details in the readable script notes or source appendix.
   The audio should not say whether a point came from a content read, title, or
   Summary unless that distinction is itself part of the story.
-- Write the spoken text like people talking, not like a numbered report. Avoid
-  rigid ordinal labels unless the user explicitly requested a ranked list. Use
-  soft transitions, emotional texture, brief reactions, and natural
-  conversational bridges appropriate to the spoken language.
+- Write the spoken text like people talking about news, not like a numbered
+  report, management memo, or AI-generated insight essay. Avoid rigid ordinal
+  labels unless the user explicitly requested a ranked list. Use plain verbs,
+  concrete nouns, short transitions, and natural conversational bridges
+  appropriate to the spoken language.
+- Avoid AI-flavored contrast templates and meta-commentary, especially repeated
+  phrasing like "this is not X, but Y", "the key is not X, but Y", "what matters
+  is not the headline", "the real signal is", or "from a broader perspective".
+  Use direct news phrasing instead: say what happened, then explain the
+  consequence in ordinary words.
+- Avoid abstraction-heavy language in any spoken language unless the source
+  material itself is about that abstraction. Do not repeatedly frame ordinary
+  events as insights, signals, paradigms, narratives, deep logic, boundary
+  shifts, or similar high-level labels. Prefer concrete newsroom phrasing:
+  describe the event, name the affected people or organizations, explain the
+  immediate consequence, and state what remains uncertain.
 - `speaker`, host names, roles, gender, and voice labels are script metadata.
   They must not be copied into spoken text. Do not generate audio that reads
   speaker labels, host labels, gender labels, or role labels aloud.

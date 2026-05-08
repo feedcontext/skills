@@ -17,25 +17,24 @@ Feed Items; they are not Feed Items, not api resources, and not pages hosted by
 4. Use `item get` to read one Feed Item, or `item get-many` to read several
    selected Feed Items with bounded local concurrency, when those Feed Items
    materially support the artifact.
-5. Create a Structured Synthesis sidecar JSON file before rendering HTML,
-   writing a script, or generating audio. Validate it with:
-
-   ```bash
-   node scripts/helper.mjs synthesis validate --file path/to/artifact.synthesis.json
-   ```
+5. Follow `structured-synthesis.md` to create, validate, and review a
+   Structured Synthesis sidecar JSON file before rendering HTML, writing a
+   script, or generating audio.
 
 6. Keep sidecar files next to the generated artifact when practical so evidence,
    selection rationale, and generation inputs remain inspectable.
 
 Shared guidance covers discovery, deterministic filtering, Feed Item reading,
-Structured Synthesis validation, evidence rules, selection rationale, and
-sidecar preservation. Rendering and generation details live in the specific
-artifact docs.
+Structured Synthesis validation and review, evidence rules, selection
+rationale, and sidecar preservation. Rendering and generation details live in
+the specific artifact docs.
 
 ## Artifact Types
 
 - Use `gather.md` for local Gather Sidecars before semantic Feed Item
   aggregation.
+- Use `structured-synthesis.md` and `synthesis-review.md` for the shared
+  evidence-backed stage before artifact-specific rendering.
 - Use `briefing-page.md` for local single-file HTML briefing pages.
 - Use `audio-brief.md` for local Audio Brief scripts and generated audio.
 

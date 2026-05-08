@@ -64,11 +64,12 @@ node scripts/helper.mjs audio render \
   --out-dir feedcontext-audio-brief-2026-05-07-segments \
   --concurrency 4 \
   --language en-US \
-  --intro-audio intro.mp3 \
-  --outro-audio outro.mp3 \
   --final-out feedcontext-audio-brief-2026-05-07.bing-edge.mp3 \
   --out feedcontext-audio-brief-2026-05-07.bing-edge.segments.json
 ```
+
+Pass `--intro-audio` and `--outro-audio` only to override the bundled defaults.
+Pass `--no-default-music` only for explicitly speech-only output.
 
 The segments file should contain the spoken `language` and an ordered
 `segments` array:
@@ -96,11 +97,25 @@ The segments file should contain the spoken `language` and an ordered
 If `--voice` is omitted, Bing Edge TTS chooses a default voice from the script
 language and host gender metadata.
 
-Use intro and outro music when the user asks for a podcast-like final output and
-music assets are available. The helper can prepend `--intro-audio` and append
-`--outro-audio` while assembling `--final-out`. If music assets are not
-available, preserve the speech segments and state that the final bed/jingle
-asset is missing instead of pretending the audio has a podcast opening.
+## Intro And Outro Music
+
+Podcast-like final outputs should include short intro and outro music unless the
+user explicitly asks for speech-only output. The skill includes bundled default
+assets at `assets/audio/intro.mp3` and `assets/audio/outro.mp3`; use those
+stable defaults instead of asking the agent to improvise music at render time.
+
+Before final assembly:
+
+1. Use the bundled default intro and outro assets when the user did not provide
+   custom music.
+2. Use `--intro-audio` and `--outro-audio` only when the user supplied custom
+   assets or explicitly approved replacement music.
+3. Use `--no-default-music` only when the user explicitly asks for speech-only
+   output or rejects the bundled defaults.
+
+The helper automatically prepends the bundled intro and appends the bundled
+outro when `--final-out` is used. Custom `--intro-audio` and `--outro-audio`
+paths override the bundled defaults.
 
 Use Bing Edge TTS as the default production audio provider when the user accepts
 the external service boundary. For longer Audio Briefs, generate by section and

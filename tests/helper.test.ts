@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -232,6 +232,11 @@ describe("FeedContext Show Script validation", () => {
 });
 
 describe("FeedContext Audio provider diagnostics", () => {
+  it("ships bundled podcast intro and outro music assets", () => {
+    expect(existsSync("skills/feedcontext/assets/audio/intro.mp3")).toBe(true);
+    expect(existsSync("skills/feedcontext/assets/audio/outro.mp3")).toBe(true);
+  });
+
   it("reports bundled Bing Edge TTS as the default provider", async () => {
     const result = await detectAudioProviders();
 
@@ -440,6 +445,98 @@ describe("FeedContext Audio provider diagnostics", () => {
           { speaker: "host_b", voice: "zh-CN-YunxiNeural" },
         ],
       });
+    } finally {
+      rmSync(directory, { force: true, recursive: true });
+    }
+  });
+
+  it("uses bundled intro and outro music for final podcast assembly by default", async () => {
+    const directory = mkdtempSync(join(tmpdir(), "feedcontext-bing-tts-default-music-test-"));
+    const segmentsFile = join(directory, "segments.json");
+    const finalOut = join(directory, "final.mp3");
+    const concatCalls: Array<{ files: string[]; out: string }> = [];
+
+    try {
+      await writeFile(
+        segmentsFile,
+        JSON.stringify({
+          language: "en-US",
+          segments: [{ id: "opening", text: "Opening." }],
+        }),
+      );
+
+      const result = await renderBingEdgeTtsSegments(
+        {
+          finalOut,
+          outDir: directory,
+          segmentsFile,
+        },
+        async (input) => {
+          await writeFile(input.out, `audio:${input.voice}:${input.text}`);
+        },
+        async (files, out) => {
+          concatCalls.push({ files, out });
+          await writeFile(out, files.join("\n"));
+        },
+      );
+
+      expect(concatCalls).toEqual([
+        {
+          files: [
+            expect.stringMatching(/assets\/audio\/intro\.mp3$/),
+            join(directory, "001-opening.mp3"),
+            expect.stringMatching(/assets\/audio\/outro\.mp3$/),
+          ],
+          out: finalOut,
+        },
+      ]);
+      expect(result).toMatchObject({
+        final_out: finalOut,
+        intro_audio: expect.stringMatching(/assets\/audio\/intro\.mp3$/),
+        outro_audio: expect.stringMatching(/assets\/audio\/outro\.mp3$/),
+      });
+    } finally {
+      rmSync(directory, { force: true, recursive: true });
+    }
+  });
+
+  it("can disable bundled intro and outro music for speech-only final assembly", async () => {
+    const directory = mkdtempSync(join(tmpdir(), "feedcontext-bing-tts-no-music-test-"));
+    const segmentsFile = join(directory, "segments.json");
+    const finalOut = join(directory, "final.mp3");
+    const concatCalls: Array<{ files: string[]; out: string }> = [];
+
+    try {
+      await writeFile(
+        segmentsFile,
+        JSON.stringify({
+          language: "en-US",
+          segments: [{ id: "opening", text: "Opening." }],
+        }),
+      );
+
+      await renderBingEdgeTtsSegments(
+        {
+          defaultMusic: false,
+          finalOut,
+          outDir: directory,
+          segmentsFile,
+        },
+        async (input) => {
+          await writeFile(input.out, `audio:${input.voice}:${input.text}`);
+        },
+        async (files, out) => {
+          concatCalls.push({ files, out });
+          await writeFile(out, files.join("\n"));
+        },
+      );
+
+      expect(concatCalls).toEqual([
+        {
+          files: [join(directory, "001-opening.mp3")],
+          out: finalOut,
+        },
+      ]);
     } finally {
       rmSync(directory, { force: true, recursive: true });
     }
