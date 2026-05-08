@@ -41,8 +41,17 @@ Check every major section for:
   the topic is being raised before interpretation.
 - Evidence fit: important claims remain traceable to the synthesis units or
   evidence ids referenced by the turns.
+- Topic ordering: Artifact Topics follow a natural listening arc unless the
+  user requested chronological, Source-based, or importance-only ordering.
+- Show opening: the spoken opening starts with a brief natural welcome, then
+  moves quickly into the concrete news tension, affected actors, risk, decision,
+  or question instead of Feed Item counts, sidecar mechanics, or
+  source-selection process.
 - Natural news style: the script sounds like people explaining news, not an
   abstract insight essay, management memo, or model-generated summary.
+- Conversational transitions: sections connect through the story's logic rather
+  than report-like ordinal labels such as "first main thread," "second main
+  thread," or "third item," unless the user requested a ranked list.
 - Low AI flavor: remove contrast templates, meta-commentary, and
   abstraction-heavy phrasing that frames ordinary events as signals, paradigms,
   narratives, or deep logic.
@@ -50,6 +59,24 @@ Check every major section for:
   and no written-only formatting or citation strings in the spoken text.
 - Host usefulness: in a two-host script, the second host asks real clarifying
   questions or adds useful perspective instead of echoing the first host.
+- Host chemistry: two-host scripts include appropriate emotional interaction,
+  personal listener-perspective reactions, restrained evaluations, or light
+  playful moments where the topic allows them.
+- Numeric translation: large figures, percentages, counts, and timelines are
+  followed by the practical consequence a listener should understand.
+- Runtime scaling: the target duration grows with the selected Artifact Topic
+  count at about 30 seconds per topic on average, unless the user requested a
+  different runtime or highlights-only treatment.
+- Runtime conflict: if the user gave both a topic count and a conflicting
+  target runtime, the script reflects an explicit trade-off confirmation rather
+  than silent compression.
+- Information density: the number of major topics fits the topic-derived target
+  duration, with lower-priority topics grouped into quick-hit or appendix-style
+  spoken sections when needed.
+- Depth fit: when the target runtime leaves the script feeling thin, selected
+  topics are deepened with cause-and-effect context, listener relevance,
+  number interpretation, uncertainty boundaries, and useful host interaction
+  instead of padding with unrelated items or generic filler.
 - Source handling: source notes, evidence depth, URLs, and metadata stay in the
   readable script notes or appendix, not in spoken text.
 - Scope control: remove filler, repeated conclusions, unsupported claims,
@@ -67,7 +94,33 @@ The verdict must not be `ready` when any of these are true:
   direct news explanation.
 - The script repeatedly uses meta-commentary or abstraction-heavy framing where
   concrete news explanation would work.
+- The script uses report-like ordinal transitions such as "first main thread,"
+  "second main thread," or "third item" as the main section glue when natural
+  story-driven bridges would work.
 - A major claim is unsupported by the Structured Synthesis.
+- Artifact Topics are mechanically ordered by Feed Item, Source, group, or
+  publication time when no user request or evidence need justifies that order.
+- The spoken opening jumps straight into analysis or starts with workflow
+  metadata, Feed Item counts, or selection mechanics instead of a brief show
+  welcome followed by a listener-facing news hook.
+- In a two-host script, the second host mostly repeats, agrees, or summarizes
+  without asking useful questions or translating implications for the listener.
+- A two-host script has no emotional interaction, personal reaction, restrained
+  evaluation, or lightness where the subject matter would naturally allow it.
+- Host banter trivializes serious harm, invents unsupported opinion, or becomes
+  filler detached from the news.
+- Dense numeric claims are stacked without a spoken explanation of why the
+  figures matter.
+- The script compresses too many selected Artifact Topics into a target duration
+  that does not scale with the topic count, leaving sections without enough
+  setup, transition, or listener breathing room.
+- The user gave a conflicting topic count and target runtime, but the script
+  silently chose one without an explicit trade-off confirmation.
+- Selected Artifact Topics are left only in notes even though the user did not
+  ask for a shorter runtime or highlights-only audio brief.
+- The script is noticeably thin for the target runtime and pads with generic
+  commentary, unrelated Feed Items, or repeated conclusions instead of
+  deepening the selected topics.
 - A section makes an overconfident prediction from weak evidence.
 - The script has empty host banter, repeated conclusions, or filler that does
   not help the listener understand the news.
@@ -82,6 +135,20 @@ The reviewer may edit the script to:
 - shorten turns for spoken delivery;
 - move source or evidence-depth details out of spoken text and into notes;
 - preserve useful host contrast while removing empty banter.
+- recast workflow-first openings into listener-facing hooks;
+- turn second-host summaries into clarifying questions or practical
+  implications;
+- add a compact show-style welcome before the news hook;
+- add appropriate host reactions, restrained personal evaluations, or light
+  banter when supported by the topic and tone;
+- add compact meaning after important numbers when the synthesis already
+  supports that interpretation;
+- replace ordinal section labels with story-driven bridges that connect the
+  previous topic to the next one;
+- deepen thin sections with supported context, listener relevance, uncertainty
+  boundaries, and host questions;
+- group lower-priority material into quick-hit sections or notes when the
+  target duration is too crowded.
 
 The reviewer must not:
 
@@ -101,6 +168,21 @@ note file with:
 - `required_edits`: required changes before the next review, or an empty list;
 - `removed_ai_flavor`: AI-flavored phrasing removed or still present;
 - `story_setup_gaps`: sections that still need factual setup;
+- `topic_ordering_notes`: whether the topic sequence follows a natural
+  listening arc or a user-requested ordering;
+- `opening_hook_notes`: whether the spoken opening starts from the listener's
+  show welcome and news question rather than workflow metadata;
+- `host_usefulness_notes`: whether the second host materially helps listener
+  understanding;
+- `host_chemistry_notes`: whether host interaction has appropriate emotional
+  texture without drifting into filler or unsupported opinion;
+- `runtime_scaling_notes`: whether target duration scales from the selected
+  Artifact Topic count at about 30 seconds per topic on average, or what user
+  request changed that target;
+- `runtime_conflict_notes`: the explicit user-confirmed trade-off when topic
+  count and target runtime conflicted;
+- `density_notes`: whether the script fits the topic-derived target duration
+  without compressing too many major topics;
 - `unsupported_or_overconfident_claims`: claims to remove, soften, or support;
 - `ready_for_audio`: boolean, true only when `verdict` is `ready`.
 

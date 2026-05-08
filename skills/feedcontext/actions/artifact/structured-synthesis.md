@@ -1,8 +1,16 @@
 # Structured Synthesis
 
-Use this shared stage before rendering any agent-composed artifact from
-FeedContext items. Structured Synthesis is the evidence-backed intermediate
-artifact for briefing pages, audio scripts, and other local outputs.
+Use this shared stage before rendering any agent-composed artifact that
+organizes, groups, synthesizes, explains, or editorially structures FeedContext
+items. Structured Synthesis is the evidence-backed intermediate artifact for
+briefing pages, audio scripts, and other local outputs.
+
+Structured Synthesis is not required when the user only asks for full Feed Item
+display, export, or listing as a Feed Item stream.
+
+For v1, do not add a separate Artifact Topic field to the schema. Treat each
+topic-level `units[]` entry as the Artifact Topic when the synthesis is for an
+organized page or Audio Brief.
 
 Do not generate a briefing, digest, summary, insight set, script, roundup, or
 visual summary as final prose first. First create a Structured Synthesis JSON
@@ -151,6 +159,6 @@ the main units in `secondary_items` when useful. Groups are:
 
 ## Review
 
-Run `synthesis-review.md` after validation and before any artifact-specific
-rendering, page writing, or script writing. Continue only when the latest review
-verdict is `ready`.
+Run `synthesis-review.md` after validation and before artifact-specific
+rendering, page writing, or script writing for organized or synthesized
+artifacts. Continue only when the latest review verdict is `ready`.

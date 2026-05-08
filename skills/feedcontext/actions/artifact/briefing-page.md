@@ -14,17 +14,31 @@ Feed Item, not an api resource, and not a page hosted by `web`.
    time range, Subscription id, item ids, or keyword filters. Leave semantic
    filtering, importance, user-intent matching, and synthesis quality to the
    agent.
-4. Use `item get` for one item or `item get-many` for several selected Feed
+4. If the user asks for an organized, grouped, synthesized, explanatory, or
+   editorial page but does not specify capacity, ask how many Artifact Topics
+   to include before creating the page. Offer 10, 20, 50, or 100 topics,
+   recommending 20 for a broad briefing unless the request clearly needs a
+   smaller or larger result. Accept a custom topic count when the user provides
+   one. Briefly explain that an Artifact Topic is a grouped topic, not a Feed
+   Item count, and that multiple Feed Items about the same topic may merge into
+   one Artifact Topic. Skip this prompt when the user supplies or selects an
+   existing Structured Synthesis sidecar because that sidecar already fixes the
+   page's topic set.
+5. If the user only asks for full Feed Item display, export, or listing, build a
+   Feed Item stream instead of forcing the page into synthesized Artifact
+   Topics or Structured Synthesis review. Preserve the scope, deterministic
+   filter, and source index clearly in the page.
+6. Use `item get` for one item or `item get-many` for several selected Feed
    Items that materially support the page.
-5. Follow `structured-synthesis.md` to create, validate, and review a
+7. Follow `structured-synthesis.md` to create, validate, and review a
    Structured Synthesis sidecar JSON file before writing prose or HTML.
-6. Curate the page around the user's request. If the user does not give a
+8. Curate the page around the user's request. If the user does not give a
    precise scope, choose a coherent recent theme from visible Feed Items, but
    record the selection rule in the Structured Synthesis.
-7. If the page uses images, create a local temporary asset directory and copy,
+9. If the page uses images, create a local temporary asset directory and copy,
    download, or generate the image files there before referencing them from the
    HTML.
-8. Write one standalone `.html` file with embedded CSS.
+10. Write one standalone `.html` file with embedded CSS.
 
 The page may contain agent-curated Feed Item selections or agent-synthesized
 insights from visible Feed Items. Do not imply unsupported facts. Important
@@ -44,6 +58,8 @@ Default to a traditional newspaper reading experience:
 
 - a masthead at the top with the page title, date, theme, and scope;
 - a hero or lead module for the most important story or synthesized insight;
+- editorial sections or columns that group multiple Artifact Topics into a
+  small number of content areas, rather than a flat list of topics;
 - mixed module sizes arranged by importance, not a uniform card list;
 - dense but readable columns, rules, captions, sidebars, and pull quotes;
 - old-money editorial styling: restrained palette, serif typography, generous
@@ -55,6 +71,19 @@ Default to a traditional newspaper reading experience:
 The layout should feel like a complex editorial waterfall: large, medium, and
 small modules interlock according to importance. Avoid generic SaaS cards,
 marketing hero sections, and plain Markdown exported as HTML.
+
+When a page has many Artifact Topics, derive a few section headings from the
+content, such as product and platform changes, market and company moves, policy
+and risk, or supplemental reading. These headings are a page-rendering decision,
+not a separate Structured Synthesis schema field. Preserve the complete source
+index even when the reading path is grouped into sections.
+
+If the user selects a large page capacity such as 50 or 100 Artifact Topics, do
+not silently collapse the artifact to a small highlight list. Give every
+selected Artifact Topic a place in the page, using hierarchy to manage reading
+pressure: lead modules for the most important topics, major sections for
+clusters, compact modules for smaller topics, and supplemental sections for
+lower-priority topics.
 
 ## Sources
 

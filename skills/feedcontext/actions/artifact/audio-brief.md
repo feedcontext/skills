@@ -41,45 +41,67 @@ script-only handoff   provider selection
 
 ## Workflow
 
-1. Follow `structured-synthesis.md` through Structured Synthesis creation,
+1. If the user asks for an organized, synthesized, explanatory, or editorial
+   Audio Brief but does not specify capacity, ask how many Artifact Topics to
+   include before scripting. Offer 10, 20, 50, or 100 topics, recommending 20
+   for a broad briefing unless the request clearly needs a smaller or larger
+   result. Accept a custom topic count when the user provides one. Briefly
+   explain that an Artifact Topic is a grouped topic, not a Feed Item count, and
+   that multiple Feed Items about the same topic may merge into one Artifact
+   Topic. Include the estimated runtime in the prompt: about 5, 10, 25, or 50
+   minutes for 10, 20, 50, or 100 Artifact Topics respectively, based on about
+   30 seconds per topic on average. Skip this prompt when the user supplies or
+   selects an existing Structured Synthesis sidecar because that sidecar already
+   fixes the audio brief's topic set. If the user only asks for a full Feed Item
+   listing in audio form, preserve that listing intent instead of forcing
+   Artifact Topic synthesis or Structured Synthesis review.
+   For large capacities such as 50 or 100 Artifact Topics, tell the user that
+   the Audio Brief will cover the topic set through major segments plus fast
+   roundup or appendix-style sections, and that the estimated runtime will grow
+   with the selected capacity at about 30 seconds per Artifact Topic on average
+   unless they ask for a different depth or runtime.
+   If the user gives both an Artifact Topic count and a conflicting target
+   runtime, do not silently compress the script. Confirm whether they want
+   faster coverage for all selected topics or fewer topics at normal depth.
+2. Follow `structured-synthesis.md` through Structured Synthesis creation,
    validation, and Synthesis Review, or start from an existing reviewed
    `.synthesis.json` sidecar when the user wants to turn an existing briefing
    into audio. If relevant prior Audio Brief feedback exists, read
    `audio-brief/run-feedback.md` and apply only adjustments that fit the
    current request and evidence.
-2. Confirm the latest Synthesis Review verdict from `synthesis-review.md` is
+3. Confirm the latest Synthesis Review verdict from `synthesis-review.md` is
    `ready` before scripting starts. `revise` returns to synthesis editing;
    `blocked` returns to the main agent for missing evidence, scope, content
    reads, or user decisions.
-3. Create a machine-readable Show Script JSON file before generating audio.
+4. Create a machine-readable Show Script JSON file before generating audio.
    Follow `audio-brief/script.md`, then validate it with:
 
    ```bash
    node scripts/helper.mjs show-script validate --file path/to/audio-brief.script.json
    ```
 
-4. Create a user-readable script Markdown file from the same Show Script. Keep
+5. Create a user-readable script Markdown file from the same Show Script. Keep
    source notes and evidence-depth details in that readable script, not in the
    spoken text.
-5. Review the Show Script before audio generation or script-only handoff. Follow
+6. Review the Show Script before audio generation or script-only handoff. Follow
    `audio-brief/script-review.md`. Use a separate reviewer agent when the host
    environment supports it; otherwise the current agent must self-review with
    the same checklist. The review must produce a `ready` verdict before the
    workflow can continue. `revise` returns to Show Script editing; `blocked`
    returns to the main agent for missing evidence, scope, or user decisions.
-6. If the user requested script-only mode, stop only after preserving the
+7. If the user requested script-only mode, stop only after preserving the
    reviewed files and a `ready` review note. The reviewed script can later
    continue into provider selection and rendering through
    `audio_from_existing_script`.
-7. If the user requested audio or did not specify script-only mode, follow
+8. If the user requested audio or did not specify script-only mode, follow
    `audio-brief/providers.md` to discover available provider paths and ask the
    user which one to use unless the user already specified a provider.
-8. Generate audio through the selected provider path. Follow
+9. Generate audio through the selected provider path. Follow
    `audio-brief/rendering.md` for segments, provider diagnostics, and final
    assembly. Podcast-like final outputs use the bundled intro and outro music
    unless the user explicitly asks for speech-only output or supplies custom
    assets.
-9. Preserve a Run Feedback note after script-only handoff or final audio
+10. Preserve a Run Feedback note after script-only handoff or final audio
    generation. Follow `audio-brief/run-feedback.md`.
 
 ## Stage Docs
