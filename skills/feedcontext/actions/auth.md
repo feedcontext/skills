@@ -13,7 +13,7 @@ node scripts/helper.mjs version
 
 Run `version` before other FeedContext actions in an agent session. The helper
 prints installed and latest git revisions, whether an upgrade is available, and
-the `npx skills upgrade feedcontext` upgrade command. The agent decides whether
+the `npx skills update feedcontext` update command. The agent decides whether
 to notify the user.
 
 ## Login

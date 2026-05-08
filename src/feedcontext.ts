@@ -223,7 +223,7 @@ const HELPER_DIR = dirname(fileURLToPath(import.meta.url));
 const DEFAULT_INTRO_AUDIO = join(HELPER_DIR, "..", "assets", "audio", "intro.mp3");
 const DEFAULT_OUTRO_AUDIO = join(HELPER_DIR, "..", "assets", "audio", "outro.mp3");
 const SKILL_NAME = "feedcontext";
-const UPGRADE_COMMAND = "npx skills upgrade feedcontext";
+const UPGRADE_COMMAND = "npx skills update feedcontext";
 
 function stripQuery(path: string) {
   return path.split("?", 1)[0] || "/";

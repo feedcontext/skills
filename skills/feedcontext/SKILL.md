@@ -15,7 +15,7 @@ node scripts/helper.mjs version
 ```
 
 The version action prints JSON with installed and latest git revisions,
-`upgrade_available`, and the `npx skills upgrade feedcontext` upgrade command.
+`upgrade_available`, and the `npx skills update feedcontext` update command.
 Use conversation context to decide whether to surface upgrade availability to
 the user.
 
