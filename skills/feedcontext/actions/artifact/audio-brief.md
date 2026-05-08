@@ -41,6 +41,11 @@ an api or web resource.
 - The spoken content should explain the story, context, and implications for
   listening. Do not make the audio a source-by-source recap, article read-aloud,
   or mechanical summary.
+- When a claim relies on identifiable reporting, include a brief spoken source
+  attribution in natural language. Mention the reporting outlet or outlets
+  compactly to strengthen factual authority, especially for high-impact claims
+  or claims corroborated by multiple sources. Do not read URLs, publication
+  metadata, or full citation strings aloud.
 - Write the spoken text like people talking, not like a numbered report. Avoid
   rigid ordinal labels unless the user explicitly requested a ranked list. Use
   soft transitions, emotional texture, brief reactions, and natural
