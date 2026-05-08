@@ -43,7 +43,7 @@ Check every major section for:
   evidence ids referenced by the turns.
 - Natural news style: the script sounds like people explaining news, not an
   abstract insight essay, management memo, or model-generated summary.
-- Low AI flavor: remove repeated contrast templates, meta-commentary, and
+- Low AI flavor: remove contrast templates, meta-commentary, and
   abstraction-heavy phrasing that frames ordinary events as signals, paradigms,
   narratives, or deep logic.
 - Spoken clarity: each turn is easy to say aloud, with short enough sentences
@@ -63,9 +63,10 @@ The verdict must not be `ready` when any of these are true:
 - A major news, risk, or trend section lacks Story Setup.
 - A spoken turn contains source URLs, citation strings, metadata, or evidence
   depth notes that belong in readable script notes.
-- The script contains obvious AI-flavored contrast templates, repeated
-  meta-commentary, or abstraction-heavy framing that can be rewritten as direct
-  news explanation.
+- The script contains AI-flavored contrast templates that can be rewritten as
+  direct news explanation.
+- The script repeatedly uses meta-commentary or abstraction-heavy framing where
+  concrete news explanation would work.
 - A major claim is unsupported by the Structured Synthesis.
 - A section makes an overconfident prediction from weak evidence.
 - The script has empty host banter, repeated conclusions, or filler that does
@@ -104,3 +105,28 @@ note file with:
 - `ready_for_audio`: boolean, true only when `verdict` is `ready`.
 
 The final spoken text should be the reviewed version only.
+
+## Mechanical Phrase Scan
+
+Before giving a `ready` verdict, scan the spoken text for recurring rhetorical
+templates. If any pattern appears more than once, the verdict should normally be
+`revise`. If one pattern appears once, keep it only when it expresses a concrete
+factual distinction that would sound natural in ordinary speech.
+
+Language-neutral patterns to scan for:
+
+- `not X, but Y`
+- `not only X, but also Y`
+- `the key is not X`
+- `what matters is not X`
+- `this is less about X and more about Y`
+- `the real signal is`
+- `the bigger story is`
+- `from a broader perspective`
+- `the deeper logic is`
+- repeated "signal", "paradigm", "narrative", "inflection point", or "structural
+  shift" framing when the underlying event can be described directly
+
+Rewrite by replacing the frame with the event and consequence. State the
+concrete update first, then explain how distribution, adoption, risk,
+customers, regulators, or affected users change because of it.

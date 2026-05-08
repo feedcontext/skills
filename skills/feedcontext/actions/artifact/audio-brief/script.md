@@ -39,11 +39,17 @@ text or freeform prose summaries.
   labels unless the user explicitly requested a ranked list. Use plain verbs,
   concrete nouns, short transitions, and natural conversational bridges
   appropriate to the spoken language.
-- Avoid AI-flavored contrast templates and meta-commentary, especially repeated
-  phrasing like "this is not X, but Y", "the key is not X, but Y", "what matters
-  is not the headline", "the real signal is", or "from a broader perspective".
-  Use direct news phrasing instead: say what happened, then explain the
-  consequence in ordinary words.
+- Do not use AI-flavored contrast templates in spoken text. In any language,
+  repeated rhetorical structures equivalent to "not X, but Y", "the key is not
+  X, but Y", "what matters is not X", or "this is less about X and more about Y"
+  must be rewritten before review can pass. These patterns are allowed only
+  when a real quoted source or concrete factual distinction requires them.
+  Prefer direct news phrasing: say what happened, name the actors, then explain
+  the consequence in ordinary words.
+- Do not rely on meta-commentary hooks such as "the real signal is", "the
+  bigger story is", "from a broader perspective", "the deeper logic is", or
+  similar abstract framing. Replace them with the actual fact, pressure,
+  decision, risk, or open question.
 - Avoid abstraction-heavy language in any spoken language unless the source
   material itself is about that abstraction. Do not repeatedly frame ordinary
   events as insights, signals, paradigms, narratives, deep logic, boundary
@@ -127,7 +133,7 @@ Minimum shape:
       "turns": [
         {
           "speaker": "host_a",
-          "text": "The most important part today is not one isolated headline. A few separate signals are starting to point in the same direction.",
+          "text": "Several separate stories today point in the same direction, so let's start with the concrete moves and then talk through why they matter.",
           "synthesis_unit_ids": ["lead-ai-shift"],
           "emotion": "warm curiosity",
           "transition": "soft opening hook",
