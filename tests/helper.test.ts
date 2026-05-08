@@ -555,7 +555,7 @@ describe("FeedContext Skill helper version action", () => {
       installed_revision: "abc123",
       latest_revision: "def456",
       upgrade_available: true,
-      upgrade_command: "npx skills install feedcontext",
+      upgrade_command: "npx skills upgrade feedcontext",
     });
   });
 
@@ -572,7 +572,7 @@ describe("FeedContext Skill helper version action", () => {
       latest_revision: null,
       upgrade_available: false,
       upgrade_check_error: "latest_revision_unavailable",
-      upgrade_command: "npx skills install feedcontext",
+      upgrade_command: "npx skills upgrade feedcontext",
     });
   });
 
