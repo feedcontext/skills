@@ -647,6 +647,21 @@ async function embedArtworkMetadata(
   run: CommandRunner = defaultCommandRunner,
 ) {
   const extension = extname(options.audioFile) || ".m4a";
+  const normalizedExtension = extension.toLowerCase();
+  if (normalizedExtension === ".m4a" || normalizedExtension === ".mp4") {
+    try {
+      await run("AtomicParsley", [
+        options.audioFile,
+        "--artwork",
+        options.artworkFile,
+        "--overWrite",
+      ]);
+      return { embedded: true, mode: "apple_covr" as const };
+    } catch {
+      // Fall through to ffmpeg attached-picture metadata when AtomicParsley is
+      // unavailable or cannot update this file.
+    }
+  }
   const tempFile = `${options.audioFile}.artwork${extension}`;
   const embeddedArtworkFile = `${options.audioFile}.artwork.jpg`;
   try {
@@ -691,7 +706,7 @@ async function embedArtworkMetadata(
       tempFile,
     ]);
     await rename(tempFile, options.audioFile);
-    return { embedded: true };
+    return { embedded: true, mode: "ffmpeg_attached_pic" as const };
   } finally {
     await unlink(tempFile).catch(() => undefined);
     await unlink(embeddedArtworkFile).catch(() => undefined);
@@ -724,6 +739,7 @@ async function prepareAudioBriefArtwork({
     return {
       artwork_brand_applied: true,
       artwork_embedded: embedding.embedded,
+      artwork_embedding_mode: embedding.mode,
       artwork_file: out,
       artwork_source: source,
     };

@@ -1,6 +1,6 @@
 import { execFile } from "node:child_process";
 import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
-import { readFile, writeFile } from "node:fs/promises";
+import { chmod, mkdir, readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { promisify } from "node:util";
@@ -8,11 +8,12 @@ import { describe, expect, it } from "vitest";
 
 const execFileAsync = promisify(execFile);
 
-async function runHelper(args: string[], cwd: string) {
+async function runHelper(args: string[], cwd: string, env: NodeJS.ProcessEnv = {}) {
   return execFileAsync("node", ["skills/feedcontext/scripts/helper.mjs", ...args], {
     cwd,
     env: {
       ...process.env,
+      ...env,
       FEEDCONTEXT_TEST_FIXTURE_TTS: "1",
     },
     timeout: 120_000,
@@ -31,8 +32,21 @@ describe("FeedContext Audio Brief CLI smoke test", () => {
     const artworkFile = join(directory, "brief.bing-edge.cover.png");
     const lyricsFile = join(directory, "brief.bing-edge.lyrics.txt");
     const syncedLyricsFile = join(directory, "brief.bing-edge.lrc");
+    const binDir = join(directory, "bin");
+    const atomicParsleyLog = join(directory, "atomicparsley.json");
+    const fakeAtomicParsley = join(binDir, "AtomicParsley");
 
     try {
+      await mkdir(binDir);
+      await writeFile(
+        fakeAtomicParsley,
+        [
+          "#!/usr/bin/env node",
+          "const { writeFileSync } = require('node:fs');",
+          "writeFileSync(process.env.FEEDCONTEXT_TEST_ATOMICPARSLEY_LOG, JSON.stringify(process.argv.slice(2)));",
+        ].join("\n"),
+      );
+      await chmod(fakeAtomicParsley, 0o755);
       await writeFile(
         scriptFile,
         JSON.stringify(
@@ -107,12 +121,17 @@ describe("FeedContext Audio Brief CLI smoke test", () => {
           "--no-default-music",
         ],
         packageRoot,
+        {
+          FEEDCONTEXT_TEST_ATOMICPARSLEY_LOG: atomicParsleyLog,
+          PATH: `${binDir}:${process.env.PATH ?? ""}`,
+        },
       );
 
       const manifest = JSON.parse(await readFile(manifestFile, "utf8")) as {
         artwork?: {
           artwork_brand_applied?: boolean;
           artwork_embedded?: boolean;
+          artwork_embedding_mode?: string;
           artwork_file?: string;
           artwork_source?: string;
         };
@@ -128,6 +147,7 @@ describe("FeedContext Audio Brief CLI smoke test", () => {
       };
       const lyrics = readFileSync(lyricsFile, "utf8");
       const syncedLyrics = readFileSync(syncedLyricsFile, "utf8");
+      const atomicParsleyArgs = JSON.parse(readFileSync(atomicParsleyLog, "utf8")) as string[];
       const metadata = await execFileAsync(
         "ffprobe",
         [
@@ -141,28 +161,21 @@ describe("FeedContext Audio Brief CLI smoke test", () => {
         ],
         { timeout: 30_000 },
       );
-      const streams = await execFileAsync(
-          "ffprobe",
-        [
-          "-v",
-          "error",
-          "-show_entries",
-          "stream=codec_type,codec_name:stream_disposition=attached_pic:stream_tags=title,comment",
-          "-of",
-          "json",
-          finalOut,
-        ],
-        { timeout: 30_000 },
-      );
-
       expect(existsSync(finalOut)).toBe(true);
       expect(existsSync(artworkFile)).toBe(true);
       expect(manifest.artwork).toMatchObject({
         artwork_brand_applied: true,
         artwork_embedded: true,
+        artwork_embedding_mode: "apple_covr",
         artwork_file: artworkFile,
         artwork_source: "fixed_template",
       });
+      expect(atomicParsleyArgs).toEqual([
+        finalOut,
+        "--artwork",
+        artworkFile,
+        "--overWrite",
+      ]);
       expect(manifest.display_title).toBe("Smoke Test Audio Brief");
       expect(manifest.final_out).toBe(finalOut);
       expect(manifest.timed_script).toMatchObject({
@@ -181,9 +194,6 @@ describe("FeedContext Audio Brief CLI smoke test", () => {
       expect(metadata.stdout).toContain("Welcome back");
       expect(metadata.stdout).toContain("Smoke Test Audio Brief");
       expect(metadata.stdout).toContain("FeedContext");
-      expect(streams.stdout).toContain("video");
-      expect(streams.stdout).toContain("mjpeg");
-      expect(streams.stdout).toContain('"attached_pic": 1');
     } finally {
       rmSync(directory, { force: true, recursive: true });
     }

@@ -190,9 +190,10 @@ The helper must apply the FeedContext brand mark as the final post-processing
 step for both generated and fixed-template artwork. Save the final cover next to
 the audio as `<audio-stem>.cover.png` and attempt to embed it into the final
 audio file using player-compatible cover encoding for the target container. The
-sidecar may remain PNG even when the M4A embedding path converts the attached
-artwork to JPEG/MJPEG for compatibility. If embedding fails, keep the audio and
-sidecar image and record the artwork embedding failure in the render manifest.
+sidecar may remain PNG even when the M4A embedding path writes Apple-compatible
+`covr` artwork metadata or converts the attached artwork to JPEG/MJPEG for
+fallback compatibility. If embedding fails, keep the audio and sidecar image and
+record the artwork embedding failure in the render manifest.
 
 Write the full spoken playback text to the audio file's lyrics or unsynchronized
 lyrics metadata when supported. Use comment or description metadata only as a

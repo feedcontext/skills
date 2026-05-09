@@ -158,6 +158,7 @@ export type AudioBriefArtworkResult = {
   artwork_brand_applied: boolean;
   artwork_embedded: boolean;
   artwork_embedding_error?: string;
+  artwork_embedding_mode?: "apple_covr" | "ffmpeg_attached_pic";
   artwork_file: string;
   artwork_source: "agent_generated" | "fixed_template";
 };
