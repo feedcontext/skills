@@ -96,8 +96,10 @@ type BingEdgeTtsOptions = {
 };
 
 type BingEdgeTtsSegmentsOptions = {
+  artworkFile?: string;
   concurrency?: string;
   defaultMusic?: boolean;
+  displayTitle?: string;
   finalOut?: string;
   introAudio?: string;
   language?: string;
@@ -111,6 +113,7 @@ type BingEdgeTtsSegmentsOptions = {
 type BingEdgeTtsSegment = {
   id: string;
   speaker?: string;
+  speaker_label?: string;
   text: string;
   voice?: string;
 };
@@ -124,6 +127,7 @@ type RenderedBingEdgeTtsSegment = BingEdgeTtsSegment & {
 type BingEdgeTtsSegmentsFile = {
   language?: string;
   segments: BingEdgeTtsSegment[];
+  title?: string;
 };
 
 type BingEdgeTtsSynthesizer = (options: {
@@ -136,6 +140,20 @@ type CommandRunner = (command: string, args: string[]) => Promise<void>;
 
 type AudioDurationProbe = (file: string) => Promise<number>;
 
+type AudioBriefArtworkResult = {
+  artwork_brand_applied: boolean;
+  artwork_embedded: boolean;
+  artwork_embedding_error?: string;
+  artwork_file: string;
+  artwork_source: "agent_generated" | "fixed_template";
+};
+
+type AudioBriefArtworkPreparer = (options: {
+  artworkFile?: string;
+  audioFile: string;
+  displayTitle: string;
+}) => Promise<AudioBriefArtworkResult>;
+
 type TimedScriptEmbeddingResult = {
   embedded: boolean;
   embedding_error?: string;
@@ -147,6 +165,20 @@ type TimedScriptEmbedder = (options: {
   sidecarFile: string;
   text: string;
 }) => Promise<TimedScriptEmbeddingResult>;
+
+const ARTWORK_SIZE = 1400;
+const ARTWORK_BRAND_TEXT = "FeedContext";
+
+const BITMAP_FONT: Record<string, string[]> = {
+  C: ["01110", "10001", "10000", "10000", "10000", "10001", "01110"],
+  F: ["11111", "10000", "10000", "11110", "10000", "10000", "10000"],
+  d: ["00001", "00001", "01101", "10011", "10001", "10011", "01101"],
+  e: ["00000", "01110", "10001", "11111", "10000", "10001", "01110"],
+  n: ["00000", "10110", "11001", "10001", "10001", "10001", "10001"],
+  o: ["00000", "01110", "10001", "10001", "10001", "10001", "01110"],
+  t: ["00100", "00100", "11111", "00100", "00100", "00101", "00010"],
+  x: ["00000", "10001", "01010", "00100", "01010", "10001", "10001"],
+};
 
 type GetItemOptions = {
   cursor?: string;
@@ -1405,6 +1437,7 @@ async function probeAudioDurationSeconds(file: string) {
 async function concatAudioFiles(
   files: string[],
   out: string,
+  metadata: { title?: string } = {},
   run: CommandRunner = defaultCommandRunner,
 ) {
   if (files.length === 0) {
@@ -1417,7 +1450,7 @@ async function concatAudioFiles(
   await writeFile(listFile, `${content}\n`);
   try {
     const isM4a = extname(out).toLowerCase() === ".m4a";
-    const title = basename(audioFileStem(out));
+    const title = metadata.title?.trim() || basename(audioFileStem(out));
     await run("ffmpeg", [
       "-y",
       "-hide_banner",
@@ -1429,16 +1462,12 @@ async function concatAudioFiles(
       "0",
       "-i",
       listFile,
-      ...(isM4a
-        ? [
-            "-metadata",
-            `title=${title}`,
-            "-metadata",
-            "artist=FeedContext",
-            "-metadata",
-            "album=FeedContext Audio Brief",
-          ]
-        : []),
+      "-metadata",
+      `title=${title}`,
+      "-metadata",
+      "artist=FeedContext",
+      "-metadata",
+      "album=FeedContext Audio Brief",
       ...(isM4a
         ? ["-c:a", "aac", "-b:a", "128k", "-movflags", "+faststart"]
         : ["-c", "copy"]),
@@ -1462,10 +1491,14 @@ function syncedLyricsSidecarPath(audioFile: string) {
   return `${audioFileStem(audioFile)}.lrc`;
 }
 
+function artworkSidecarPath(audioFile: string) {
+  return `${audioFileStem(audioFile)}.cover.png`;
+}
+
 function timedScriptTextFromSegments(segments: BingEdgeTtsSegment[]) {
   return segments
     .map((segment) => {
-      const speaker = segment.speaker?.trim();
+      const speaker = segment.speaker_label?.trim() || segment.speaker?.trim();
       return speaker ? `${speaker}: ${segment.text}` : segment.text;
     })
     .join("\n\n")
@@ -1485,7 +1518,7 @@ function syncedLyricsTextFromSegments(segments: RenderedBingEdgeTtsSegment[]) {
   }
   return segments
     .map((segment) => {
-      const speaker = segment.speaker?.trim();
+      const speaker = segment.speaker_label?.trim() || segment.speaker?.trim();
       const text = speaker ? `${speaker}: ${segment.text}` : segment.text;
       return `[${lrcTimestamp(segment.start_seconds ?? 0)}]${text}`;
     })
@@ -1536,6 +1569,198 @@ async function embedTimedScriptMetadata(
     };
   } finally {
     await unlink(tempFile).catch(() => undefined);
+  }
+}
+
+function setPixel(buffer: Buffer, width: number, x: number, y: number, r: number, g: number, b: number) {
+  if (x < 0 || y < 0 || x >= width || y >= width) return;
+  const offset = (y * width + x) * 3;
+  buffer[offset] = r;
+  buffer[offset + 1] = g;
+  buffer[offset + 2] = b;
+}
+
+function fillRect(
+  buffer: Buffer,
+  width: number,
+  x: number,
+  y: number,
+  rectWidth: number,
+  rectHeight: number,
+  color: [number, number, number],
+) {
+  for (let yy = y; yy < y + rectHeight; yy += 1) {
+    for (let xx = x; xx < x + rectWidth; xx += 1) {
+      setPixel(buffer, width, xx, yy, color[0], color[1], color[2]);
+    }
+  }
+}
+
+function drawBitmapText(buffer: Buffer, width: number, text: string, x: number, y: number, scale: number) {
+  let cursor = x;
+  for (const char of text) {
+    const glyph = BITMAP_FONT[char];
+    if (!glyph) {
+      cursor += scale * 4;
+      continue;
+    }
+    glyph.forEach((row, rowIndex) => {
+      Array.from(row).forEach((value, columnIndex) => {
+        if (value !== "1") return;
+        fillRect(buffer, width, cursor + columnIndex * scale, y + rowIndex * scale, scale, scale, [
+          238,
+          242,
+          247,
+        ]);
+      });
+    });
+    cursor += scale * 6;
+  }
+}
+
+async function writeFixedTemplateArtworkPng(out: string, run: CommandRunner = defaultCommandRunner) {
+  const size = ARTWORK_SIZE;
+  const buffer = Buffer.alloc(size * size * 3);
+  for (let y = 0; y < size; y += 1) {
+    for (let x = 0; x < size; x += 1) {
+      const offset = (y * size + x) * 3;
+      const diagonal = (x + y) / (size * 2);
+      const band = Math.sin((x - y) / 70) * 18;
+      buffer[offset] = Math.round(20 + diagonal * 58 + band);
+      buffer[offset + 1] = Math.round(28 + diagonal * 70);
+      buffer[offset + 2] = Math.round(44 + diagonal * 92 - band);
+    }
+  }
+  fillRect(buffer, size, 76, 1228, 432, 86, [12, 18, 30]);
+  fillRect(buffer, size, 76, 1228, 12, 86, [97, 218, 251]);
+  drawBitmapText(buffer, size, ARTWORK_BRAND_TEXT, 112, 1252, 7);
+
+  const ppmFile = `${out}.ppm`;
+  await writeFile(ppmFile, Buffer.concat([Buffer.from(`P6\n${size} ${size}\n255\n`), buffer]));
+  try {
+    await run("ffmpeg", ["-y", "-hide_banner", "-loglevel", "error", "-i", ppmFile, out]);
+  } finally {
+    await unlink(ppmFile).catch(() => undefined);
+  }
+}
+
+async function brandArtworkFile(
+  input: string,
+  out: string,
+  run: CommandRunner = defaultCommandRunner,
+) {
+  const escapedText = ARTWORK_BRAND_TEXT.replaceAll("'", "\\'");
+  await run("ffmpeg", [
+    "-y",
+    "-hide_banner",
+    "-loglevel",
+    "error",
+    "-i",
+    input,
+    "-vf",
+    `scale=${ARTWORK_SIZE}:${ARTWORK_SIZE}:force_original_aspect_ratio=increase,crop=${ARTWORK_SIZE}:${ARTWORK_SIZE},drawbox=x=76:y=1228:w=432:h=86:color=0x0c121e@0.92:t=fill,drawbox=x=76:y=1228:w=12:h=86:color=0x61dafb@1:t=fill,drawtext=text='${escapedText}':x=112:y=1250:fontsize=42:fontcolor=0xeef2f7`,
+    "-frames:v",
+    "1",
+    out,
+  ]);
+}
+
+async function embedArtworkMetadata(
+  options: {
+    artworkFile: string;
+    audioFile: string;
+  },
+  run: CommandRunner = defaultCommandRunner,
+) {
+  const extension = extname(options.audioFile) || ".m4a";
+  const tempFile = `${options.audioFile}.artwork${extension}`;
+  const embeddedArtworkFile = `${options.audioFile}.artwork.jpg`;
+  try {
+    await run("ffmpeg", [
+      "-y",
+      "-hide_banner",
+      "-loglevel",
+      "error",
+      "-i",
+      options.artworkFile,
+      "-frames:v",
+      "1",
+      "-q:v",
+      "2",
+      embeddedArtworkFile,
+    ]);
+    await run("ffmpeg", [
+      "-y",
+      "-hide_banner",
+      "-loglevel",
+      "error",
+      "-i",
+      options.audioFile,
+      "-i",
+      embeddedArtworkFile,
+      "-map",
+      "0:a",
+      "-map",
+      "1:v",
+      "-map_metadata",
+      "0",
+      "-c:a",
+      "copy",
+      "-c:v",
+      "mjpeg",
+      "-disposition:v:0",
+      "attached_pic",
+      "-metadata:s:v",
+      "title=Album cover",
+      "-metadata:s:v",
+      "comment=Cover (front)",
+      tempFile,
+    ]);
+    await rename(tempFile, options.audioFile);
+    return { embedded: true };
+  } finally {
+    await unlink(tempFile).catch(() => undefined);
+    await unlink(embeddedArtworkFile).catch(() => undefined);
+  }
+}
+
+async function prepareAudioBriefArtwork({
+  artworkFile,
+  audioFile,
+}: {
+  artworkFile?: string;
+  audioFile: string;
+  displayTitle: string;
+}): Promise<AudioBriefArtworkResult> {
+  const out = artworkSidecarPath(audioFile);
+  let source: AudioBriefArtworkResult["artwork_source"] = artworkFile ? "agent_generated" : "fixed_template";
+  if (artworkFile) {
+    try {
+      await brandArtworkFile(artworkFile, out);
+    } catch {
+      source = "fixed_template";
+      await writeFixedTemplateArtworkPng(out);
+    }
+  } else {
+    await writeFixedTemplateArtworkPng(out);
+  }
+
+  try {
+    const embedding = await embedArtworkMetadata({ artworkFile: out, audioFile });
+    return {
+      artwork_brand_applied: true,
+      artwork_embedded: embedding.embedded,
+      artwork_file: out,
+      artwork_source: source,
+    };
+  } catch (error) {
+    return {
+      artwork_brand_applied: true,
+      artwork_embedded: false,
+      artwork_embedding_error: error instanceof Error ? error.message : String(error),
+      artwork_file: out,
+      artwork_source: source,
+    };
   }
 }
 
@@ -1639,6 +1864,11 @@ function parseBingEdgeTtsSegments(value: unknown): BingEdgeTtsSegmentsFile {
     throw new Error("Segments file must contain a segments array.");
   }
 
+  const title = value.title;
+  if (title !== undefined && (typeof title !== "string" || title.trim() === "")) {
+    throw new Error("title: must be a non-empty string when provided");
+  }
+
   const language = value.language;
   if (language !== undefined && (typeof language !== "string" || language.trim() === "")) {
     throw new Error("language: must be a non-empty string when provided");
@@ -1650,6 +1880,7 @@ function parseBingEdgeTtsSegments(value: unknown): BingEdgeTtsSegmentsFile {
     }
     const id = segment.id;
     const speaker = segment.speaker;
+    const speakerLabel = segment.speaker_label;
     const text = segment.text;
     const voice = segment.voice;
     if (typeof id !== "string" || id.trim() === "") {
@@ -1658,16 +1889,19 @@ function parseBingEdgeTtsSegments(value: unknown): BingEdgeTtsSegmentsFile {
     if (speaker !== undefined && (typeof speaker !== "string" || speaker.trim() === "")) {
       throw new Error(`segments.${index}.speaker: must be a non-empty string when provided`);
     }
+    if (speakerLabel !== undefined && (typeof speakerLabel !== "string" || speakerLabel.trim() === "")) {
+      throw new Error(`segments.${index}.speaker_label: must be a non-empty string when provided`);
+    }
     if (typeof text !== "string" || text.trim() === "") {
       throw new Error(`segments.${index}.text: must be a non-empty string`);
     }
     if (voice !== undefined && (typeof voice !== "string" || voice.trim() === "")) {
       throw new Error(`segments.${index}.voice: must be a non-empty string when provided`);
     }
-    return { id, speaker, text, voice } satisfies BingEdgeTtsSegment;
+    return { id, speaker, speaker_label: speakerLabel, text, voice } satisfies BingEdgeTtsSegment;
   });
 
-  return { language, segments };
+  return { language, segments, title };
 }
 
 function segmentFileName(index: number, segment: BingEdgeTtsSegment) {
@@ -1685,6 +1919,7 @@ export async function renderBingEdgeTtsSegments(
   concat: typeof concatAudioFiles = concatAudioFiles,
   embed: TimedScriptEmbedder = embedTimedScriptMetadata,
   probeDuration: AudioDurationProbe = probeAudioDurationSeconds,
+  prepareArtwork: AudioBriefArtworkPreparer = prepareAudioBriefArtwork,
 ) {
   const concurrency = parseConcurrency(options.concurrency, 4);
   const parsed = JSON.parse(await readFile(options.segmentsFile, "utf8")) as unknown;
@@ -1692,6 +1927,7 @@ export async function renderBingEdgeTtsSegments(
   const language = options.language ?? parsedSegments.language;
   const voice = options.voice ?? defaultBingEdgeVoiceForLanguage(language);
   const segments = parsedSegments.segments;
+  const displayTitle = options.displayTitle?.trim() || parsedSegments.title?.trim() || undefined;
   await mkdir(options.outDir, { recursive: true });
   const rendered = await runWithConcurrency(segments, concurrency, async (segment, index) => {
     const mediaFile = join(options.outDir, segmentFileName(index, segment));
@@ -1711,6 +1947,7 @@ export async function renderBingEdgeTtsSegments(
       id: segment.id,
       media_file: mediaFile,
       speaker: segment.speaker,
+      speaker_label: segment.speaker_label,
       text: segment.text,
       voice: segment.voice ?? voice,
     } satisfies RenderedBingEdgeTtsSegment;
@@ -1726,6 +1963,7 @@ export async function renderBingEdgeTtsSegments(
         ...(outroAudio ? [outroAudio] : []),
       ],
       options.finalOut,
+      { title: displayTitle },
     );
     const timedScript = options.timedScript === false
       ? undefined
@@ -1738,8 +1976,15 @@ export async function renderBingEdgeTtsSegments(
             rendered,
           }),
         });
+    const artwork = await prepareArtwork({
+      artworkFile: options.artworkFile,
+      audioFile: options.finalOut,
+      displayTitle: displayTitle ?? basename(audioFileStem(options.finalOut)),
+    });
     return {
+      artwork,
       final_out: options.finalOut,
+      display_title: displayTitle ?? basename(audioFileStem(options.finalOut)),
       intro_audio: introAudio,
       ok: true,
       outro_audio: outroAudio,
@@ -1752,6 +1997,7 @@ export async function renderBingEdgeTtsSegments(
 
   return {
     final_out: options.finalOut,
+    display_title: displayTitle,
     ok: true,
     provider: "bing-edge" as const,
     segments: rendered,
@@ -1778,10 +2024,11 @@ export function buildAudioSegmentsFromShowScript(showScript: unknown) {
 
   const language = String(showScript.language);
   const hosts = showScript.hosts as JsonRecord[];
-  const hostById = new Map<string, { gender: string; providerVoice?: string }>();
+  const hostById = new Map<string, { gender: string; name: string; providerVoice?: string }>();
   hosts.forEach((host, index) => {
     hostById.set(String(host.id), {
       gender: hostGender(host, index, hosts.length),
+      name: String(host.name),
       providerVoice: typeof host.provider_voice === "string" ? host.provider_voice : undefined,
     });
   });
@@ -1795,6 +2042,7 @@ export function buildAudioSegmentsFromShowScript(showScript: unknown) {
       segments.push({
         id: `${String(section.id)}-${String(turnIndex + 1).padStart(2, "0")}`,
         speaker,
+        speaker_label: host?.name ?? speaker,
         text,
         voice: host?.providerVoice ?? defaultBingEdgeVoiceForLanguageAndGender(language, host?.gender),
       });
@@ -1804,6 +2052,7 @@ export function buildAudioSegmentsFromShowScript(showScript: unknown) {
   return {
     language,
     segments,
+    title: String(showScript.title),
   };
 }
 
@@ -1811,12 +2060,16 @@ async function writeAudioSegmentsFromShowScript(options: { out: string; scriptFi
   const parsed = JSON.parse(await readFile(options.scriptFile, "utf8")) as unknown;
   const segments = buildAudioSegmentsFromShowScript(parsed);
   await writeFile(options.out, `${JSON.stringify(segments, null, 2)}\n`);
-  console.log(JSON.stringify({ ok: true, out: options.out, segments: segments.segments.length }, null, 2));
+  console.log(
+    JSON.stringify({ ok: true, out: options.out, segments: segments.segments.length, title: segments.title }, null, 2),
+  );
 }
 
 async function renderAudio(options: {
+  artworkFile?: string;
   concurrency?: string;
   defaultMusic?: boolean;
+  displayTitle?: string;
   finalOut?: string;
   introAudio?: string;
   language?: string;
@@ -1839,8 +2092,10 @@ async function renderAudio(options: {
       throw new Error("Segmented audio render requires --out-dir.");
     }
     const result = await renderBingEdgeTtsSegments({
+      artworkFile: options.artworkFile,
       concurrency: options.concurrency,
       defaultMusic: options.defaultMusic,
+      displayTitle: options.displayTitle,
       finalOut: options.finalOut,
       introAudio: options.introAudio,
       language: options.language,
@@ -2468,6 +2723,8 @@ async function main(argv = process.argv) {
     .option("--concurrency <count>", "Number of TTS segments to render concurrently", "4")
     .requiredOption("--out <path>", "Output audio file path, or segment manifest path with --segments-file")
     .option("--final-out <path>", "Optional final audio file assembled from rendered segments")
+    .option("--display-title <title>", "Optional player-facing title metadata for the final audio file")
+    .option("--artwork-file <path>", "Optional unbranded artwork base image to brand, save, and embed")
     .option("--intro-audio <path>", "Optional intro music/audio file to prepend when --final-out is used")
     .option("--outro-audio <path>", "Optional outro music/audio file to append when --final-out is used")
     .option("--no-default-music", "Do not use bundled intro/outro music when --final-out is used")

@@ -28,6 +28,7 @@ describe("FeedContext Audio Brief CLI smoke test", () => {
     const segmentsOutDir = join(directory, "segments");
     const finalOut = join(directory, "brief.bing-edge.m4a");
     const manifestFile = join(directory, "brief.bing-edge.render-manifest.json");
+    const artworkFile = join(directory, "brief.bing-edge.cover.png");
     const lyricsFile = join(directory, "brief.bing-edge.lyrics.txt");
     const syncedLyricsFile = join(directory, "brief.bing-edge.lrc");
 
@@ -67,11 +68,11 @@ describe("FeedContext Audio Brief CLI smoke test", () => {
                 turns: [
                   {
                     speaker: "host_a",
-                    text: "Welcome back. This is the short smoke test.",
+                    text: "Welcome back, I'm Host A. Host B is here with me for this short smoke test.",
                   },
                   {
                     speaker: "host_b",
-                    text: "And this line verifies the second host appears in playback text.",
+                    text: "Good to be here. We'll keep the hello brief, then verify the second host appears in playback text.",
                   },
                 ],
               },
@@ -109,6 +110,13 @@ describe("FeedContext Audio Brief CLI smoke test", () => {
       );
 
       const manifest = JSON.parse(await readFile(manifestFile, "utf8")) as {
+        artwork?: {
+          artwork_brand_applied?: boolean;
+          artwork_embedded?: boolean;
+          artwork_file?: string;
+          artwork_source?: string;
+        };
+        display_title?: string;
         final_out?: string;
         timed_script?: {
           embedded?: boolean;
@@ -133,8 +141,29 @@ describe("FeedContext Audio Brief CLI smoke test", () => {
         ],
         { timeout: 30_000 },
       );
+      const streams = await execFileAsync(
+          "ffprobe",
+        [
+          "-v",
+          "error",
+          "-show_entries",
+          "stream=codec_type,codec_name:stream_disposition=attached_pic:stream_tags=title,comment",
+          "-of",
+          "json",
+          finalOut,
+        ],
+        { timeout: 30_000 },
+      );
 
       expect(existsSync(finalOut)).toBe(true);
+      expect(existsSync(artworkFile)).toBe(true);
+      expect(manifest.artwork).toMatchObject({
+        artwork_brand_applied: true,
+        artwork_embedded: true,
+        artwork_file: artworkFile,
+        artwork_source: "fixed_template",
+      });
+      expect(manifest.display_title).toBe("Smoke Test Audio Brief");
       expect(manifest.final_out).toBe(finalOut);
       expect(manifest.timed_script).toMatchObject({
         embedded: true,
@@ -143,13 +172,18 @@ describe("FeedContext Audio Brief CLI smoke test", () => {
         synced_sidecar_file: syncedLyricsFile,
         synced_timing_source: "segment_durations",
       });
-      expect(lyrics).toContain("host_a: Welcome back.");
-      expect(lyrics).toContain("host_b: And this line verifies");
-      expect(syncedLyrics).toContain("[00:00.00]host_a: Welcome back.");
-      expect(syncedLyrics).toMatch(/\[00:04\.[0-9]{2}\]host_b: And this line verifies/);
+      expect(lyrics).toContain("Host A: Welcome back, I'm Host A.");
+      expect(lyrics).toContain("Host B: Good to be here.");
+      expect(lyrics).not.toContain("host_a:");
+      expect(lyrics).not.toContain("host_b:");
+      expect(syncedLyrics).toContain("[00:00.00]Host A: Welcome back, I'm Host A.");
+      expect(syncedLyrics).toMatch(/\[00:04\.[0-9]{2}\]Host B: Good to be here/);
       expect(metadata.stdout).toContain("Welcome back");
-      expect(metadata.stdout).toContain("brief.bing-edge");
+      expect(metadata.stdout).toContain("Smoke Test Audio Brief");
       expect(metadata.stdout).toContain("FeedContext");
+      expect(streams.stdout).toContain("video");
+      expect(streams.stdout).toContain("mjpeg");
+      expect(streams.stdout).toContain('"attached_pic": 1');
     } finally {
       rmSync(directory, { force: true, recursive: true });
     }

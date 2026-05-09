@@ -48,12 +48,13 @@ text or freeform prose summaries.
   listener relevance, number interpretation, uncertainty boundaries, host
   questions, and grounded reactions that help the listener understand why the
   selected topics matter.
-- Open like a show before moving into the news hook. Start with a brief,
-  natural welcome such as "welcome back" or "thanks for listening," then move
-  quickly into the day's concrete tension, affected actors, decision, risk, or
-  question. Do not lead the spoken script with how many Feed Items were scanned,
-  which sidecar was used, or how the selection was made. Put those details in
-  notes unless they are essential to the story.
+- Open like a show before moving into the news hook. The opening should include
+  a brief natural welcome, a spoken host self-introduction, and a short
+  conversational greeting or handoff between hosts before the first news setup.
+  After that, move quickly into the day's concrete tension, affected actors,
+  decision, risk, or question. Do not lead the spoken script with how many Feed
+  Items were scanned, which sidecar was used, or how the selection was made. Put
+  those details in notes unless they are essential to the story.
 - For two-host formats, the second host must do more than affirm or summarize.
   Use the second host as a listener proxy: ask short clarifying questions,
   challenge whether two stories really belong together, translate abstract
@@ -145,6 +146,7 @@ feedcontext-audio-brief-2026-05-07.script.json
 feedcontext-audio-brief-2026-05-07.script.md
 feedcontext-audio-brief-2026-05-07.segments.json
 feedcontext-audio-brief-2026-05-07.bing-edge.m4a
+feedcontext-audio-brief-2026-05-07.bing-edge.cover.png
 feedcontext-audio-brief-2026-05-07.bing-edge.lyrics.txt
 feedcontext-audio-brief-2026-05-07.bing-edge.render-manifest.json
 ```
@@ -154,6 +156,9 @@ Use `schemas/show-script.schema.json` as the generated schema artifact and
 Do not add Timed Script fields to the Show Script JSON. Timed Script playback
 text is derived after audio rendering because it depends on the final audio
 file, provider pacing, segment manifest, and intro or outro assembly.
+The Show Script `title` should be preserved into the TTS segments file so final
+audio rendering can embed it as the player-facing display title independently
+from the output filename.
 
 Minimum shape:
 
@@ -195,11 +200,19 @@ Minimum shape:
       "turns": [
         {
           "speaker": "host_a",
-          "text": "Several separate stories today point in the same direction, so let's start with the concrete moves and then talk through why they matter.",
+          "text": "Welcome back, I'm Host A. Host B is here with me today, and we'll ease in quickly before we get to the concrete moves that matter.",
           "synthesis_unit_ids": ["lead-ai-shift"],
           "emotion": "warm curiosity",
           "transition": "soft opening hook",
           "pacing": "measured"
+        },
+        {
+          "speaker": "host_b",
+          "text": "Good to be here. Let's start with the story that sets up the rest of the brief.",
+          "synthesis_unit_ids": ["lead-ai-shift"],
+          "emotion": "warm",
+          "transition": "brief host greeting before news setup",
+          "pacing": "conversational"
         }
       ]
     }

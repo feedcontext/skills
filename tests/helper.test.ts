@@ -122,9 +122,16 @@ describe("FeedContext Show Script validation", () => {
             turns: [
               {
                 speaker: "host_a",
-                text: "Today, the important point is how several signals connect.",
+                text: "Welcome back, I'm A. B is here with me today, and we will start with a quick hello before the main story.",
                 emotion: "warm curiosity",
                 transition: "soft bridge from context into the lead",
+                synthesis_unit_ids: ["u1"],
+              },
+              {
+                speaker: "host_b",
+                text: "Good to be here. Let's ease in and then get straight to the concrete news.",
+                emotion: "warm",
+                transition: "brief host greeting before news setup",
                 synthesis_unit_ids: ["u1"],
               },
             ],
@@ -215,16 +222,19 @@ describe("FeedContext Show Script validation", () => {
         {
           id: "opening-01",
           speaker: "host_a",
+          speaker_label: "女主播",
           text: "哈哈，今天这几条新闻看起来分散，但其实有一条暗线。",
           voice: "zh-CN-XiaoxiaoNeural",
         },
         {
           id: "opening-02",
           speaker: "host_b",
+          speaker_label: "男主播",
           text: "我先接一句，这条暗线可能比单条漏洞更值得紧张。",
           voice: "zh-CN-YunxiNeural",
         },
       ],
+      title: "Daily Audio Brief",
     });
     expect(segments.segments.map((segment) => segment.text).join("")).not.toContain("女主播");
     expect(segments.segments.map((segment) => segment.text).join("")).not.toContain("男主播");
@@ -389,7 +399,7 @@ describe("FeedContext Audio provider diagnostics", () => {
     const intro = join(directory, "intro.mp3");
     const outro = join(directory, "outro.mp3");
     const calls: Array<{ out: string; text: string; voice: string }> = [];
-    const concatCalls: Array<{ files: string[]; out: string }> = [];
+    const concatCalls: Array<{ files: string[]; metadata?: { title?: string }; out: string }> = [];
 
     try {
       await writeFile(intro, "intro");
@@ -402,6 +412,7 @@ describe("FeedContext Audio provider diagnostics", () => {
             { id: "opening", speaker: "host_a", text: "开场。", voice: "zh-CN-XiaoxiaoNeural" },
             { id: "reply", speaker: "host_b", text: "回应。", voice: "zh-CN-YunxiNeural" },
           ],
+          title: "每日音频简报",
         }),
       );
 
@@ -417,8 +428,8 @@ describe("FeedContext Audio provider diagnostics", () => {
           calls.push(input);
           await writeFile(input.out, `audio:${input.voice}:${input.text}`);
         },
-        async (files, out) => {
-          concatCalls.push({ files, out });
+        async (files, out, metadata) => {
+          concatCalls.push({ files, metadata, out });
           await writeFile(out, files.join("\n"));
         },
       );
@@ -435,10 +446,12 @@ describe("FeedContext Audio provider diagnostics", () => {
             join(directory, "002-reply.mp3"),
             outro,
           ],
+          metadata: { title: "每日音频简报" },
           out: finalOut,
         },
       ]);
       expect(result).toMatchObject({
+        display_title: "每日音频简报",
         final_out: finalOut,
         segments: [
           { speaker: "host_a", voice: "zh-CN-XiaoxiaoNeural" },
@@ -465,12 +478,14 @@ describe("FeedContext Audio provider diagnostics", () => {
             { id: "opening", speaker: "host_a", text: "开场。", voice: "zh-CN-XiaoxiaoNeural" },
             { id: "reply", speaker: "host_b", text: "回应。", voice: "zh-CN-YunxiNeural" },
           ],
+          title: "台本标题优先",
         }),
       );
 
       const result = await renderBingEdgeTtsSegments(
         {
           defaultMusic: false,
+          displayTitle: "显式标题优先",
           finalOut,
           outDir: directory,
           segmentsFile,
@@ -506,6 +521,7 @@ describe("FeedContext Audio provider diagnostics", () => {
         },
       ]);
       expect(result).toMatchObject({
+        display_title: "显式标题优先",
         final_out: finalOut,
         timed_script: {
           embedded: true,

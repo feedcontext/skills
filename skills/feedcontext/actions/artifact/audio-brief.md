@@ -24,19 +24,19 @@ Script Review gate --revise---------------'
    |
    v
 Reviewed script artifact
-   |----------------------.
-   |                      |
-   v                      v
-script-only handoff   provider selection
-   |                      |
-   '----------.           v
-              '----> TTS segments
+   |----------------------.--------------------------.
+   |                      |                          |
+   v                      v                          v
+script-only handoff   provider selection       artwork base generation
+   |                      |                   (agent image or template)
+   '----------.           v                          |
+              '----> TTS segments                    |
+                        |                             |
+                        v                             |
+         final audio with bundled intro/outro <-------'
                         |
                         v
-         final audio with bundled intro/outro
-                        |
-                        v
-        embedded Timed Script playback text
+     branded Artwork + embedded Timed Script
                         |
                         v
                Run Feedback note
@@ -96,15 +96,22 @@ script-only handoff   provider selection
    reviewed files and a `ready` review note. The reviewed script can later
    continue into provider selection and rendering through
    `audio_from_existing_script`.
-8. If the user requested audio or did not specify script-only mode, follow
+8. After the reviewed script artifact exists, start Audio Brief Artwork base
+   generation in parallel with provider selection and TTS segment preparation
+   when the host environment supports parallel work. If the host agent can
+   generate images, create an unbranded, text-free base image from the reviewed
+   script and synthesis context. If not, rely on the helper's deterministic
+   fixed-template artwork base. Final brand overlay and audio embedding happen
+   during rendering.
+9. If the user requested audio or did not specify script-only mode, follow
    `audio-brief/providers.md` to discover available provider paths and ask the
    user which one to use unless the user already specified a provider.
-9. Generate audio through the selected provider path. Follow
+10. Generate audio through the selected provider path. Follow
    `audio-brief/rendering.md` for segments, provider diagnostics, final
-   assembly, and embedded Timed Script playback text. Podcast-like final outputs
-   use the bundled intro and outro music unless the user explicitly asks for
-   speech-only output or supplies custom assets.
-10. Preserve a Run Feedback note after script-only handoff or final audio
+   assembly, branded Audio Brief Artwork, and embedded Timed Script playback
+   text. Podcast-like final outputs use the bundled intro and outro music unless
+   the user explicitly asks for speech-only output or supplies custom assets.
+11. Preserve a Run Feedback note after script-only handoff or final audio
    generation. Follow `audio-brief/run-feedback.md`.
 
 ## Stage Docs

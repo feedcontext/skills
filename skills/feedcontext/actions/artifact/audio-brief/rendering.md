@@ -145,9 +145,25 @@ If either tool is missing, unavailable, or fails to write compatible metadata,
 keep the final audio file when available, preserve the sidecar text track, and
 mark the embedding path as failed in the render manifest.
 
-Final M4A assembly should include basic title, artist, and album metadata so
+Final audio assembly should include basic title, artist, and album metadata so
 desktop audio players recognize the local file as a normal track and can expose
-its playback text panel.
+its playback text panel. The player-facing title should come from the Show
+Script title passed through the segments file when available. Treat
+`--final-out` as the filesystem path, not the display title; use a safe file
+stem only as a fallback when no Show Script title or explicit display title is
+available.
+
+Final audio assembly should also preserve Audio Brief Artwork. Host agents that
+can generate images may create an unbranded, text-free artwork base and pass it
+with `--artwork-file`. The helper must still apply the FeedContext brand mark as
+the final post-processing step. When no artwork file is provided, generate a
+deterministic fixed-template cover image instead of leaving the audio without
+artwork. Save the final cover next to the audio as `<audio-stem>.cover.png` and
+attempt to embed it into the final audio file using player-compatible cover
+encoding for the target container. The sidecar may remain PNG even when the M4A
+embedding path converts the attached artwork to JPEG/MJPEG for compatibility.
+If embedding fails, keep the audio and sidecar image and record the artwork
+embedding failure in the render manifest.
 
 Write the full spoken playback text to the audio file's lyrics or unsynchronized
 lyrics metadata when supported. Use comment or description metadata only as a
@@ -155,8 +171,10 @@ short compatibility fallback that points to the sidecar or summarizes that
 playback text is available; do not duplicate the full long script into comment
 or description fields.
 
-The embedded text should contain the spoken script text with host or speaker
-labels when that improves readability:
+The embedded text should contain the spoken script text with player-facing host
+or speaker labels when that improves readability. Prefer the host display names
+from the Show Script. Do not leak internal IDs such as `host_a` or `host_b`
+when display names are available:
 
 ```text
 Host A: Welcome back. Today we are starting with...
