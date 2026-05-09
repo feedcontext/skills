@@ -38,6 +38,39 @@ Read first:
   because `build` regenerates skill artifacts and checks their git diff, a push
   must fail when generated artifacts are not aligned with the source code being
   submitted.
+- Treat Skill Behavior Evals as the development loop for testing agent workflow
+  behavior, not helper implementation correctness. They should replay realistic
+  prompts, capture Codex traces and artifacts, and check whether the agent
+  followed the documented FeedContext Skill workflow. Keep them separate from
+  the required pre-push lane until the eval cases are stable enough for CI.
+- Put Skill Behavior Eval harnesses and prompt suites under `evals/` at this
+  repository root. Do not place eval harness files under `skills/feedcontext/`,
+  which must remain the installable skill artifact.
+- Start Skill Behavior Eval coverage with Agent-Composed Artifact and Audio
+  Brief workflows because those flows depend on ordered agent behavior:
+  Structured Synthesis, Synthesis Review, Show Script, Script Review, then
+  artifact-specific rendering or audio generation.
+- Grade Skill Behavior Evals in two layers. Use deterministic trace and file
+  checks as hard gates for observable behavior such as running `version`,
+  validating synthesis or Show Script files, preserving expected artifacts, and
+  following required command order. Use rubric-based grading only for quality
+  judgments that deterministic checks cannot capture, such as story setup,
+  spoken style, evidence fit, and whether an Audio Brief sounds like a show
+  rather than read-aloud source material.
+- Split Skill Behavior Evals into `offline` and `live` lanes. The `offline`
+  lane is the default and should use fixtures or local inputs for stable
+  workflow regression checks. The `live` lane may call the real FeedContext API,
+  but it must be explicitly opted into, require a valid Skill Session or test
+  account, and remain outside the default pre-push lane.
+- Base `live` Skill Behavior Evals on a dedicated test account and stable
+  fixture Subscription set. Do not use a maintainer's personal FeedContext
+  account as the default live eval baseline; personal accounts are suitable for
+  manual acceptance only.
+- `live` Skill Behavior Evals may cover Write actions only in the dedicated
+  test account. Use identifiable test data, clean up created Subscriptions when
+  practical, preserve diagnostic output when cleanup fails, and keep the Write
+  safety contract intact: host approval plus helper `--confirm`. Do not bypass
+  that contract for automation; evals should verify it.
 
 ## Verification
 
