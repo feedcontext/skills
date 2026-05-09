@@ -6,6 +6,7 @@ normal workflows:
 - Authenticate and manage the local Skill Session through `auth.md`.
 - Read Feed Items through `feed-items.md`.
 - Manage Subscriptions through `subscriptions.md`.
+- Manage Telegram delivery through `integrations.md`.
 - Compose traceable local artifacts through `artifact/README.md`.
 - Migrate or import existing subscriptions through `migration.md`.
 - Use OPML migration through `migration/opml.md` after an OPML or export file is available.
@@ -31,6 +32,7 @@ Raw read calls are allowed only for these paths:
 - `GET /v1/subscriptions`
 - `GET /v1/items`
 - `GET /v1/items/{item_id}`
+- `GET /v1/integrations/telegram`
 
 Example:
 
@@ -45,6 +47,10 @@ Allowed raw write paths:
 
 - `POST /v1/subscriptions`
 - `DELETE /v1/subscriptions/{subscription_id}`
+- `POST /v1/integrations/telegram/binding-link`
+- `DELETE /v1/integrations/telegram`
+- `PUT /v1/uploads`
+- `POST /v1/artifacts`
 
 Example after host approval:
 
@@ -62,6 +68,8 @@ The public resources are:
 
 - Subscription
 - Feed Item
+- Telegram Integration
+- Artifact Delivery Submission
 
 Do not expose internal source identifiers or internal storage models in user
 responses.

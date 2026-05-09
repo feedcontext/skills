@@ -39,6 +39,34 @@ Feed Items; they are not Feed Items, not api resources, and not pages hosted by
 8. Keep sidecar files next to the generated artifact when practical so evidence,
    selection rationale, and generation inputs remain inspectable.
 
+9. If the user asks to send the final page or audio to Telegram, first follow
+   `../integrations.md` and confirm Telegram is connected. Then deliver only
+   the final artifact file and its Structured Synthesis sidecar:
+
+   ```bash
+   node scripts/helper.mjs artifact deliver \
+     --artifact-type briefing_page \
+     --file briefing.html \
+     --synthesis-file briefing.synthesis.json \
+     --title "Daily Briefing" \
+     --confirm
+   ```
+
+   For audio briefs, use the final `.m4a` or `.mp3` file:
+
+   ```bash
+   node scripts/helper.mjs artifact deliver \
+     --artifact-type audio_brief \
+     --file daily-brief.m4a \
+     --synthesis-file daily-brief.synthesis.json \
+     --title "Daily Audio Brief" \
+     --caption "Today’s audio brief" \
+     --confirm
+   ```
+
+   Delivery is explicit and user-approved. Do not upload drafts, Gather
+   Sidecars, raw browser captures, provider logs, or unrelated local files.
+
 Shared guidance covers discovery, deterministic filtering, Feed Item reading,
 Structured Synthesis validation and review, evidence rules, selection
 rationale, and sidecar preservation. Rendering and generation details live in
@@ -54,6 +82,8 @@ the specific artifact docs.
 - Use `audio-brief.md` for local Audio Brief scripts and generated audio.
 - Treat full Feed Item stream pages as an exception path inside the shared
   workflow and `briefing-page.md`, not as a separate artifact action doc.
+- Use `artifact deliver` only after the final artifact exists and the
+  Structured Synthesis sidecar has passed validation and review.
 
 ## Evidence Rules
 

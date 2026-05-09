@@ -8,6 +8,8 @@ import { importOpml } from "./helper/subscriptions";
 import { getVersionStatus } from "./helper/version";
 import { printAudioProviderDoctor, renderAudio, writeAudioSegmentsFromShowScript } from "./helper/audio";
 import { printShowScriptSchema, printSynthesisSchema, validateShowScriptFile, validateSynthesisFile } from "./helper/validation";
+import { deliverArtifactCommand } from "./helper/artifacts";
+import { disconnectTelegram, printTelegramBindingLink, printTelegramStatus } from "./helper/integrations";
 
 export { API_ORIGIN, AUTH_BASE, CLIENT_ID, REDIRECT_URI, SCOPES, SKILL_PAIR_ENDPOINT, WEB_ORIGIN } from "./helper/config";
 export type { GatherInsightResult, SkillSession, VersionStatus } from "./helper/types";
@@ -17,6 +19,8 @@ export { buildGetItemPath, buildListItemsPath, gatherInsight, getManyItems, writ
 export { parseOpmlFeedUrls } from "./helper/subscriptions";
 export { buildVersionStatus, getVersionStatus } from "./helper/version";
 export { buildAudioSegmentsFromShowScript, detectAudioProviders, renderBingEdgeTts, renderBingEdgeTtsSegments } from "./helper/audio";
+export { deliverArtifact, inferArtifactContentType } from "./helper/artifacts";
+export { disconnectTelegram, printTelegramBindingLink, printTelegramStatus } from "./helper/integrations";
 export { normalizeItemIds, parseConcurrency, parseItemIdsFile, parsePositiveIntegerOption, runWithConcurrency } from "./helper/utils";
 export { validateShowScript, validateStructuredSynthesis } from "./helper/validation";
 
@@ -178,6 +182,47 @@ async function main(argv = process.argv) {
         ),
       );
     });
+
+  const integration = program.command("integration").description("Manage FeedContext delivery integrations");
+  const telegram = integration.command("telegram").description("Manage the Telegram delivery integration");
+  telegram
+    .command("status")
+    .description("Print Telegram integration status")
+    .action(printTelegramStatus);
+  telegram
+    .command("binding-link")
+    .description("Create a Telegram bot deep link for binding this account")
+    .action(printTelegramBindingLink);
+  telegram
+    .command("disconnect")
+    .description("Disconnect Telegram delivery")
+    .option("--confirm", "Confirm host approval before disconnecting Telegram")
+    .action((options) => disconnectTelegram({ confirm: options.confirm }));
+
+  const artifact = program.command("artifact").description("Upload and deliver generated artifacts");
+  artifact
+    .command("deliver")
+    .description("Upload a final artifact and submit it for Telegram delivery")
+    .requiredOption("--file <path>", "Final artifact file to upload")
+    .requiredOption("--synthesis-file <path>", "Structured Synthesis JSON sidecar used by the artifact")
+    .requiredOption("--artifact-type <type>", "Artifact type: audio_brief or briefing_page")
+    .requiredOption("--title <title>", "Plain-text artifact title")
+    .option("--content-type <type>", "Override content type: audio/mp4, audio/mpeg, or text/html")
+    .option("--display-filename <name>", "Safe display filename; defaults to the uploaded file basename")
+    .option("--caption <text>", "Optional Telegram delivery caption")
+    .option("--confirm", "Confirm host approval before upload and delivery")
+    .action((options) =>
+      deliverArtifactCommand({
+        artifactType: options.artifactType,
+        caption: options.caption,
+        confirm: options.confirm,
+        contentType: options.contentType,
+        displayFilename: options.displayFilename,
+        file: options.file,
+        synthesisFile: options.synthesisFile,
+        title: options.title,
+      }),
+    );
 
   const synthesis = program.command("synthesis").description("Validate Structured Synthesis files");
   synthesis

@@ -20,6 +20,28 @@ export type ApiResult = {
 
 export type ApiRequester = (input: RawCall, session: SkillSession) => Promise<ApiResult>;
 
+export type ArtifactType = "audio_brief" | "briefing_page";
+
+export type UploadContentType = "audio/mp4" | "audio/mpeg" | "text/html";
+
+export type ArtifactDeliverOptions = {
+  artifactType: ArtifactType;
+  caption?: string;
+  confirm?: boolean;
+  contentType?: UploadContentType;
+  displayFilename?: string;
+  file: string;
+  synthesisFile: string;
+  title: string;
+};
+
+export type ArtifactDeliveryResult = {
+  accepted: boolean;
+  artifact_id: string;
+  delivery: "telegram";
+  upload_ref: string;
+};
+
 export type OpmlImportResult = {
   created: number;
   existing: number;

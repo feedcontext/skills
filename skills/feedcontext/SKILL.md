@@ -27,6 +27,7 @@ accounts, or clear a stale local session.
 - Authenticate and manage the local Skill Session through `actions/auth.md`.
 - Read Feed Items through `actions/feed-items.md`.
 - Manage Subscriptions through `actions/subscriptions.md`.
+- Manage delivery integrations through `actions/integrations.md`.
 - Use raw API calls and public resource boundaries through `actions/api.md`.
 - Compose local artifacts through `actions/artifact/README.md`.
 - Gather Feed Item aggregation sidecars through `actions/artifact/gather.md`.
@@ -59,6 +60,11 @@ audio briefs, follow `actions/artifact/README.md`: create and validate a
 Structured Synthesis JSON sidecar before rendering prose, HTML, scripts, or
 audio. For audio briefs, create and validate a Show Script before generating
 audio.
+
+When the user asks to send a generated page or audio brief to Telegram, follow
+`actions/integrations.md` to confirm Telegram is linked, then follow
+`actions/artifact/README.md` to upload and deliver the final artifact with its
+Structured Synthesis sidecar.
 
 This repository publishes the installable skill from `skills/feedcontext`.
 Helper source changes must refresh `scripts/helper.mjs` before release so this

@@ -13,7 +13,8 @@ FeedContext Skill helps agents:
 - manage subscriptions with approval;
 - migrate or import subscriptions from existing RSS readers and OPML files;
 - turn feed context into traceable local artifacts, including briefing pages and
-  audio briefs.
+  audio briefs;
+- deliver completed briefing pages and audio briefs to linked Telegram chats.
 
 It is not a feed reader UI or a product console. It is a skill for agents that
 work alongside FeedContext.
@@ -34,6 +35,7 @@ After installation, use the skill instructions in `skills/feedcontext/SKILL.md`.
 - `skills/feedcontext/actions/artifact/audio-brief.md`
 - `skills/feedcontext/actions/artifact/briefing-page.md`
 - `skills/feedcontext/actions/feed-items.md`
+- `skills/feedcontext/actions/integrations.md`
 - `skills/feedcontext/actions/migration.md`
 - `skills/feedcontext/actions/subscriptions.md`
 - `skills/feedcontext/actions/troubleshooting.md`
@@ -46,6 +48,9 @@ After installation, use the skill instructions in `skills/feedcontext/SKILL.md`.
 - **Audio Brief**: an agent-composed local audio artifact generated from a Show
   Script and grounded in Structured Synthesis. Final renders may embed Timed
   Script playback text for audio players when the output format supports it.
+- **Artifact Delivery**: an explicit user-approved upload of a completed local
+  artifact and its Structured Synthesis sidecar to FeedContext for Telegram
+  delivery.
 
 Briefings should keep important insights traceable to their supporting Feed
 Items without turning the reading experience into an audit interface.

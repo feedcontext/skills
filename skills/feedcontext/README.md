@@ -14,6 +14,7 @@ Action docs:
 - `actions/artifact/audio-brief.md`
 - `actions/artifact/briefing-page.md`
 - `actions/feed-items.md`
+- `actions/integrations.md`
 - `actions/migration.md`
 - `actions/subscriptions.md`
 - `actions/troubleshooting.md`

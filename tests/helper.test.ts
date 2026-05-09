@@ -16,6 +16,7 @@ import {
   gatherInsight,
   getManyItems,
   getVersionStatus,
+  inferArtifactContentType,
   isAllowedRawCall,
   isMutatingRawCall,
   normalizeItemIds,
@@ -56,12 +57,16 @@ describe("FeedContext Skill helper safety", () => {
     expect(isAllowedRawCall("GET", "/v1/items")).toBe(true);
     expect(isAllowedRawCall("GET", "/v1/items/item_123")).toBe(true);
     expect(isAllowedRawCall("POST", "/v1/subscriptions")).toBe(true);
+    expect(isAllowedRawCall("GET", "/v1/integrations/telegram")).toBe(true);
+    expect(isAllowedRawCall("POST", "/v1/artifacts")).toBe(true);
     expect(isAllowedRawCall("GET", "/v1/sources")).toBe(false);
     expect(isAllowedRawCall("POST", "/api/auth/sign-in/google")).toBe(false);
   });
 
   it("requires confirm for mutating calls before network access", () => {
     expect(isMutatingRawCall("POST", "/v1/subscriptions")).toBe(true);
+    expect(isMutatingRawCall("POST", "/v1/artifacts")).toBe(true);
+    expect(isMutatingRawCall("DELETE", "/v1/integrations/telegram")).toBe(true);
     expect(() =>
       enforceConfirmBeforeNetwork({
         method: "POST",
@@ -75,6 +80,13 @@ describe("FeedContext Skill helper safety", () => {
         path: "/v1/subscriptions",
       }),
     ).not.toThrow();
+  });
+
+  it("infers artifact upload content types from final file paths", () => {
+    expect(inferArtifactContentType("brief.m4a", "audio_brief")).toBe("audio/mp4");
+    expect(inferArtifactContentType("brief.mp3", "audio_brief")).toBe("audio/mpeg");
+    expect(inferArtifactContentType("brief.html", "briefing_page")).toBe("text/html");
+    expect(() => inferArtifactContentType("brief.wav", "audio_brief")).toThrow(/m4a or .mp3/);
   });
 });
 
