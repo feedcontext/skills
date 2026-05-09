@@ -87,7 +87,7 @@
     "host": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "name", "role"],
+      "required": ["id", "role"],
       "properties": {
         "id": {
           "type": "string",
@@ -110,6 +110,10 @@
           "enum": ["female", "male", "neutral"]
         },
         "provider_voice": {
+          "type": "string",
+          "minLength": 1
+        },
+        "voice_persona_id": {
           "type": "string",
           "minLength": 1
         }

@@ -51,8 +51,13 @@ support that spoken language.
 
 For multi-host scripts, preserve each turn as a separate TTS segment and switch
 voices by `speaker`. Use host `provider_voice` when present; otherwise let the
-helper choose language-appropriate defaults by host `gender`. Do not flatten a
-two-host script into one text file with speaker labels.
+helper resolve the fixed Voice Persona registry for the spoken language and host
+gender. Do not flatten a two-host script into one text file with speaker labels.
+
+Voice Personas are provider-specific host identities. Provider renderers map
+them to concrete provider voices, stable host display names, and any supported
+prosody settings. The Bing Edge path currently fixes Chinese defaults to `林晓`
+and `周熙`, and English defaults to `Maya` and `Noah`.
 
 FeedContext's default TTS provider path is Bing Edge TTS through the helper's
 built-in Edge Read Aloud client. If the user has not specified another

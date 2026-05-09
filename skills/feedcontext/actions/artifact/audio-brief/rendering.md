@@ -71,31 +71,45 @@ node scripts/helper.mjs audio render \
 Pass `--intro-audio` and `--outro-audio` only to override the bundled defaults.
 Pass `--no-default-music` only for explicitly speech-only output.
 
-The segments file should contain the spoken `language` and an ordered
-`segments` array:
+The segments file should contain the spoken `language`, Show Script `title`,
+and an ordered `segments` array. Each segment should carry the resolved fixed
+Voice Persona metadata when the helper selected a host voice:
 
 ```json
 {
   "language": "en-US",
+  "title": "Daily Audio Brief",
   "segments": [
     {
       "id": "opening-01",
       "speaker": "host_a",
+      "speaker_label": "Maya",
       "text": "At first these stories look separate, but there is a shared thread underneath them.",
+      "voice_persona_id": "bing-edge/en-US-AvaNeural",
       "voice": "en-US-AvaNeural"
     },
     {
       "id": "opening-02",
       "speaker": "host_b",
+      "speaker_label": "Noah",
       "text": "And that thread may matter more than any single headline on its own.",
+      "voice_persona_id": "bing-edge/en-US-GuyNeural",
       "voice": "en-US-GuyNeural"
     }
   ]
 }
 ```
 
-If `--voice` is omitted, Bing Edge TTS chooses a default voice from the script
-language and host gender metadata.
+If `--voice` is omitted, Bing Edge TTS chooses voices through the fixed Voice
+Persona registry. Exact host `provider_voice` values from the Show Script take
+precedence over registry defaults.
+
+For Chinese Audio Briefs, avoid raw provider defaults when generating final
+audio. The default Edge voices can sound too broadcast-like or too childlike;
+the fixed Chinese Edge defaults use `林晓` and `周熙` persona voices with lower
+pitch and moderately reduced rate because that tested better than both raw
+defaults and slower tuning variants. Treat it as a usable preview baseline, not
+a finished quality ceiling.
 
 ## Intro And Outro Music
 
@@ -153,17 +167,32 @@ Script title passed through the segments file when available. Treat
 stem only as a fallback when no Show Script title or explicit display title is
 available.
 
-Final audio assembly should also preserve Audio Brief Artwork. Host agents that
-can generate images may create an unbranded, text-free artwork base and pass it
-with `--artwork-file`. The helper must still apply the FeedContext brand mark as
-the final post-processing step. When no artwork file is provided, generate a
-deterministic fixed-template cover image instead of leaving the audio without
-artwork. Save the final cover next to the audio as `<audio-stem>.cover.png` and
-attempt to embed it into the final audio file using player-compatible cover
-encoding for the target container. The sidecar may remain PNG even when the M4A
-embedding path converts the attached artwork to JPEG/MJPEG for compatibility.
-If embedding fails, keep the audio and sidecar image and record the artwork
-embedding failure in the render manifest.
+Final audio assembly should also preserve Audio Brief Artwork.
+
+Artwork capability contract:
+
+- Treat host image generation as an abstract capability. It may be native,
+  plugin-backed, externally configured, MCP-backed, or CLI-backed; do not require
+  a specific tool name such as `imagegen`.
+- If the host agent can generate an image and hand off a local file, create a
+  square, unbranded, text-free artwork base from the reviewed Show Script and
+  synthesis context. Save it as `<audio-stem>.artwork-base.png` or
+  `<audio-stem>.artwork-base.jpg`.
+- The generated base image must not contain title text, subtitles, dates,
+  captions, logos, watermarks, or provider branding. The helper owns the
+  FeedContext brand overlay and audio metadata owns the title.
+- Pass the local base image to helper rendering with `--artwork-file`.
+- If image generation is unavailable, fails, or cannot produce a local file for
+  handoff, omit `--artwork-file` and let the helper use its deterministic
+  fixed-template artwork base.
+
+The helper must apply the FeedContext brand mark as the final post-processing
+step for both generated and fixed-template artwork. Save the final cover next to
+the audio as `<audio-stem>.cover.png` and attempt to embed it into the final
+audio file using player-compatible cover encoding for the target container. The
+sidecar may remain PNG even when the M4A embedding path converts the attached
+artwork to JPEG/MJPEG for compatibility. If embedding fails, keep the audio and
+sidecar image and record the artwork embedding failure in the render manifest.
 
 Write the full spoken playback text to the audio file's lyrics or unsynchronized
 lyrics metadata when supported. Use comment or description metadata only as a

@@ -180,7 +180,8 @@ Minimum shape:
       "role": "narrative_lead",
       "gender": "female",
       "voice": "calm, clear, analytical",
-      "provider_voice": "en-US-AvaNeural"
+      "provider_voice": "en-US-AvaNeural",
+      "voice_persona_id": "bing-edge/en-US-AvaNeural"
     },
     {
       "id": "host_b",
@@ -188,7 +189,8 @@ Minimum shape:
       "role": "clarifier",
       "gender": "male",
       "voice": "curious, concise",
-      "provider_voice": "en-US-GuyNeural"
+      "provider_voice": "en-US-GuyNeural",
+      "voice_persona_id": "bing-edge/en-US-GuyNeural"
     }
   ],
   "sections": [
@@ -225,3 +227,10 @@ Minimum shape:
   }
 }
 ```
+
+When `provider_voice` is omitted, the helper resolves a fixed Voice Persona for
+the spoken language and host gender. Host-level `provider_voice` remains the
+exact rendering voice and takes precedence over registry defaults. Host-level
+`voice_persona_id` records which fixed provider voice persona supplied the host
+name or voice metadata, while `name` is the stable host name used for spoken
+self-introductions.

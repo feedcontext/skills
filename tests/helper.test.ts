@@ -104,6 +104,7 @@ describe("FeedContext Show Script validation", () => {
             id: "host_a",
             name: "A",
             provider_voice: "zh-CN-XiaoxiaoNeural",
+            voice_persona_id: "bing-edge/zh-CN-XiaoxiaoNeural",
             role: "narrative_lead",
           },
           {
@@ -111,6 +112,7 @@ describe("FeedContext Show Script validation", () => {
             id: "host_b",
             name: "B",
             provider_voice: "zh-CN-YunxiNeural",
+            voice_persona_id: "bing-edge/zh-CN-YunxiNeural",
             role: "clarifier",
           },
         ],
@@ -221,23 +223,188 @@ describe("FeedContext Show Script validation", () => {
       segments: [
         {
           id: "opening-01",
+          pitch: "-10Hz",
+          rate: "-7%",
           speaker: "host_a",
           speaker_label: "女主播",
           text: "哈哈，今天这几条新闻看起来分散，但其实有一条暗线。",
           voice: "zh-CN-XiaoxiaoNeural",
+          voice_persona_id: "bing-edge/zh-CN-XiaoxiaoNeural",
         },
         {
           id: "opening-02",
+          pitch: "-12Hz",
+          rate: "-5%",
           speaker: "host_b",
           speaker_label: "男主播",
           text: "我先接一句，这条暗线可能比单条漏洞更值得紧张。",
           voice: "zh-CN-YunxiNeural",
+          voice_persona_id: "bing-edge/zh-CN-YunxiNeural",
         },
       ],
       title: "Daily Audio Brief",
     });
     expect(segments.segments.map((segment) => segment.text).join("")).not.toContain("女主播");
     expect(segments.segments.map((segment) => segment.text).join("")).not.toContain("男主播");
+  });
+
+  it("resolves fixed Chinese Voice Personas when host voices are omitted", () => {
+    const segments = buildAudioSegmentsFromShowScript({
+      schema_version: "1",
+      source_synthesis: {
+        file: "briefing.synthesis.json",
+      },
+      intent: "script_then_audio",
+      language: "zh-CN",
+      format: "two_host",
+      title: "Daily Audio Brief",
+      hosts: [
+        {
+          gender: "female",
+          id: "host_a",
+          role: "narrative_lead",
+        },
+        {
+          gender: "male",
+          id: "host_b",
+          role: "clarifier",
+        },
+      ],
+      sections: [
+        {
+          id: "opening",
+          title: "Opening",
+          turns: [
+            { speaker: "host_a", text: "今天先看一个重要变化。" },
+            { speaker: "host_b", text: "它的影响可能比表面更深。" },
+          ],
+        },
+      ],
+      provider_requirements: {
+        multi_voice: true,
+        long_form: true,
+        segment_generation: true,
+        preferred_output_format: "mp3",
+      },
+    });
+
+    expect(segments).toMatchObject({
+      segments: [
+        {
+          pitch: "-10Hz",
+          rate: "-7%",
+          speaker_label: "林晓",
+          voice: "zh-CN-XiaoxiaoNeural",
+          voice_persona_id: "bing-edge/zh-CN-XiaoxiaoNeural",
+        },
+        {
+          pitch: "-12Hz",
+          rate: "-5%",
+          speaker_label: "周熙",
+          voice: "zh-CN-YunxiNeural",
+          voice_persona_id: "bing-edge/zh-CN-YunxiNeural",
+        },
+      ],
+    });
+  });
+
+  it("keeps host provider_voice as an exact voice override", () => {
+    const segments = buildAudioSegmentsFromShowScript({
+      schema_version: "1",
+      source_synthesis: {
+        file: "briefing.synthesis.json",
+      },
+      intent: "script_then_audio",
+      language: "zh-CN",
+      format: "two_host",
+      title: "Daily Audio Brief",
+      hosts: [
+        {
+          gender: "female",
+          id: "host_a",
+          name: "林晓",
+          provider_voice: "zh-CN-XiaoxiaoNeural",
+          role: "narrative_lead",
+        },
+      ],
+      sections: [
+        {
+          id: "opening",
+          title: "Opening",
+          turns: [{ speaker: "host_a", text: "欢迎回来。" }],
+        },
+      ],
+      provider_requirements: {
+        multi_voice: true,
+        long_form: true,
+        segment_generation: true,
+      },
+    });
+
+    expect(segments.segments[0]).toMatchObject({
+      pitch: "-10Hz",
+      rate: "-7%",
+      speaker_label: "林晓",
+      voice: "zh-CN-XiaoxiaoNeural",
+      voice_persona_id: "bing-edge/zh-CN-XiaoxiaoNeural",
+    });
+  });
+
+  it("applies fixed English Voice Persona prosody", () => {
+    const segments = buildAudioSegmentsFromShowScript({
+      schema_version: "1",
+      source_synthesis: {
+        file: "briefing.synthesis.json",
+      },
+      intent: "script_then_audio",
+      language: "en-US",
+      format: "two_host",
+      title: "Daily Audio Brief",
+      hosts: [
+        {
+          gender: "female",
+          id: "host_a",
+          role: "narrative_lead",
+        },
+        {
+          gender: "male",
+          id: "host_b",
+          role: "clarifier",
+        },
+      ],
+      sections: [
+        {
+          id: "opening",
+          title: "Opening",
+          turns: [
+            { speaker: "host_a", text: "Welcome back." },
+            { speaker: "host_b", text: "Let's get started." },
+          ],
+        },
+      ],
+      provider_requirements: {
+        multi_voice: true,
+        long_form: true,
+        segment_generation: true,
+      },
+    });
+
+    expect(segments.segments).toMatchObject([
+      {
+        pitch: "-3Hz",
+        rate: "-2%",
+        speaker_label: "Maya",
+        voice: "en-US-AvaNeural",
+        voice_persona_id: "bing-edge/en-US-AvaNeural",
+      },
+      {
+        pitch: "-4Hz",
+        rate: "-2%",
+        speaker_label: "Noah",
+        voice: "en-US-GuyNeural",
+        voice_persona_id: "bing-edge/en-US-GuyNeural",
+      },
+    ]);
   });
 });
 
@@ -278,7 +445,7 @@ describe("FeedContext Audio provider diagnostics", () => {
     const directory = mkdtempSync(join(tmpdir(), "feedcontext-bing-tts-test-"));
     const textFile = join(directory, "spoken.txt");
     const out = join(directory, "audio.mp3");
-    const calls: Array<{ out: string; text: string; voice: string }> = [];
+    const calls: Array<{ out: string; pitch?: string; rate?: string; text: string; voice: string; volume?: string }> = [];
 
     try {
       await import("node:fs/promises").then(({ writeFile }) =>
@@ -314,7 +481,7 @@ describe("FeedContext Audio provider diagnostics", () => {
     const directory = mkdtempSync(join(tmpdir(), "feedcontext-bing-tts-language-test-"));
     const textFile = join(directory, "spoken.txt");
     const out = join(directory, "audio.mp3");
-    const calls: Array<{ out: string; text: string; voice: string }> = [];
+    const calls: Array<{ out: string; pitch?: string; rate?: string; text: string; voice: string; volume?: string }> = [];
 
     try {
       await writeFile(textFile, "今天的重点是安全更新。");
@@ -340,7 +507,7 @@ describe("FeedContext Audio provider diagnostics", () => {
   it("renders Bing Edge TTS segments concurrently", async () => {
     const directory = mkdtempSync(join(tmpdir(), "feedcontext-bing-tts-segments-test-"));
     const segmentsFile = join(directory, "segments.json");
-    const calls: Array<{ out: string; text: string; voice: string }> = [];
+    const calls: Array<{ out: string; pitch?: string; rate?: string; text: string; voice: string; volume?: string }> = [];
     let active = 0;
     let peak = 0;
 
@@ -386,6 +553,52 @@ describe("FeedContext Audio provider diagnostics", () => {
           { id: "lead", media_file: join(directory, "002-lead.mp3") },
           { id: "close", media_file: join(directory, "003-close.mp3") },
         ],
+      });
+    } finally {
+      rmSync(directory, { force: true, recursive: true });
+    }
+  });
+
+  it("passes segment prosody settings to the Bing Edge synthesizer", async () => {
+    const directory = mkdtempSync(join(tmpdir(), "feedcontext-bing-tts-prosody-test-"));
+    const segmentsFile = join(directory, "segments.json");
+    const calls: Array<{ out: string; pitch?: string; rate?: string; text: string; voice: string; volume?: string }> = [];
+
+    try {
+      await writeFile(
+        segmentsFile,
+        JSON.stringify({
+          language: "zh-CN",
+          segments: [
+            {
+              id: "opening",
+              pitch: "-4Hz",
+              rate: "-8%",
+              text: "开场。",
+              voice: "zh-CN-XiaoxiaoNeural",
+              volume: "default",
+            },
+          ],
+        }),
+      );
+
+      await renderBingEdgeTtsSegments(
+        {
+          outDir: directory,
+          segmentsFile,
+        },
+        async (input) => {
+          calls.push(input);
+          await writeFile(input.out, "audio");
+        },
+      );
+
+      expect(calls[0]).toMatchObject({
+        pitch: "-4Hz",
+        rate: "-8%",
+        text: "开场。",
+        voice: "zh-CN-XiaoxiaoNeural",
+        volume: "default",
       });
     } finally {
       rmSync(directory, { force: true, recursive: true });

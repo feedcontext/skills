@@ -98,11 +98,15 @@ script-only handoff   provider selection       artwork base generation
    `audio_from_existing_script`.
 8. After the reviewed script artifact exists, start Audio Brief Artwork base
    generation in parallel with provider selection and TTS segment preparation
-   when the host environment supports parallel work. If the host agent can
-   generate images, create an unbranded, text-free base image from the reviewed
-   script and synthesis context. If not, rely on the helper's deterministic
-   fixed-template artwork base. Final brand overlay and audio embedding happen
-   during rendering.
+   when the host environment supports parallel work. If the host agent has any
+   configured image-generation capability that can produce a local image file,
+   create an unbranded, text-free square base image from the reviewed script and
+   synthesis context, save it as `*.artwork-base.png` or `*.artwork-base.jpg`,
+   and pass it to rendering with `--artwork-file`. The capability may be native,
+   plugin-backed, externally configured, or CLI-backed; do not require a
+   specific tool name. If the host cannot generate and hand off a local image
+   file, rely on the helper's deterministic fixed-template artwork base. Final
+   brand overlay and audio embedding happen during rendering.
 9. If the user requested audio or did not specify script-only mode, follow
    `audio-brief/providers.md` to discover available provider paths and ask the
    user which one to use unless the user already specified a provider.
