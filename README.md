@@ -44,7 +44,8 @@ After installation, use the skill instructions in `skills/feedcontext/SKILL.md`.
 - **Feed Item**: one visible content entry from a subscription.
 - **Briefing**: an agent-composed local artifact grounded in visible Feed Items.
 - **Audio Brief**: an agent-composed local audio artifact generated from a Show
-  Script and grounded in Structured Synthesis.
+  Script and grounded in Structured Synthesis. Final renders may embed Timed
+  Script playback text for audio players when the output format supports it.
 
 Briefings should keep important insights traceable to their supporting Feed
 Items without turning the reading experience into an audit interface.

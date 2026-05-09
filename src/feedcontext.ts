@@ -3,9 +3,9 @@ import { execFile, spawn } from "node:child_process";
 import { Buffer } from "node:buffer";
 import { createHash, randomBytes } from "node:crypto";
 import { createWriteStream } from "node:fs";
-import { mkdir, readFile, unlink, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rename, unlink, writeFile } from "node:fs/promises";
 import { homedir, platform } from "node:os";
-import { dirname, join } from "node:path";
+import { basename, dirname, extname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Command } from "commander";
 import { parseOpml } from "feedsmith";
@@ -104,6 +104,7 @@ type BingEdgeTtsSegmentsOptions = {
   outroAudio?: string;
   outDir: string;
   segmentsFile: string;
+  timedScript?: boolean;
   voice?: string;
 };
 
@@ -112,6 +113,12 @@ type BingEdgeTtsSegment = {
   speaker?: string;
   text: string;
   voice?: string;
+};
+
+type RenderedBingEdgeTtsSegment = BingEdgeTtsSegment & {
+  duration_seconds?: number;
+  media_file: string;
+  start_seconds?: number;
 };
 
 type BingEdgeTtsSegmentsFile = {
@@ -126,6 +133,20 @@ type BingEdgeTtsSynthesizer = (options: {
 }) => Promise<void>;
 
 type CommandRunner = (command: string, args: string[]) => Promise<void>;
+
+type AudioDurationProbe = (file: string) => Promise<number>;
+
+type TimedScriptEmbeddingResult = {
+  embedded: boolean;
+  embedding_error?: string;
+  metadata_fields: string[];
+};
+
+type TimedScriptEmbedder = (options: {
+  audioFile: string;
+  sidecarFile: string;
+  text: string;
+}) => Promise<TimedScriptEmbeddingResult>;
 
 type GetItemOptions = {
   cursor?: string;
@@ -1242,6 +1263,27 @@ async function synthesizeBingEdgeTtsFile({ out, text, voice }: {
   text: string;
   voice: string;
 }) {
+  if (process.env.FEEDCONTEXT_TEST_FIXTURE_TTS === "1") {
+    await defaultCommandRunner("ffmpeg", [
+      "-y",
+      "-hide_banner",
+      "-loglevel",
+      "error",
+      "-f",
+      "lavfi",
+      "-i",
+      "anullsrc=r=24000:cl=mono",
+      "-t",
+      "4",
+      "-q:a",
+      "9",
+      "-acodec",
+      "libmp3lame",
+      out,
+    ]);
+    return;
+  }
+
   const trustedClientToken = "6A5AA1D4EAFF4E9FB37E23D68491D6F4";
   const connectionId = edgeTtsRequestId();
   const url =
@@ -1330,6 +1372,36 @@ async function defaultCommandRunner(command: string, args: string[]) {
   });
 }
 
+async function probeAudioDurationSeconds(file: string) {
+  return new Promise<number>((resolve, reject) => {
+    execFile(
+      "ffprobe",
+      [
+        "-v",
+        "error",
+        "-show_entries",
+        "format=duration",
+        "-of",
+        "default=noprint_wrappers=1:nokey=1",
+        file,
+      ],
+      { timeout: 30_000 },
+      (error, stdout) => {
+        if (error) {
+          reject(error);
+          return;
+        }
+        const duration = Number.parseFloat(stdout.trim());
+        if (!Number.isFinite(duration) || duration < 0) {
+          reject(new Error(`Could not read audio duration for ${file}`));
+          return;
+        }
+        resolve(duration);
+      },
+    );
+  });
+}
+
 async function concatAudioFiles(
   files: string[],
   out: string,
@@ -1344,6 +1416,8 @@ async function concatAudioFiles(
     .join("\n");
   await writeFile(listFile, `${content}\n`);
   try {
+    const isM4a = extname(out).toLowerCase() === ".m4a";
+    const title = basename(audioFileStem(out));
     await run("ffmpeg", [
       "-y",
       "-hide_banner",
@@ -1355,13 +1429,190 @@ async function concatAudioFiles(
       "0",
       "-i",
       listFile,
-      "-c",
-      "copy",
+      ...(isM4a
+        ? [
+            "-metadata",
+            `title=${title}`,
+            "-metadata",
+            "artist=FeedContext",
+            "-metadata",
+            "album=FeedContext Audio Brief",
+          ]
+        : []),
+      ...(isM4a
+        ? ["-c:a", "aac", "-b:a", "128k", "-movflags", "+faststart"]
+        : ["-c", "copy"]),
       out,
     ]);
   } finally {
     await unlink(listFile).catch(() => undefined);
   }
+}
+
+function audioFileStem(path: string) {
+  const extension = extname(path);
+  return extension ? path.slice(0, -extension.length) : path;
+}
+
+function timedScriptSidecarPath(audioFile: string) {
+  return `${audioFileStem(audioFile)}.lyrics.txt`;
+}
+
+function syncedLyricsSidecarPath(audioFile: string) {
+  return `${audioFileStem(audioFile)}.lrc`;
+}
+
+function timedScriptTextFromSegments(segments: BingEdgeTtsSegment[]) {
+  return segments
+    .map((segment) => {
+      const speaker = segment.speaker?.trim();
+      return speaker ? `${speaker}: ${segment.text}` : segment.text;
+    })
+    .join("\n\n")
+    .concat("\n");
+}
+
+function lrcTimestamp(seconds: number) {
+  const safeSeconds = Math.max(0, seconds);
+  const minutes = Math.floor(safeSeconds / 60);
+  const remainingSeconds = safeSeconds - minutes * 60;
+  return `${String(minutes).padStart(2, "0")}:${remainingSeconds.toFixed(2).padStart(5, "0")}`;
+}
+
+function syncedLyricsTextFromSegments(segments: RenderedBingEdgeTtsSegment[]) {
+  if (segments.some((segment) => segment.start_seconds === undefined)) {
+    return undefined;
+  }
+  return segments
+    .map((segment) => {
+      const speaker = segment.speaker?.trim();
+      const text = speaker ? `${speaker}: ${segment.text}` : segment.text;
+      return `[${lrcTimestamp(segment.start_seconds ?? 0)}]${text}`;
+    })
+    .join("\n")
+    .concat("\n");
+}
+
+async function embedTimedScriptMetadata(
+  options: {
+    audioFile: string;
+    sidecarFile: string;
+    text: string;
+  },
+  run: CommandRunner = defaultCommandRunner,
+): Promise<TimedScriptEmbeddingResult> {
+  await run("ffprobe", [
+    "-v",
+    "error",
+    "-show_entries",
+    "format=duration",
+    "-of",
+    "default=noprint_wrappers=1:nokey=1",
+    options.audioFile,
+  ]);
+
+  const extension = extname(options.audioFile) || ".m4a";
+  const tempFile = `${options.audioFile}.metadata${extension}`;
+  try {
+    await run("ffmpeg", [
+      "-y",
+      "-hide_banner",
+      "-loglevel",
+      "error",
+      "-i",
+      options.audioFile,
+      "-metadata",
+      `lyrics=${options.text}`,
+      "-metadata",
+      `comment=Timed Script playback text embedded; sidecar: ${basename(options.sidecarFile)}`,
+      "-codec",
+      "copy",
+      tempFile,
+    ]);
+    await rename(tempFile, options.audioFile);
+    return {
+      embedded: true,
+      metadata_fields: ["lyrics", "comment"],
+    };
+  } finally {
+    await unlink(tempFile).catch(() => undefined);
+  }
+}
+
+async function preserveTimedScript({
+  audioFile,
+  embed,
+  segments,
+}: {
+  audioFile: string;
+  embed: TimedScriptEmbedder;
+  segments: RenderedBingEdgeTtsSegment[];
+}) {
+  const sidecarFile = timedScriptSidecarPath(audioFile);
+  const syncedSidecarFile = syncedLyricsSidecarPath(audioFile);
+  const text = timedScriptTextFromSegments(segments);
+  const syncedText = syncedLyricsTextFromSegments(segments);
+  await writeFile(sidecarFile, text);
+  if (syncedText !== undefined) {
+    await writeFile(syncedSidecarFile, syncedText);
+  }
+
+  try {
+    const embedding = await embed({ audioFile, sidecarFile, text });
+    return {
+      embedded: embedding.embedded,
+      embedding_error: embedding.embedding_error,
+      format: "unsynchronized_lyrics",
+      metadata_fields: embedding.metadata_fields,
+      sidecar_file: sidecarFile,
+      synced_sidecar_file: syncedText === undefined ? undefined : syncedSidecarFile,
+      timing_source: "none",
+      synced_timing_source: syncedText === undefined ? "unavailable" : "segment_durations",
+    };
+  } catch (error) {
+    return {
+      embedded: false,
+      embedding_error: error instanceof Error ? error.message : String(error),
+      format: "unsynchronized_lyrics",
+      metadata_fields: [],
+      sidecar_file: sidecarFile,
+      synced_sidecar_file: syncedText === undefined ? undefined : syncedSidecarFile,
+      timing_source: "none",
+      synced_timing_source: syncedText === undefined ? "unavailable" : "segment_durations",
+    };
+  }
+}
+
+async function assignSegmentStartTimes({
+  introAudio,
+  probeDuration,
+  rendered,
+}: {
+  introAudio?: string;
+  probeDuration: AudioDurationProbe;
+  rendered: RenderedBingEdgeTtsSegment[];
+}) {
+  let cursor: number | undefined = 0;
+  if (introAudio !== undefined) {
+    try {
+      cursor = await probeDuration(introAudio);
+    } catch {
+      cursor = undefined;
+    }
+  }
+
+  return rendered.map((segment) => {
+    const startSeconds = cursor;
+    if (cursor !== undefined && segment.duration_seconds !== undefined) {
+      cursor += segment.duration_seconds;
+    } else {
+      cursor = undefined;
+    }
+    return {
+      ...segment,
+      start_seconds: startSeconds,
+    };
+  });
 }
 
 export async function renderBingEdgeTts(
@@ -1432,6 +1683,8 @@ export async function renderBingEdgeTtsSegments(
   options: BingEdgeTtsSegmentsOptions,
   synthesize: BingEdgeTtsSynthesizer = synthesizeBingEdgeTtsFile,
   concat: typeof concatAudioFiles = concatAudioFiles,
+  embed: TimedScriptEmbedder = embedTimedScriptMetadata,
+  probeDuration: AudioDurationProbe = probeAudioDurationSeconds,
 ) {
   const concurrency = parseConcurrency(options.concurrency, 4);
   const parsed = JSON.parse(await readFile(options.segmentsFile, "utf8")) as unknown;
@@ -1447,12 +1700,20 @@ export async function renderBingEdgeTtsSegments(
       text: segment.text,
       voice: segment.voice ?? voice,
     });
+    let durationSeconds: number | undefined;
+    try {
+      durationSeconds = await probeDuration(mediaFile);
+    } catch {
+      durationSeconds = undefined;
+    }
     return {
+      duration_seconds: durationSeconds,
       id: segment.id,
       media_file: mediaFile,
       speaker: segment.speaker,
+      text: segment.text,
       voice: segment.voice ?? voice,
-    };
+    } satisfies RenderedBingEdgeTtsSegment;
   });
 
   if (options.finalOut) {
@@ -1466,6 +1727,17 @@ export async function renderBingEdgeTtsSegments(
       ],
       options.finalOut,
     );
+    const timedScript = options.timedScript === false
+      ? undefined
+      : await preserveTimedScript({
+          audioFile: options.finalOut,
+          embed,
+          segments: await assignSegmentStartTimes({
+            introAudio,
+            probeDuration,
+            rendered,
+          }),
+        });
     return {
       final_out: options.finalOut,
       intro_audio: introAudio,
@@ -1473,6 +1745,7 @@ export async function renderBingEdgeTtsSegments(
       outro_audio: outroAudio,
       provider: "bing-edge",
       segments: rendered,
+      timed_script: timedScript,
       voice,
     };
   }
@@ -1553,6 +1826,7 @@ async function renderAudio(options: {
   provider?: AudioProviderId;
   segmentsFile?: string;
   textFile?: string;
+  timedScript?: boolean;
   voice?: string;
 }) {
   const provider = options.provider ?? DEFAULT_AUDIO_PROVIDER;
@@ -1573,6 +1847,7 @@ async function renderAudio(options: {
       outroAudio: options.outroAudio,
       outDir: options.outDir,
       segmentsFile: options.segmentsFile,
+      timedScript: options.timedScript,
       voice: options.voice,
     });
     await writeFile(options.out, `${JSON.stringify(result, null, 2)}\n`);
@@ -2196,6 +2471,7 @@ async function main(argv = process.argv) {
     .option("--intro-audio <path>", "Optional intro music/audio file to prepend when --final-out is used")
     .option("--outro-audio <path>", "Optional outro music/audio file to append when --final-out is used")
     .option("--no-default-music", "Do not use bundled intro/outro music when --final-out is used")
+    .option("--no-timed-script", "Do not write or embed Timed Script playback text when --final-out is used")
     .option("--language <bcp47>", "Spoken language for provider voice selection, such as zh-CN or en-US")
     .option("--voice <voice>", "Provider voice id")
     .action((options) => renderAudio(options));

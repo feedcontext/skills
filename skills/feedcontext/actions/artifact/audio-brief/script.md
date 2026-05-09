@@ -143,12 +143,17 @@ Keep these files together when practical:
 feedcontext-audio-brief-2026-05-07.synthesis.json
 feedcontext-audio-brief-2026-05-07.script.json
 feedcontext-audio-brief-2026-05-07.script.md
-feedcontext-audio-brief-2026-05-07.mp3
 feedcontext-audio-brief-2026-05-07.segments.json
+feedcontext-audio-brief-2026-05-07.bing-edge.m4a
+feedcontext-audio-brief-2026-05-07.bing-edge.lyrics.txt
+feedcontext-audio-brief-2026-05-07.bing-edge.render-manifest.json
 ```
 
 Use `schemas/show-script.schema.json` as the generated schema artifact and
 `node scripts/helper.mjs show-script schema` as the helper-backed schema source.
+Do not add Timed Script fields to the Show Script JSON. Timed Script playback
+text is derived after audio rendering because it depends on the final audio
+file, provider pacing, segment manifest, and intro or outro assembly.
 
 Minimum shape:
 

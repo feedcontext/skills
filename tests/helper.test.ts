@@ -450,6 +450,134 @@ describe("FeedContext Audio provider diagnostics", () => {
     }
   });
 
+  it("embeds Timed Script playback text for final m4a renders", async () => {
+    const directory = mkdtempSync(join(tmpdir(), "feedcontext-bing-tts-timed-script-test-"));
+    const segmentsFile = join(directory, "segments.json");
+    const finalOut = join(directory, "final.m4a");
+    const embedCalls: Array<{ audioFile: string; sidecarFile: string; text: string }> = [];
+
+    try {
+      await writeFile(
+        segmentsFile,
+        JSON.stringify({
+          language: "zh-CN",
+          segments: [
+            { id: "opening", speaker: "host_a", text: "开场。", voice: "zh-CN-XiaoxiaoNeural" },
+            { id: "reply", speaker: "host_b", text: "回应。", voice: "zh-CN-YunxiNeural" },
+          ],
+        }),
+      );
+
+      const result = await renderBingEdgeTtsSegments(
+        {
+          defaultMusic: false,
+          finalOut,
+          outDir: directory,
+          segmentsFile,
+        },
+        async (input) => {
+          await writeFile(input.out, `audio:${input.voice}:${input.text}`);
+        },
+        async (files, out) => {
+          await writeFile(out, files.join("\n"));
+        },
+        async (input) => {
+          embedCalls.push(input);
+          return { embedded: true, metadata_fields: ["lyrics", "comment"] };
+        },
+        async (file) => {
+          if (file.endsWith("001-opening.mp3")) return 2.25;
+          if (file.endsWith("002-reply.mp3")) return 3.5;
+          throw new Error(`unexpected duration probe: ${file}`);
+        },
+      );
+
+      const sidecarFile = join(directory, "final.lyrics.txt");
+      const syncedSidecarFile = join(directory, "final.lrc");
+      expect(readFileSync(sidecarFile, "utf8")).toBe("host_a: 开场。\n\nhost_b: 回应。\n");
+      expect(readFileSync(syncedSidecarFile, "utf8")).toBe(
+        "[00:00.00]host_a: 开场。\n[00:02.25]host_b: 回应。\n",
+      );
+      expect(embedCalls).toEqual([
+        {
+          audioFile: finalOut,
+          sidecarFile,
+          text: "host_a: 开场。\n\nhost_b: 回应。\n",
+        },
+      ]);
+      expect(result).toMatchObject({
+        final_out: finalOut,
+        timed_script: {
+          embedded: true,
+          format: "unsynchronized_lyrics",
+          metadata_fields: ["lyrics", "comment"],
+          sidecar_file: sidecarFile,
+          synced_sidecar_file: syncedSidecarFile,
+          timing_source: "none",
+          synced_timing_source: "segment_durations",
+        },
+      });
+    } finally {
+      rmSync(directory, { force: true, recursive: true });
+    }
+  });
+
+  it("keeps final audio and sidecar when Timed Script embedding fails", async () => {
+    const directory = mkdtempSync(join(tmpdir(), "feedcontext-bing-tts-timed-script-fallback-test-"));
+    const segmentsFile = join(directory, "segments.json");
+    const finalOut = join(directory, "final.m4a");
+
+    try {
+      await writeFile(
+        segmentsFile,
+        JSON.stringify({
+          language: "en-US",
+          segments: [{ id: "opening", speaker: "host_a", text: "Opening." }],
+        }),
+      );
+
+      const result = await renderBingEdgeTtsSegments(
+        {
+          defaultMusic: false,
+          finalOut,
+          outDir: directory,
+          segmentsFile,
+        },
+        async (input) => {
+          await writeFile(input.out, `audio:${input.voice}:${input.text}`);
+        },
+        async (files, out) => {
+          await writeFile(out, files.join("\n"));
+        },
+        async () => {
+          throw new Error("ffmpeg metadata write failed");
+        },
+        async (file) => {
+          if (file.endsWith("001-opening.mp3")) return 1.5;
+          throw new Error(`unexpected duration probe: ${file}`);
+        },
+      );
+
+      const sidecarFile = join(directory, "final.lyrics.txt");
+      const syncedSidecarFile = join(directory, "final.lrc");
+      expect(existsSync(finalOut)).toBe(true);
+      expect(readFileSync(sidecarFile, "utf8")).toBe("host_a: Opening.\n");
+      expect(readFileSync(syncedSidecarFile, "utf8")).toBe("[00:00.00]host_a: Opening.\n");
+      expect(result).toMatchObject({
+        ok: true,
+        timed_script: {
+          embedded: false,
+          embedding_error: "ffmpeg metadata write failed",
+          sidecar_file: sidecarFile,
+          synced_sidecar_file: syncedSidecarFile,
+          synced_timing_source: "segment_durations",
+        },
+      });
+    } finally {
+      rmSync(directory, { force: true, recursive: true });
+    }
+  });
+
   it("uses bundled intro and outro music for final podcast assembly by default", async () => {
     const directory = mkdtempSync(join(tmpdir(), "feedcontext-bing-tts-default-music-test-"));
     const segmentsFile = join(directory, "segments.json");

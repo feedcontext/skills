@@ -36,6 +36,9 @@ script-only handoff   provider selection
          final audio with bundled intro/outro
                         |
                         v
+        embedded Timed Script playback text
+                        |
+                        v
                Run Feedback note
 ```
 
@@ -97,10 +100,10 @@ script-only handoff   provider selection
    `audio-brief/providers.md` to discover available provider paths and ask the
    user which one to use unless the user already specified a provider.
 9. Generate audio through the selected provider path. Follow
-   `audio-brief/rendering.md` for segments, provider diagnostics, and final
-   assembly. Podcast-like final outputs use the bundled intro and outro music
-   unless the user explicitly asks for speech-only output or supplies custom
-   assets.
+   `audio-brief/rendering.md` for segments, provider diagnostics, final
+   assembly, and embedded Timed Script playback text. Podcast-like final outputs
+   use the bundled intro and outro music unless the user explicitly asks for
+   speech-only output or supplies custom assets.
 10. Preserve a Run Feedback note after script-only handoff or final audio
    generation. Follow `audio-brief/run-feedback.md`.
 
@@ -117,7 +120,7 @@ script-only handoff   provider selection
 - `audio-brief/providers.md` covers provider discovery, provider classes,
   privacy boundaries, and provider selection.
 - `audio-brief/rendering.md` covers helper commands, segments, Bing Edge TTS,
-  and final audio assembly.
+  final audio assembly, and embedded Timed Script playback text.
 - `audio-brief/run-feedback.md` covers post-run feedback notes that future
   Audio Brief runs may read before creating a new script.
 - `audio-brief/mechanical-delegation.md` covers the narrow cases where a host
