@@ -1,6 +1,9 @@
 # Dependencies
 /node_modules/
 
+# macOS metadata
+.DS_Store
+
 # Test and TypeScript output
 /coverage/
 *.tsbuildinfo

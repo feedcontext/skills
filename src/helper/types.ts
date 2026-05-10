@@ -302,6 +302,7 @@ export type GitRunner = (args: string[], cwd: string) => Promise<string>;
 
 export type PendingLogin = {
   created_at: number;
+  login_session: string;
   redirect_uri: string;
   state: string;
   verifier: string;

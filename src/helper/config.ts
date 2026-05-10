@@ -1,4 +1,4 @@
-import { homedir } from "node:os";
+import { homedir, tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import allowlist from "@/allowlist.json" assert { type: "json" };
@@ -14,8 +14,14 @@ export const SCOPES = "feeds:read subscriptions:read subscriptions:write";
 
 export const SERVICE = "feedcontext.skill";
 export const ACCOUNT = "default";
-export const FALLBACK_PATH = join(homedir(), ".feedcontext", "skill-session.json");
-export const PENDING_LOGIN_PATH = join(homedir(), ".feedcontext", "pending-login.json");
+export const STATE_DIR = process.env.FEEDCONTEXT_STATE_DIR ?? join(homedir(), ".feedcontext");
+export const FALLBACK_PATH = join(STATE_DIR, "skill-session.json");
+export const PENDING_LOGIN_DIR = join(tmpdir(), "feedcontext");
+export function buildPendingLoginPath(loginSession: string) {
+  return join(PENDING_LOGIN_DIR, `pending-login-${loginSession}.json`);
+}
+export const PENDING_LOGIN_PATH = buildPendingLoginPath("default");
+export const LEGACY_PENDING_LOGIN_PATH = join(STATE_DIR, "pending-login.json");
 export const PENDING_LOGIN_TTL_MS = 10 * 60 * 1000;
 export const ALLOWLIST = allowlist.paths;
 export const HELPER_DIR = dirname(fileURLToPath(import.meta.url));

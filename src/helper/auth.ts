@@ -1,10 +1,10 @@
 import { execFile, spawn } from "node:child_process";
 import { Buffer } from "node:buffer";
 import { createHash, randomBytes } from "node:crypto";
-import { mkdir, readFile, unlink, writeFile } from "node:fs/promises";
-import { dirname } from "node:path";
+import { mkdir, readFile, readdir, unlink, writeFile } from "node:fs/promises";
+import { dirname, join } from "node:path";
 import { platform } from "node:os";
-import { API_ORIGIN, AUTH_BASE, CLIENT_ID, FALLBACK_PATH, PENDING_LOGIN_PATH, PENDING_LOGIN_TTL_MS, REDIRECT_URI, SERVICE, ACCOUNT, SKILL_PAIR_ENDPOINT } from "./config";
+import { API_ORIGIN, AUTH_BASE, buildPendingLoginPath, CLIENT_ID, FALLBACK_PATH, LEGACY_PENDING_LOGIN_PATH, PENDING_LOGIN_DIR, PENDING_LOGIN_TTL_MS, REDIRECT_URI, SERVICE, ACCOUNT, SKILL_PAIR_ENDPOINT } from "./config";
 import type { PendingLogin, SkillSession } from "./types";
 
 function base64Url(input: Buffer) {
@@ -15,6 +15,44 @@ function createPkce() {
   const verifier = base64Url(randomBytes(32));
   const challenge = base64Url(createHash("sha256").update(verifier).digest());
   return { challenge, verifier };
+}
+
+export function createLoginSessionId(state: string) {
+  return createHash("sha256").update(state).digest("hex").slice(0, 8);
+}
+
+function pendingLoginDetails(pending: PendingLogin) {
+  return {
+    created_at: new Date(pending.created_at).toISOString(),
+    expires_at: new Date(pending.created_at + PENDING_LOGIN_TTL_MS).toISOString(),
+    login_session: createLoginSessionId(pending.state),
+    pending_login_path: buildPendingLoginPath(pending.login_session),
+  };
+}
+
+function pendingLoginHint() {
+  return `State directory: ${PENDING_LOGIN_DIR}. If multiple logins are pending, re-run with --login-session <id>.`;
+}
+
+export function selectPendingLogin(input: {
+  loginSession?: string;
+  now?: number;
+  pendingLogins: PendingLogin[];
+}) {
+  const now = input.now ?? Date.now();
+  const fresh = input.pendingLogins.filter(
+    (pending) => pending.created_at >= now - PENDING_LOGIN_TTL_MS,
+  );
+
+  if (input.loginSession) {
+    return fresh.find((pending) => pending.login_session === input.loginSession) ?? null;
+  }
+
+  if (fresh.length > 1) {
+    throw new Error("Multiple pending FeedContext logins found. Re-run with --login-session <id>.");
+  }
+
+  return fresh[0] ?? null;
 }
 
 async function macKeychainRead() {
@@ -75,23 +113,75 @@ async function writeFallbackSession(value: string) {
   );
 }
 
-async function readPendingLogin() {
+export function selectSessionRaw(input: { credentialStoreRaw: string | null; fallbackRaw: string | null }) {
+  return input.credentialStoreRaw ?? input.fallbackRaw;
+}
+
+export function shouldWriteFallbackSession(input: { credentialStoreWritten: boolean }) {
+  return !input.credentialStoreWritten;
+}
+
+async function readPendingLoginFile(path: string) {
   try {
-    return JSON.parse(await readFile(PENDING_LOGIN_PATH, "utf8")) as PendingLogin;
+    return JSON.parse(await readFile(path, "utf8")) as PendingLogin;
   } catch {
     return null;
   }
 }
 
-async function writePendingLogin(pending: PendingLogin) {
-  await mkdir(dirname(PENDING_LOGIN_PATH), { recursive: true, mode: 0o700 });
-  await clearPendingLogin();
-  await writeFile(PENDING_LOGIN_PATH, JSON.stringify(pending), { mode: 0o600 });
+async function listPendingLogins() {
+  let entries: string[];
+  try {
+    entries = await readdir(PENDING_LOGIN_DIR);
+  } catch {
+    return [];
+  }
+
+  const pending = await Promise.all(
+    entries
+      .filter((entry) => /^pending-login-[a-f0-9]{8}\.json$/.test(entry))
+      .map((entry) => readPendingLoginFile(join(PENDING_LOGIN_DIR, entry))),
+  );
+  return pending.filter((entry): entry is PendingLogin => entry !== null);
 }
 
-async function clearPendingLogin() {
+async function readPendingLogin(loginSession?: string) {
+  if (loginSession) {
+    return readPendingLoginFile(buildPendingLoginPath(loginSession));
+  }
+
+  return selectPendingLogin({
+    pendingLogins: await listPendingLogins(),
+  });
+}
+
+async function writePendingLogin(pending: PendingLogin) {
+  const path = buildPendingLoginPath(pending.login_session);
+  await mkdir(dirname(path), { recursive: true, mode: 0o700 });
+  await writeFile(path, JSON.stringify(pending), { mode: 0o600 });
+}
+
+async function clearPendingLogin(loginSession?: string) {
+  if (loginSession) {
+    try {
+      await unlink(buildPendingLoginPath(loginSession));
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  const pending = await listPendingLogins();
+  if (pending.length === 0) return false;
+  await Promise.allSettled(
+    pending.map((entry) => unlink(buildPendingLoginPath(entry.login_session))),
+  );
+  return true;
+}
+
+async function clearLegacyPendingLogin() {
   try {
-    await unlink(PENDING_LOGIN_PATH);
+    await unlink(LEGACY_PENDING_LOGIN_PATH);
     return true;
   } catch {
     return false;
@@ -99,13 +189,16 @@ async function clearPendingLogin() {
 }
 
 async function readSession(): Promise<SkillSession | null> {
-  const raw = (await macKeychainRead()) ?? (await readFallbackSession());
+  const raw = selectSessionRaw({
+    credentialStoreRaw: await macKeychainRead(),
+    fallbackRaw: await readFallbackSession(),
+  });
   return raw ? (JSON.parse(raw) as SkillSession) : null;
 }
 
 async function writeSession(session: SkillSession) {
   const raw = JSON.stringify(session);
-  if (!(await macKeychainWrite(raw))) {
+  if (shouldWriteFallbackSession({ credentialStoreWritten: await macKeychainWrite(raw) })) {
     await writeFallbackSession(raw);
   }
 }
@@ -182,11 +275,15 @@ async function startLogin() {
   const state = base64Url(randomBytes(24));
   const pkce = createPkce();
   const authorize = createSkillAuthUrl(state, pkce.challenge);
-  await writePendingLogin({
+  const pending = {
     created_at: Date.now(),
+    login_session: createLoginSessionId(state),
     redirect_uri: REDIRECT_URI,
     state,
     verifier: pkce.verifier,
+  };
+  await writePendingLogin({
+    ...pending,
   });
   await openBrowser(authorize.toString());
 
@@ -194,21 +291,25 @@ async function startLogin() {
     JSON.stringify({
       ok: true,
       authorize_url: authorize.toString(),
+      ...pendingLoginDetails(pending),
       next: "After signing in, copy the pair code from the browser and run `feedcontext login --pair-code <code>`.",
       status: "pair_code_required",
     }),
   );
 }
 
-async function completeLogin(pairCode: string) {
-  const pending = await readPendingLogin();
+async function completeLogin(pairCode: string, loginSession?: string) {
+  const pending = await readPendingLogin(loginSession);
   if (!pending) {
-    throw new Error("No pending FeedContext login. Run `feedcontext login` first.");
+    throw new Error(`No pending FeedContext login. Run \`feedcontext login\` first. ${pendingLoginHint()}`);
   }
 
   if (pending.created_at < Date.now() - PENDING_LOGIN_TTL_MS) {
-    await clearPendingLogin();
-    throw new Error("Pending FeedContext login expired. Run `feedcontext login` again.");
+    const details = pendingLoginDetails(pending);
+    await clearPendingLogin(pending.login_session);
+    throw new Error(
+      `Pending FeedContext login expired for session ${details.login_session} (created ${details.created_at}, expired ${details.expires_at}). Run \`feedcontext login\` again. ${pendingLoginHint()}`,
+    );
   }
 
   const normalizedPairCode = parsePairCode(pairCode);
@@ -219,7 +320,10 @@ async function completeLogin(pairCode: string) {
   });
 
   if (!pairResponse.ok) {
-    throw new Error("Pair code expired or already used. Run `feedcontext login` again.");
+    const details = pendingLoginDetails(pending);
+    throw new Error(
+      `Pair code expired, already used, or from a different browser page for login session ${details.login_session}. Run \`feedcontext login\` again and use the newest browser page. ${pendingLoginHint()}`,
+    );
   }
 
   const pair = (await pairResponse.json()) as {
@@ -228,7 +332,10 @@ async function completeLogin(pairCode: string) {
   };
 
   if (pair.state !== pending.state) {
-    throw new Error("Invalid pair code state. Run `feedcontext login` again.");
+    const details = pendingLoginDetails(pending);
+    throw new Error(
+      `Invalid pair code state for login session ${details.login_session}. The code came from a different login attempt. Run \`feedcontext login\` again and use the newest browser page. ${pendingLoginHint()}`,
+    );
   }
 
   const tokenResponse = await fetch(`${AUTH_BASE}/oauth2/token`, {
@@ -259,13 +366,13 @@ async function completeLogin(pairCode: string) {
     refresh_token: token.refresh_token,
     token_type: "Bearer",
   });
-  await clearPendingLogin();
+  await clearPendingLogin(pending.login_session);
   console.log(JSON.stringify({ ok: true }));
 }
 
-export async function login(options: { pairCode?: string }) {
+export async function login(options: { loginSession?: string; pairCode?: string }) {
   if (options.pairCode) {
-    await completeLogin(options.pairCode);
+    await completeLogin(options.pairCode, options.loginSession);
     return;
   }
 
@@ -275,11 +382,12 @@ export async function login(options: { pairCode?: string }) {
 export async function logout() {
   const session = await clearSession();
   const pending_login_cleared = await clearPendingLogin();
+  const legacy_pending_login_cleared = await clearLegacyPendingLogin();
   console.log(
     JSON.stringify({
       ok: true,
       ...session,
-      pending_login_cleared,
+      pending_login_cleared: pending_login_cleared || legacy_pending_login_cleared,
     }),
   );
 }

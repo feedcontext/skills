@@ -11,9 +11,9 @@ import { printShowScriptSchema, printSynthesisSchema, validateShowScriptFile, va
 import { deliverArtifactCommand } from "./helper/artifacts";
 import { disconnectTelegram, printTelegramBindingLink, printTelegramStatus } from "./helper/integrations";
 
-export { API_ORIGIN, AUTH_BASE, CLIENT_ID, REDIRECT_URI, SCOPES, SKILL_PAIR_ENDPOINT, WEB_ORIGIN } from "./helper/config";
+export { API_ORIGIN, AUTH_BASE, buildPendingLoginPath, CLIENT_ID, PENDING_LOGIN_PATH, REDIRECT_URI, SCOPES, SKILL_PAIR_ENDPOINT, STATE_DIR, WEB_ORIGIN } from "./helper/config";
 export type { GatherInsightResult, SkillSession, VersionStatus } from "./helper/types";
-export { createSkillAuthUrl, parsePairCode } from "./helper/auth";
+export { createLoginSessionId, createSkillAuthUrl, parsePairCode, selectPendingLogin, selectSessionRaw, shouldWriteFallbackSession } from "./helper/auth";
 export { enforceConfirmBeforeNetwork, isAllowedRawCall, isMutatingRawCall } from "./helper/api";
 export { buildGetItemPath, buildListItemsPath, gatherInsight, getManyItems, writeGatherInsightFile } from "./helper/items";
 export { parseOpmlFeedUrls } from "./helper/subscriptions";
@@ -40,7 +40,8 @@ async function main(argv = process.argv) {
     .command("login")
     .description("Start browser login or finish login with a pair code")
     .option("--pair-code <code>", "Resolve a pending browser login with the 6-digit pair code")
-    .action((options) => login({ pairCode: options.pairCode }));
+    .option("--login-session <id>", "Resolve a specific pending browser login when more than one is active")
+    .action((options) => login({ loginSession: options.loginSession, pairCode: options.pairCode }));
   program
     .command("logout")
     .description("Clear the local Skill Session and pending login state")

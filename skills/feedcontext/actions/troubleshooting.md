@@ -7,7 +7,15 @@ Use this doc for recovery paths.
 
 - Confirm the browser opened an `api.feedcontext.io` Google login URL.
 - Confirm the browser shows a FeedContext pair code after Google login.
-- Retry `node scripts/helper.mjs login` if the pending pair code expired.
+- Confirm the pair code came from the newest browser page for the printed
+  `login_session`.
+- If multiple logins are pending, re-run `login --pair-code` with the printed
+  `--login-session <id>`.
+- Do not override `HOME` for login commands. Pending login state is temporary
+  OS handoff state, while `FEEDCONTEXT_STATE_DIR` only affects persistent
+  fallback Skill Session files.
+- Retry `node scripts/helper.mjs login` if the pending pair code expired, then
+  use the newest browser page and ignore older tabs.
 
 ## Session Storage Warning
 

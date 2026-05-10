@@ -1,14 +1,16 @@
 import { describe, expect, it } from "vitest";
 import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
+import { homedir, tmpdir } from "node:os";
 import { join } from "node:path";
 import showScriptSchema from "@/show-script.schema.json" assert { type: "json" };
 import structuredSynthesisSchema from "@/structured-synthesis.schema.json" assert { type: "json" };
 import {
   buildGetItemPath,
   buildAudioSegmentsFromShowScript,
+  buildPendingLoginPath,
   buildVersionStatus,
+  createLoginSessionId,
   createSkillAuthUrl,
   buildListItemsPath,
   detectAudioProviders,
@@ -31,7 +33,12 @@ import {
   reviewFinalAudio,
   runWithConcurrency,
   SCOPES,
+  selectPendingLogin,
+  selectSessionRaw,
+  shouldWriteFallbackSession,
   SKILL_PAIR_ENDPOINT,
+  PENDING_LOGIN_PATH,
+  STATE_DIR,
   validateShowScript,
   validateStructuredSynthesis,
   writeGatherInsightFile,
@@ -53,6 +60,64 @@ describe("FeedContext Skill helper safety", () => {
 
   it("resolves skill pair codes through the skill-scoped handoff endpoint", () => {
     expect(SKILL_PAIR_ENDPOINT).toBe("/v1/auth/skill/pair");
+  });
+
+  it("uses a stable explicit state directory for local Skill Session files", () => {
+    expect(STATE_DIR.endsWith(".feedcontext")).toBe(true);
+  });
+
+  it("keeps pending login handoff state in the OS temporary directory, not the home state directory", () => {
+    expect(PENDING_LOGIN_PATH.startsWith(tmpdir())).toBe(true);
+    expect(PENDING_LOGIN_PATH.startsWith(homedir())).toBe(false);
+    expect(PENDING_LOGIN_PATH).toContain("feedcontext");
+  });
+
+  it("binds pending login handoff file names to the login session", () => {
+    expect(buildPendingLoginPath("abcdef12")).toBe(
+      join(tmpdir(), "feedcontext", "pending-login-abcdef12.json"),
+    );
+  });
+
+  it("selects a pending login only when the login session is unambiguous", () => {
+    const now = 1_000_000;
+    const first = {
+      created_at: now,
+      login_session: "first111",
+      redirect_uri: "https://feedcontext.io/pair",
+      state: "state_1",
+      verifier: "verifier_1",
+    };
+    const second = {
+      created_at: now,
+      login_session: "second22",
+      redirect_uri: "https://feedcontext.io/pair",
+      state: "state_2",
+      verifier: "verifier_2",
+    };
+
+    expect(selectPendingLogin({ now, pendingLogins: [first] })).toEqual(first);
+    expect(selectPendingLogin({ loginSession: "second22", now, pendingLogins: [first, second] })).toEqual(second);
+    expect(() => selectPendingLogin({ now, pendingLogins: [first, second] })).toThrow(/--login-session/);
+  });
+
+  it("prefers the credential store over the fallback session file", () => {
+    expect(
+      selectSessionRaw({
+        credentialStoreRaw: JSON.stringify({ access_token: "keychain", token_type: "Bearer" }),
+        fallbackRaw: JSON.stringify({ access_token: "file", token_type: "Bearer" }),
+      }),
+    ).toBe(JSON.stringify({ access_token: "keychain", token_type: "Bearer" }));
+    expect(
+      selectSessionRaw({
+        credentialStoreRaw: null,
+        fallbackRaw: JSON.stringify({ access_token: "file", token_type: "Bearer" }),
+      }),
+    ).toBe(JSON.stringify({ access_token: "file", token_type: "Bearer" }));
+  });
+
+  it("writes the fallback session file only when the credential store write fails", () => {
+    expect(shouldWriteFallbackSession({ credentialStoreWritten: true })).toBe(false);
+    expect(shouldWriteFallbackSession({ credentialStoreWritten: false })).toBe(true);
   });
 
   it("allows only documented v1 API paths", () => {
@@ -1131,6 +1196,12 @@ describe("FeedContext Skill helper version action", () => {
 });
 
 describe("FeedContext Skill helper pair codes", () => {
+  it("creates non-secret login session ids for diagnostics", () => {
+    expect(createLoginSessionId("state_123")).toMatch(/^[a-f0-9]{8}$/);
+    expect(createLoginSessionId("state_123")).toBe(createLoginSessionId("state_123"));
+    expect(createLoginSessionId("state_123")).not.toBe(createLoginSessionId("state_456"));
+  });
+
   it("accepts 6-digit pair codes", () => {
     expect(parsePairCode("123456")).toBe("123456");
   });
