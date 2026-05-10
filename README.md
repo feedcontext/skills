@@ -22,7 +22,7 @@ work alongside FeedContext.
 ## Install
 
 ```bash
-npx skills install feedcontext
+npx skills install feedcontext/skills
 ```
 
 After installation, use the skill instructions in `skills/feedcontext/SKILL.md`.
