@@ -28,6 +28,7 @@ import {
   parsePositiveIntegerOption,
   renderBingEdgeTts,
   renderBingEdgeTtsSegments,
+  reviewFinalAudio,
   runWithConcurrency,
   SCOPES,
   SKILL_PAIR_ENDPOINT,
@@ -882,6 +883,73 @@ describe("FeedContext Audio provider diagnostics", () => {
           synced_sidecar_file: syncedSidecarFile,
           synced_timing_source: "segment_durations",
         },
+      });
+    } finally {
+      rmSync(directory, { force: true, recursive: true });
+    }
+  });
+
+  it("repairs missing final M4A metadata during final audio review", async () => {
+    const directory = mkdtempSync(join(tmpdir(), "feedcontext-final-audio-review-test-"));
+    const finalOut = join(directory, "final.m4a");
+    const manifestFile = join(directory, "final.render-manifest.json");
+    const lyricsFile = join(directory, "final.lyrics.txt");
+    const artworkFile = join(directory, "final.cover.png");
+    const runCalls: Array<{ args: string[]; command: string }> = [];
+    let probeCalls = 0;
+
+    try {
+      await writeFile(finalOut, "audio");
+      await writeFile(manifestFile, JSON.stringify({ display_title: "Reviewed Brief" }));
+      await writeFile(lyricsFile, "Host A: Opening.\n");
+      await writeFile(artworkFile, "png");
+
+      const result = await reviewFinalAudio(
+        {
+          audioFile: finalOut,
+          manifestFile,
+          out: join(directory, "final.review.json"),
+        },
+        async () => {
+          probeCalls += 1;
+          if (probeCalls === 1) {
+            return { artwork_embedded: false };
+          }
+          return {
+            album: "FeedContext Audio Brief",
+            album_artist: "FeedContext",
+            artist: "FeedContext",
+            artwork_embedded: true,
+            lyrics: "Host A: Opening.",
+            title: "Reviewed Brief",
+          };
+        },
+        async (command, args) => {
+          runCalls.push({ args, command });
+          if (command === "ffmpeg") {
+            await writeFile(args[args.length - 1], "metadata");
+          }
+        },
+      );
+
+      expect(result).toMatchObject({
+        checks: {
+          album: true,
+          album_artist: true,
+          artist: true,
+          artwork: true,
+          lyrics: true,
+          title: true,
+        },
+        ok: true,
+        repaired: true,
+        repair_actions: ["basic_metadata", "lyrics", "artwork"],
+        verdict: "ready_repaired",
+      });
+      expect(runCalls.map((call) => call.command)).toEqual(["ffmpeg", "ffprobe", "ffmpeg", "AtomicParsley"]);
+      expect(JSON.parse(readFileSync(join(directory, "final.review.json"), "utf8"))).toMatchObject({
+        ok: true,
+        verdict: "ready_repaired",
       });
     } finally {
       rmSync(directory, { force: true, recursive: true });

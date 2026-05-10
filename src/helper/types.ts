@@ -173,6 +173,50 @@ export type AudioBriefArtworkPreparer = (options: {
   displayTitle: string;
 }) => Promise<AudioBriefArtworkResult>;
 
+export type AudioFinalReviewOptions = {
+  album?: string;
+  albumArtist?: string;
+  artist?: string;
+  artworkFile?: string;
+  audioFile: string;
+  displayTitle?: string;
+  lyricsFile?: string;
+  manifestFile?: string;
+  out?: string;
+  repair?: boolean;
+};
+
+export type AudioFinalReviewProbe = {
+  album?: string;
+  album_artist?: string;
+  artist?: string;
+  artwork_embedded: boolean;
+  lyrics?: string;
+  title?: string;
+};
+
+export type AudioFinalReviewResult = {
+  audio_file: string;
+  checks: {
+    album: boolean;
+    album_artist: boolean;
+    artist: boolean;
+    artwork: boolean;
+    lyrics: boolean;
+    title: boolean;
+  };
+  missing: string[];
+  ok: boolean;
+  profile: "m4a";
+  repaired: boolean;
+  repair_actions: string[];
+  sidecars: {
+    artwork_file: string;
+    lyrics_file: string;
+  };
+  verdict: "ready" | "ready_repaired" | "blocked";
+};
+
 export type TimedScriptEmbeddingResult = {
   embedded: boolean;
   embedding_error?: string;

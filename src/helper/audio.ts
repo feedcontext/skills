@@ -2,11 +2,11 @@ import { execFile } from "node:child_process";
 import { createWriteStream } from "node:fs";
 import { Buffer } from "node:buffer";
 import { createHash, randomBytes } from "node:crypto";
-import { mkdir, readFile, rename, unlink, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rename, stat, unlink, writeFile } from "node:fs/promises";
 import { basename, extname, join } from "node:path";
 import WebSocket from "ws";
 import { DEFAULT_AUDIO_PROVIDER, DEFAULT_INTRO_AUDIO, DEFAULT_OUTRO_AUDIO } from "./config";
-import type { AudioBriefArtworkPreparer, AudioBriefArtworkResult, AudioDurationProbe, AudioProviderDiagnostic, AudioProviderId, BingEdgeTtsOptions, BingEdgeTtsSegment, BingEdgeTtsSegmentsFile, BingEdgeTtsSegmentsOptions, BingEdgeTtsSynthesizer, CommandRunner, DetectAudioProvidersOptions, JsonRecord, RenderedBingEdgeTtsSegment, TimedScriptEmbedder, TimedScriptEmbeddingResult } from "./types";
+import type { AudioBriefArtworkPreparer, AudioBriefArtworkResult, AudioDurationProbe, AudioFinalReviewOptions, AudioFinalReviewProbe, AudioFinalReviewResult, AudioProviderDiagnostic, AudioProviderId, BingEdgeTtsOptions, BingEdgeTtsSegment, BingEdgeTtsSegmentsFile, BingEdgeTtsSegmentsOptions, BingEdgeTtsSynthesizer, CommandRunner, DetectAudioProvidersOptions, JsonRecord, RenderedBingEdgeTtsSegment, TimedScriptEmbedder, TimedScriptEmbeddingResult } from "./types";
 import { isRecord, parseConcurrency, runWithConcurrency } from "./utils";
 import { validateShowScript } from "./validation";
 
@@ -378,6 +378,18 @@ async function defaultCommandRunner(command: string, args: string[]) {
   });
 }
 
+function commandOutput(command: string, args: string[]) {
+  return new Promise<string>((resolve, reject) => {
+    execFile(command, args, { timeout: 30_000 }, (error, stdout) => {
+      if (error) {
+        reject(error);
+        return;
+      }
+      resolve(stdout);
+    });
+  });
+}
+
 async function probeAudioDurationSeconds(file: string) {
   return new Promise<number>((resolve, reject) => {
     execFile(
@@ -541,6 +553,44 @@ async function embedTimedScriptMetadata(
       embedded: true,
       metadata_fields: ["lyrics", "comment"],
     };
+  } finally {
+    await unlink(tempFile).catch(() => undefined);
+  }
+}
+
+async function writeBasicM4aMetadata(
+  options: {
+    album: string;
+    albumArtist: string;
+    artist: string;
+    audioFile: string;
+    title: string;
+  },
+  run: CommandRunner = defaultCommandRunner,
+) {
+  const extension = extname(options.audioFile) || ".m4a";
+  const tempFile = `${options.audioFile}.basic-metadata${extension}`;
+  try {
+    await run("ffmpeg", [
+      "-y",
+      "-hide_banner",
+      "-loglevel",
+      "error",
+      "-i",
+      options.audioFile,
+      "-metadata",
+      `title=${options.title}`,
+      "-metadata",
+      `artist=${options.artist}`,
+      "-metadata",
+      `album=${options.album}`,
+      "-metadata",
+      `album_artist=${options.albumArtist}`,
+      "-codec",
+      "copy",
+      tempFile,
+    ]);
+    await rename(tempFile, options.audioFile);
   } finally {
     await unlink(tempFile).catch(() => undefined);
   }
@@ -752,6 +802,163 @@ async function prepareAudioBriefArtwork({
       artwork_source: source,
     };
   }
+}
+
+function readStringTag(tags: JsonRecord | undefined, key: string) {
+  const value = tags?.[key];
+  return typeof value === "string" && value.trim() !== "" ? value : undefined;
+}
+
+function hasAttachedPictureStream(streams: unknown[]) {
+  return streams.some((stream) => {
+    if (!isRecord(stream)) return false;
+    const disposition = stream.disposition;
+    if (isRecord(disposition) && disposition.attached_pic === 1) return true;
+    const codecType = stream.codec_type;
+    const tags = isRecord(stream.tags) ? stream.tags : undefined;
+    return codecType === "video" && readStringTag(tags, "comment") === "Cover (front)";
+  });
+}
+
+export async function probeM4aFinalAudio(audioFile: string): Promise<AudioFinalReviewProbe> {
+  const stdout = await commandOutput("ffprobe", [
+    "-v",
+    "error",
+    "-print_format",
+    "json",
+    "-show_entries",
+    "format_tags=title,artist,album,album_artist,lyrics:stream=codec_type:stream_tags=title,comment:stream_disposition=attached_pic",
+    audioFile,
+  ]);
+  const parsed = JSON.parse(stdout) as unknown;
+  if (!isRecord(parsed)) {
+    throw new Error("ffprobe did not return an object.");
+  }
+  const format = isRecord(parsed.format) ? parsed.format : undefined;
+  const tags = isRecord(format?.tags) ? format.tags : {};
+  const streams = Array.isArray(parsed.streams) ? parsed.streams : [];
+  return {
+    album: readStringTag(tags, "album"),
+    album_artist: readStringTag(tags, "album_artist"),
+    artist: readStringTag(tags, "artist"),
+    artwork_embedded: hasAttachedPictureStream(streams),
+    lyrics: readStringTag(tags, "lyrics"),
+    title: readStringTag(tags, "title"),
+  };
+}
+
+async function fileExists(file: string | undefined) {
+  if (!file) return false;
+  try {
+    const stats = await stat(file);
+    return stats.isFile() && stats.size > 0;
+  } catch {
+    return false;
+  }
+}
+
+function manifestDisplayTitle(value: unknown) {
+  if (!isRecord(value)) return undefined;
+  return typeof value.display_title === "string" && value.display_title.trim() !== ""
+    ? value.display_title.trim()
+    : undefined;
+}
+
+function finalAudioReviewChecks(probe: AudioFinalReviewProbe) {
+  return {
+    album: probe.album !== undefined,
+    album_artist: probe.album_artist !== undefined,
+    artist: probe.artist !== undefined,
+    artwork: probe.artwork_embedded,
+    lyrics: probe.lyrics !== undefined,
+    title: probe.title !== undefined,
+  };
+}
+
+function missingFinalAudioReviewChecks(checks: Record<string, boolean>) {
+  return Object.entries(checks)
+    .filter(([, passed]) => !passed)
+    .map(([name]) => name);
+}
+
+export async function reviewFinalAudio(
+  options: AudioFinalReviewOptions,
+  probe: (audioFile: string) => Promise<AudioFinalReviewProbe> = probeM4aFinalAudio,
+  run: CommandRunner = defaultCommandRunner,
+): Promise<AudioFinalReviewResult> {
+  if (extname(options.audioFile).toLowerCase() !== ".m4a") {
+    throw new Error("Final Audio Review currently requires an .m4a final audio file.");
+  }
+  if (!(await fileExists(options.audioFile))) {
+    throw new Error(`Final audio file does not exist or is empty: ${options.audioFile}`);
+  }
+
+  const manifest = options.manifestFile && (await fileExists(options.manifestFile))
+    ? JSON.parse(await readFile(options.manifestFile, "utf8")) as unknown
+    : undefined;
+  const displayTitle =
+    options.displayTitle?.trim() ||
+    manifestDisplayTitle(manifest) ||
+    basename(audioFileStem(options.audioFile));
+  const sidecars = {
+    artwork_file: options.artworkFile ?? artworkSidecarPath(options.audioFile),
+    lyrics_file: options.lyricsFile ?? timedScriptSidecarPath(options.audioFile),
+  };
+
+  const beforeChecks = finalAudioReviewChecks(await probe(options.audioFile));
+  let repaired = false;
+  const repairActions: string[] = [];
+
+  if (options.repair !== false && missingFinalAudioReviewChecks(beforeChecks).length > 0) {
+    if (!beforeChecks.title || !beforeChecks.artist || !beforeChecks.album || !beforeChecks.album_artist) {
+      await writeBasicM4aMetadata({
+        album: options.album?.trim() || "FeedContext Audio Brief",
+        albumArtist: options.albumArtist?.trim() || "FeedContext",
+        artist: options.artist?.trim() || "FeedContext",
+        audioFile: options.audioFile,
+        title: displayTitle,
+      }, run);
+      repaired = true;
+      repairActions.push("basic_metadata");
+    }
+    if (!beforeChecks.lyrics && await fileExists(sidecars.lyrics_file)) {
+      const text = await readFile(sidecars.lyrics_file, "utf8");
+      await embedTimedScriptMetadata({
+        audioFile: options.audioFile,
+        sidecarFile: sidecars.lyrics_file,
+        text,
+      }, run);
+      repaired = true;
+      repairActions.push("lyrics");
+    }
+    if (!beforeChecks.artwork && await fileExists(sidecars.artwork_file)) {
+      await embedArtworkMetadata({
+        artworkFile: sidecars.artwork_file,
+        audioFile: options.audioFile,
+      }, run);
+      repaired = true;
+      repairActions.push("artwork");
+    }
+  }
+
+  const checks = finalAudioReviewChecks(await probe(options.audioFile));
+  const missing = missingFinalAudioReviewChecks(checks);
+  const result: AudioFinalReviewResult = {
+    audio_file: options.audioFile,
+    checks,
+    missing,
+    ok: missing.length === 0,
+    profile: "m4a",
+    repaired,
+    repair_actions: repairActions,
+    sidecars,
+    verdict: missing.length === 0 ? (repaired ? "ready_repaired" : "ready") : "blocked",
+  };
+
+  if (options.out) {
+    await writeFile(options.out, `${JSON.stringify(result, null, 2)}\n`);
+  }
+  return result;
 }
 
 async function preserveTimedScript({

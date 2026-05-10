@@ -39,6 +39,9 @@ script-only handoff   provider selection       artwork base generation
      branded Artwork + embedded Timed Script
                         |
                         v
+        Final Audio Review gate --repair in place
+                        |
+                        v
                Run Feedback note
 ```
 
@@ -115,7 +118,12 @@ script-only handoff   provider selection       artwork base generation
    assembly, branded Audio Brief Artwork, and embedded Timed Script playback
    text. Podcast-like final outputs use the bundled intro and outro music unless
    the user explicitly asks for speech-only output or supplies custom assets.
-11. Preserve a Run Feedback note after script-only handoff or final audio
+11. Run Final Audio Review against the final M4A file before user delivery.
+   The review must verify embedded player-facing metadata, embedded cover
+   artwork, and embedded Timed Script playback text. It may repair the same M4A
+   file in place using the render manifest and sidecars, but sidecars alone do
+   not pass the gate. Follow `audio-brief/rendering.md`.
+12. Preserve a Run Feedback note after script-only handoff or final audio
    generation. Follow `audio-brief/run-feedback.md`.
 
 ## Stage Docs
@@ -131,7 +139,8 @@ script-only handoff   provider selection       artwork base generation
 - `audio-brief/providers.md` covers provider discovery, provider classes,
   privacy boundaries, and provider selection.
 - `audio-brief/rendering.md` covers helper commands, segments, Bing Edge TTS,
-  final audio assembly, and embedded Timed Script playback text.
+  final audio assembly, embedded Timed Script playback text, and Final Audio
+  Review.
 - `audio-brief/run-feedback.md` covers post-run feedback notes that future
   Audio Brief runs may read before creating a new script.
 - `audio-brief/mechanical-delegation.md` covers the narrow cases where a host

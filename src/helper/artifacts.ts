@@ -73,7 +73,7 @@ async function uploadArtifactFile(input: {
 }, fetchFn: typeof fetch) {
   const sha256 = createHash("sha256").update(input.bytes).digest("hex");
   const uploadResponse = await fetchFn(`${API_ORIGIN}/v1/uploads`, {
-    body: input.bytes,
+    body: new Uint8Array(input.bytes),
     headers: {
       authorization: `Bearer ${input.session.access_token}`,
       "content-length": String(input.bytes.byteLength),

@@ -6,7 +6,7 @@ import { apiCall } from "./helper/api";
 import { buildGetItemPath, buildListItemsPath, getManyItemsCommand, listAllItems, writeGatherInsightFile } from "./helper/items";
 import { importOpml } from "./helper/subscriptions";
 import { getVersionStatus } from "./helper/version";
-import { printAudioProviderDoctor, renderAudio, writeAudioSegmentsFromShowScript } from "./helper/audio";
+import { printAudioProviderDoctor, renderAudio, reviewFinalAudio, writeAudioSegmentsFromShowScript } from "./helper/audio";
 import { printShowScriptSchema, printSynthesisSchema, validateShowScriptFile, validateSynthesisFile } from "./helper/validation";
 import { deliverArtifactCommand } from "./helper/artifacts";
 import { disconnectTelegram, printTelegramBindingLink, printTelegramStatus } from "./helper/integrations";
@@ -18,7 +18,7 @@ export { enforceConfirmBeforeNetwork, isAllowedRawCall, isMutatingRawCall } from
 export { buildGetItemPath, buildListItemsPath, gatherInsight, getManyItems, writeGatherInsightFile } from "./helper/items";
 export { parseOpmlFeedUrls } from "./helper/subscriptions";
 export { buildVersionStatus, getVersionStatus } from "./helper/version";
-export { buildAudioSegmentsFromShowScript, detectAudioProviders, renderBingEdgeTts, renderBingEdgeTtsSegments } from "./helper/audio";
+export { buildAudioSegmentsFromShowScript, detectAudioProviders, probeM4aFinalAudio, renderBingEdgeTts, renderBingEdgeTtsSegments, reviewFinalAudio } from "./helper/audio";
 export { deliverArtifact, inferArtifactContentType } from "./helper/artifacts";
 export { disconnectTelegram, printTelegramBindingLink, printTelegramStatus } from "./helper/integrations";
 export { normalizeItemIds, parseConcurrency, parseItemIdsFile, parsePositiveIntegerOption, runWithConcurrency } from "./helper/utils";
@@ -252,7 +252,7 @@ async function main(argv = process.argv) {
     .description("Print the FeedContext Show Script JSON Schema")
     .action(printShowScriptSchema);
 
-  const audio = program.command("audio").description("Inspect Audio Brief provider paths");
+  const audio = program.command("audio").description("Render and review Audio Brief files");
   const audioProvider = audio.command("provider").description("Inspect audio providers");
   audioProvider
     .command("doctor")
@@ -284,6 +284,37 @@ async function main(argv = process.argv) {
     .option("--language <bcp47>", "Spoken language for provider voice selection, such as zh-CN or en-US")
     .option("--voice <voice>", "Provider voice id")
     .action((options) => renderAudio(options));
+  audio
+    .command("review")
+    .description("Review and repair final M4A Audio Brief metadata before delivery")
+    .requiredOption("--audio-file <path>", "Final M4A audio file to inspect and repair in place")
+    .option("--manifest-file <path>", "Render manifest JSON used to recover display metadata")
+    .option("--lyrics-file <path>", "Timed Script lyrics sidecar to embed when lyrics are missing")
+    .option("--artwork-file <path>", "Branded cover sidecar to embed when artwork is missing")
+    .option("--display-title <title>", "Player-facing title to write when title metadata is missing")
+    .option("--artist <name>", "Artist metadata to write when missing")
+    .option("--album <name>", "Album metadata to write when missing")
+    .option("--album-artist <name>", "Album artist metadata to write when missing")
+    .option("--out <path>", "Optional review report JSON path")
+    .option("--no-repair", "Inspect only; do not repair missing metadata")
+    .action(async (options) => {
+      const result = await reviewFinalAudio({
+        album: options.album,
+        albumArtist: options.albumArtist,
+        artist: options.artist,
+        artworkFile: options.artworkFile,
+        audioFile: options.audioFile,
+        displayTitle: options.displayTitle,
+        lyricsFile: options.lyricsFile,
+        manifestFile: options.manifestFile,
+        out: options.out,
+        repair: options.repair,
+      });
+      console.log(JSON.stringify(result, null, 2));
+      if (!result.ok) {
+        process.exitCode = 1;
+      }
+    });
   await program.parseAsync(argv);
 }
 

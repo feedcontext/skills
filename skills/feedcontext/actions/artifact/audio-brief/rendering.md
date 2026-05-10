@@ -241,3 +241,38 @@ If embedding Timed Script metadata fails, keep the final audio file, preserve a
 sidecar text track such as `.lyrics.txt` or `.vtt`, and mark the embedding
 failure plus the error reason in the render manifest instead of failing the
 whole render.
+
+## Final Audio Review
+
+Final user delivery is M4A-first. Run Final Audio Review after rendering and
+before handing the Audio Brief to the user or submitting it for delivery:
+
+```bash
+node scripts/helper.mjs audio review \
+  --audio-file feedcontext-audio-brief-2026-05-07.bing-edge.m4a \
+  --manifest-file feedcontext-audio-brief-2026-05-07.bing-edge.segments.json \
+  --out feedcontext-audio-brief-2026-05-07.bing-edge.review.json
+```
+
+The review is a hard gate for the final M4A file. It must pass all checks:
+
+- title metadata is embedded;
+- artist metadata is embedded;
+- album metadata is embedded;
+- album artist metadata is embedded;
+- cover artwork is embedded in the audio container;
+- Timed Script playback text is embedded in the audio container.
+
+The helper may repair missing M4A metadata in place during review. It uses the
+render manifest for display title recovery and the adjacent `.cover.png` and
+`.lyrics.txt` sidecars as repair inputs. This repair does not rewrite the audio
+program content; it only updates metadata and attached artwork in the same
+final M4A file.
+
+Sidecars are required recovery material, not acceptance substitutes. A final
+M4A that only has `.cover.png`, `.lyrics.txt`, or `.lrc` beside it must not be
+delivered until `audio review` reports `ready` or `ready_repaired`.
+
+Use `--no-repair` only for diagnostics. A `blocked` review verdict means the
+final file is not deliverable; fix the render inputs or sidecars, then rerun
+review.
