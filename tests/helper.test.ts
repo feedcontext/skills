@@ -12,6 +12,7 @@ import {
   createSkillAuthUrl,
   buildListItemsPath,
   detectAudioProviders,
+  deliverArtifact,
   enforceConfirmBeforeNetwork,
   gatherInsight,
   getManyItems,
@@ -87,6 +88,74 @@ describe("FeedContext Skill helper safety", () => {
     expect(inferArtifactContentType("brief.mp3", "audio_brief")).toBe("audio/mpeg");
     expect(inferArtifactContentType("brief.html", "briefing_page")).toBe("text/html");
     expect(() => inferArtifactContentType("brief.wav", "audio_brief")).toThrow(/m4a or .mp3/);
+  });
+
+  it("submits Telegram audio presentation metadata and thumbnail upload references", async () => {
+    const directory = mkdtempSync(join(tmpdir(), "feedcontext-artifact-"));
+    try {
+      const audioFile = join(directory, "brief.m4a");
+      const thumbnailFile = join(directory, "cover.jpg");
+      const synthesisFile = join(directory, "synthesis.json");
+      await writeFile(audioFile, "audio");
+      await writeFile(thumbnailFile, "jpeg");
+      await writeFile(synthesisFile, JSON.stringify({schema_version: "1", units: []}));
+
+      const requests: Array<{body?: unknown; headers?: HeadersInit; url: string}> = [];
+      const fetchMock = async (url: string | URL | Request, init?: RequestInit) => {
+        requests.push({
+          body: init?.body,
+          headers: init?.headers,
+          url: String(url),
+        });
+        if (String(url).endsWith("/v1/uploads")) {
+          return new Response(JSON.stringify({upload_ref: `upl_${requests.length}`}), {
+            status: 201,
+          });
+        }
+        return new Response(JSON.stringify({accepted: true, artifact_id: "art_123"}), {
+          status: 202,
+        });
+      };
+
+      await deliverArtifact(
+        {
+          artifactType: "audio_brief",
+          confirm: true,
+          file: audioFile,
+          synthesisFile,
+          telegramAudioPerformer: "FeedContext",
+          telegramAudioTitle: "Brief Title",
+          telegramThumbnailFile: thumbnailFile,
+          title: "Brief Title",
+        },
+        {access_token: "token", token_type: "Bearer"},
+        fetchMock as typeof fetch,
+      );
+
+      expect(requests).toHaveLength(3);
+      expect(requests[0]?.headers).toMatchObject({
+        "content-type": "audio/mp4",
+        "x-feedcontext-upload-purpose": "artifact_deliverable",
+      });
+      expect(requests[1]?.headers).toMatchObject({
+        "content-type": "image/jpeg",
+        "x-feedcontext-upload-purpose": "delivery_presentation_asset",
+      });
+      expect(JSON.parse(String(requests[2]?.body))).toMatchObject({
+        deliveries: [
+          {
+            presentation: {
+              audio_performer: "FeedContext",
+              audio_title: "Brief Title",
+              thumbnail_upload_ref: "upl_2",
+            },
+            type: "telegram",
+          },
+        ],
+      });
+    } finally {
+      rmSync(directory, {force: true, recursive: true});
+    }
   });
 });
 

@@ -195,6 +195,11 @@ sidecar may remain PNG even when the M4A embedding path writes Apple-compatible
 fallback compatibility. If embedding fails, keep the audio and sidecar image and
 record the artwork embedding failure in the render manifest.
 
+For Telegram delivery, do not rely on embedded audio artwork or artist metadata.
+Prepare a separate JPEG thumbnail no larger than 320x320 and less than 200 KB,
+then pass it to `artifact deliver` with `--telegram-thumbnail-file` along with
+explicit `--telegram-audio-title` and `--telegram-audio-performer` values.
+
 Write the full spoken playback text to the audio file's lyrics or unsynchronized
 lyrics metadata when supported. Use comment or description metadata only as a
 short compatibility fallback that points to the sidecar or summarizes that

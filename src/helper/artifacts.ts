@@ -9,6 +9,7 @@ import type {
   ArtifactType,
   SkillSession,
   UploadContentType,
+  UploadPurpose,
 } from "./types";
 
 export function inferArtifactContentType(file: string, artifactType: ArtifactType): UploadContentType {
@@ -58,6 +59,34 @@ async function parseJsonResponse(response: Response) {
   return body;
 }
 
+function trimOptional(input: string | undefined) {
+  const value = input?.trim();
+  return value ? value : undefined;
+}
+
+async function uploadArtifactFile(input: {
+  artifactType: ArtifactType;
+  bytes: Buffer;
+  contentType: UploadContentType | "image/jpeg";
+  purpose: UploadPurpose;
+  session: SkillSession;
+}, fetchFn: typeof fetch) {
+  const sha256 = createHash("sha256").update(input.bytes).digest("hex");
+  const uploadResponse = await fetchFn(`${API_ORIGIN}/v1/uploads`, {
+    body: input.bytes,
+    headers: {
+      authorization: `Bearer ${input.session.access_token}`,
+      "content-length": String(input.bytes.byteLength),
+      "content-type": input.contentType,
+      "x-feedcontext-artifact-type": input.artifactType,
+      "x-feedcontext-sha256": sha256,
+      "x-feedcontext-upload-purpose": input.purpose,
+    },
+    method: "PUT",
+  });
+  return await parseJsonResponse(uploadResponse) as { upload_ref: string };
+}
+
 export async function deliverArtifact(
   options: ArtifactDeliverOptions,
   session?: SkillSession,
@@ -72,24 +101,45 @@ export async function deliverArtifact(
   const displayFilename = options.displayFilename ?? basename(options.file);
   validateDisplayFilename(displayFilename, contentType);
 
-  const sha256 = createHash("sha256").update(fileBytes).digest("hex");
-  const uploadResponse = await fetchFn(`${API_ORIGIN}/v1/uploads`, {
-    body: fileBytes,
-    headers: {
-      authorization: `Bearer ${skillSession.access_token}`,
-      "content-length": String(fileBytes.byteLength),
-      "content-type": contentType,
-      "x-feedcontext-artifact-type": artifactType,
-      "x-feedcontext-sha256": sha256,
-    },
-    method: "PUT",
-  });
-  const upload = await parseJsonResponse(uploadResponse) as { upload_ref: string };
+  const upload = await uploadArtifactFile({
+    artifactType,
+    bytes: fileBytes,
+    contentType,
+    purpose: "artifact_deliverable",
+    session: skillSession,
+  }, fetchFn);
+
+  let thumbnailUploadRef: string | undefined;
+  if (options.telegramThumbnailFile) {
+    const thumbnailBytes = await readFile(options.telegramThumbnailFile);
+    const thumbnailUpload = await uploadArtifactFile({
+      artifactType,
+      bytes: thumbnailBytes,
+      contentType: "image/jpeg",
+      purpose: "delivery_presentation_asset",
+      session: skillSession,
+    }, fetchFn);
+    thumbnailUploadRef = thumbnailUpload.upload_ref;
+  }
+
+  const presentation = artifactType === "audio_brief"
+    ? {
+        audio_performer: trimOptional(options.telegramAudioPerformer) ?? "FeedContext",
+        audio_title: trimOptional(options.telegramAudioTitle) ?? options.title,
+        thumbnail_upload_ref: thumbnailUploadRef,
+      }
+    : undefined;
+
+  const delivery = {
+    caption: options.caption,
+    ...(presentation ? { presentation } : {}),
+    type: "telegram",
+  };
 
   const artifactResponse = await fetchFn(`${API_ORIGIN}/v1/artifacts`, {
     body: JSON.stringify({
       artifact_type: artifactType,
-      deliveries: [{ caption: options.caption, type: "telegram" }],
+      deliveries: [delivery],
       display_filename: displayFilename,
       synthesis: await readJsonFile(options.synthesisFile),
       title: options.title,

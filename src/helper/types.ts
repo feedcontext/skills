@@ -23,6 +23,7 @@ export type ApiRequester = (input: RawCall, session: SkillSession) => Promise<Ap
 export type ArtifactType = "audio_brief" | "briefing_page";
 
 export type UploadContentType = "audio/mp4" | "audio/mpeg" | "text/html";
+export type UploadPurpose = "artifact_deliverable" | "delivery_presentation_asset";
 
 export type ArtifactDeliverOptions = {
   artifactType: ArtifactType;
@@ -32,6 +33,9 @@ export type ArtifactDeliverOptions = {
   displayFilename?: string;
   file: string;
   synthesisFile: string;
+  telegramAudioPerformer?: string;
+  telegramAudioTitle?: string;
+  telegramThumbnailFile?: string;
   title: string;
 };
 

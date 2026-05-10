@@ -60,9 +60,17 @@ Feed Items; they are not Feed Items, not api resources, and not pages hosted by
      --file daily-brief.m4a \
      --synthesis-file daily-brief.synthesis.json \
      --title "Daily Audio Brief" \
+     --telegram-audio-performer "FeedContext" \
+     --telegram-audio-title "Daily Audio Brief" \
+     --telegram-thumbnail-file daily-brief.telegram-thumb.jpg \
      --caption "Today’s audio brief" \
      --confirm
    ```
+
+   Telegram audio cards do not reliably read embedded M4A/MP3 artwork or artist
+   metadata. Pass player-facing title, performer, and a JPEG thumbnail explicitly
+   when delivering Audio Briefs. The Telegram thumbnail must be JPEG, no larger
+   than 320x320, and less than 200 KB.
 
    Delivery is explicit and user-approved. Do not upload drafts, Gather
    Sidecars, raw browser captures, provider logs, or unrelated local files.

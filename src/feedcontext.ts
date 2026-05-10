@@ -210,6 +210,9 @@ async function main(argv = process.argv) {
     .option("--content-type <type>", "Override content type: audio/mp4, audio/mpeg, or text/html")
     .option("--display-filename <name>", "Safe display filename; defaults to the uploaded file basename")
     .option("--caption <text>", "Optional Telegram delivery caption")
+    .option("--telegram-audio-performer <text>", "Telegram audio performer; defaults to FeedContext for Audio Briefs")
+    .option("--telegram-audio-title <text>", "Telegram audio title; defaults to --title for Audio Briefs")
+    .option("--telegram-thumbnail-file <path>", "JPEG thumbnail for Telegram audio cards, up to 200 KB")
     .option("--confirm", "Confirm host approval before upload and delivery")
     .action((options) =>
       deliverArtifactCommand({
@@ -220,6 +223,9 @@ async function main(argv = process.argv) {
         displayFilename: options.displayFilename,
         file: options.file,
         synthesisFile: options.synthesisFile,
+        telegramAudioPerformer: options.telegramAudioPerformer,
+        telegramAudioTitle: options.telegramAudioTitle,
+        telegramThumbnailFile: options.telegramThumbnailFile,
         title: options.title,
       }),
     );
