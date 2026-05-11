@@ -1,0 +1,385 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>FeedContext Briefing</title>
+  <style>
+    :root {
+      --paper: #f5f0e6;
+      --ink: #201b16;
+      --muted: #6f665b;
+      --rule: #2b241d;
+      --wash: #e5ddcf;
+      --accent: #7a2f20;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: #d8d0c2;
+      color: var(--ink);
+      font-family: Georgia, "Times New Roman", serif;
+      line-height: 1.45;
+    }
+
+    .page {
+      width: min(1180px, calc(100% - 32px));
+      margin: 24px auto;
+      padding: 28px;
+      background: var(--paper);
+      border: 1px solid var(--rule);
+      box-shadow: 0 18px 45px rgba(32, 27, 22, 0.18);
+    }
+
+    .masthead {
+      text-align: center;
+      border-bottom: 4px double var(--rule);
+      padding-bottom: 18px;
+      margin-bottom: 22px;
+    }
+
+    .kicker {
+      margin: 0 0 8px;
+      color: var(--muted);
+      font: 700 12px/1.2 Arial, sans-serif;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(42px, 8vw, 104px);
+      line-height: 0.88;
+      font-weight: 900;
+      letter-spacing: 0;
+      text-transform: uppercase;
+    }
+
+    .deck {
+      margin: 12px auto 0;
+      max-width: 780px;
+      color: var(--muted);
+      font-size: 18px;
+    }
+
+    .meta {
+      display: flex;
+      justify-content: center;
+      gap: 18px;
+      flex-wrap: wrap;
+      margin-top: 14px;
+      font: 700 12px/1.2 Arial, sans-serif;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .mode-toggle {
+      display: flex;
+      justify-content: center;
+      gap: 0;
+      margin-top: 14px;
+    }
+
+    .mode-toggle input[type="radio"] {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+    }
+
+    .mode-toggle label {
+      padding: 5px 16px;
+      border: 1px solid var(--rule);
+      font: 700 11px/1.2 Arial, sans-serif;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      cursor: pointer;
+      color: var(--muted);
+      background: transparent;
+    }
+
+    .mode-toggle label:first-of-type {
+      border-radius: 4px 0 0 4px;
+    }
+
+    .mode-toggle label:last-of-type {
+      border-radius: 0 4px 4px 0;
+    }
+
+    .mode-toggle input:checked + label {
+      color: var(--paper);
+      background: var(--ink);
+      border-color: var(--ink);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1.35fr 0.9fr 0.9fr;
+      gap: 18px;
+      align-items: start;
+    }
+
+    article, aside {
+      border-top: 1px solid var(--rule);
+      padding-top: 12px;
+    }
+
+    .lead {
+      grid-row: span 2;
+      border-top-width: 6px;
+    }
+
+    .wide {
+      grid-column: span 2;
+    }
+
+    h2, h3 {
+      margin: 0 0 8px;
+      line-height: 0.98;
+      letter-spacing: 0;
+    }
+
+    h2 { font-size: clamp(34px, 4.5vw, 64px); }
+    h3 { font-size: 26px; }
+
+    p { margin: 0 0 12px; }
+
+    .source-mark {
+      display: block;
+      margin-top: 10px;
+      color: var(--accent);
+      font: 700 12px/1.35 Arial, sans-serif;
+      text-transform: uppercase;
+    }
+
+    figure {
+      margin: 0 0 12px;
+      padding: 10px;
+      background: var(--wash);
+      border: 1px solid rgba(32, 27, 22, 0.35);
+    }
+
+    .photo {
+      min-height: 220px;
+      display: grid;
+      place-items: center;
+      border: 1px solid rgba(32, 27, 22, 0.45);
+      background:
+        linear-gradient(135deg, rgba(122, 47, 32, 0.14), transparent 42%),
+        repeating-linear-gradient(0deg, rgba(32, 27, 22, 0.08), rgba(32, 27, 22, 0.08) 1px, transparent 1px, transparent 6px);
+      color: var(--muted);
+      font: 700 12px/1.2 Arial, sans-serif;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    figcaption {
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.35;
+    }
+
+    .pullquote {
+      margin: 0;
+      padding: 12px 0;
+      border-top: 3px solid var(--rule);
+      border-bottom: 1px solid var(--rule);
+      font-size: 24px;
+      line-height: 1.15;
+      font-style: italic;
+    }
+
+    .source-index {
+      margin-top: 24px;
+      padding-top: 16px;
+      border-top: 4px double var(--rule);
+      columns: 2 320px;
+      font-size: 14px;
+    }
+
+    .source-index h2 {
+      column-span: all;
+      font-size: 24px;
+      text-transform: uppercase;
+    }
+
+    .source-index li {
+      break-inside: avoid;
+      margin-bottom: 8px;
+    }
+
+    a { color: inherit; text-decoration-thickness: 1px; }
+
+    .narrative-prose {
+      max-width: 680px;
+      margin: 0 auto;
+      font-size: 18px;
+      line-height: 1.7;
+    }
+
+    .narrative-prose p {
+      margin: 0 0 1.2em;
+    }
+
+    .narrative-prose .drop-cap::first-letter {
+      float: left;
+      font-size: 4.5em;
+      line-height: 0.7;
+      padding-right: 0.12em;
+      padding-top: 0.04em;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .inline-source {
+      color: var(--accent);
+      font-weight: 600;
+      text-decoration: underline;
+      text-decoration-thickness: 1px;
+    }
+
+    @media (max-width: 860px) {
+      .page {
+        width: min(100% - 18px, 680px);
+        margin: 9px auto;
+        padding: 18px;
+      }
+
+      .grid {
+        grid-template-columns: 1fr;
+      }
+
+      .lead, .wide {
+        grid-column: auto;
+        grid-row: auto;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header class="masthead">
+      <p class="kicker">FeedContext Briefing</p>
+      <h1>Theme Goes Here</h1>
+      <p class="deck">One sentence that frames the editorial judgment behind this page.</p>
+      <div class="meta">
+        <span data-meta="date">May 6, 2026</span>
+        <span data-meta="scope">Scope: Recent Feed Items</span>
+        <span>Prepared by Agent</span>
+      </div>
+      <div class="mode-toggle">
+        <input type="radio" id="mode-newspaper" name="briefing-mode" value="newspaper" checked />
+        <label for="mode-newspaper">Newspaper</label>
+        <input type="radio" id="mode-narrative" name="briefing-mode" value="narrative" />
+        <label for="mode-narrative">Narrative</label>
+      </div>
+    </header>
+
+    <section data-mode-content="newspaper" aria-label="Newspaper briefing">
+      <section class="grid" aria-label="Briefing stories">
+        <article class="lead">
+          <figure>
+            <div class="photo">Editorial Visual</div>
+            <figcaption>Caption the visual as an editorial choice, not as automatic source media.</figcaption>
+          </figure>
+          <h2>Lead insight written like a front-page story</h2>
+          <p>Summarize the most important synthesized point. Keep it grounded in visible Feed Items and explain why it matters now.</p>
+          <p>Use a second paragraph when the nuance matters. Keep the prose dense, edited, and readable.</p>
+          <span class="source-mark">Sources: Feed Name, Item Title; Feed Name, Item Title</span>
+        </article>
+
+        <article>
+          <h3>Secondary module</h3>
+          <p>Use this for an important supporting development, pattern, or contrast.</p>
+          <span class="source-mark">Source: Feed Name, Item Title</span>
+        </article>
+
+        <aside>
+          <p class="pullquote">A sharp quote, number, or synthesis can become a visual rhythm break.</p>
+          <span class="source-mark">Source: Feed Name, Item Title</span>
+        </aside>
+
+        <article class="wide">
+          <h3>Cross-feed pattern</h3>
+          <p>Use wider modules for synthesis across several Feed Items rather than for a single item recap.</p>
+          <span class="source-mark">Sources: Feed Name, Item Title; Feed Name, Item Title</span>
+        </article>
+
+        <article>
+          <h3>Brief</h3>
+          <p>Small modules can capture concise items that deserve attention but not the lead position.</p>
+          <span class="source-mark">Source: Feed Name, Item Title</span>
+        </article>
+      </section>
+    </section>
+
+    <section data-mode-content="narrative" aria-label="Narrative briefing">
+      <div class="narrative-prose">
+        <article>
+          <p class="drop-cap">Open your narrative here with the lead story. Weave Feed Items across topics into one continuous polished magazine feature. Inline citations connect claims to their sources naturally within the prose.</p>
+          <p>Continue the narrative, transitioning between items and topics with prose bridges. When a topic shifts, use a drop-cap section break to signal the new focus while keeping the reading flow continuous.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="source-index" aria-label="Source index">
+      <h2>Source Index</h2>
+      <ol>
+        <li><a href="#">Feed Item title</a> - Feed name, publication date.</li>
+        <li><a href="#">Feed Item title</a> - Feed name, publication date.</li>
+        <li><a href="#">Feed Item title</a> - Feed name, publication date.</li>
+      </ol>
+    </section>
+  </main>
+  <script>
+    (function () {
+      var newspaperContent = document.querySelector("[data-mode-content='newspaper']");
+      var narrativeContent = document.querySelector("[data-mode-content='narrative']");
+      var newspaperRadio = document.getElementById("mode-newspaper");
+      var narrativeRadio = document.getElementById("mode-narrative");
+
+      function setMode(mode) {
+        if (mode === "narrative") {
+          newspaperContent.style.display = "none";
+          narrativeContent.style.display = "";
+          narrativeRadio.checked = true;
+        } else {
+          narrativeContent.style.display = "none";
+          newspaperContent.style.display = "";
+          newspaperRadio.checked = true;
+        }
+        try {
+          sessionStorage.setItem("feedcontext-briefing-mode", mode);
+        } catch (_) { /* ignore storage errors */ }
+      }
+
+      function onRadioChange() {
+        if (newspaperRadio.checked) {
+          setMode("newspaper");
+        } else {
+          setMode("narrative");
+        }
+      }
+
+      newspaperRadio.addEventListener("change", onRadioChange);
+      narrativeRadio.addEventListener("change", onRadioChange);
+
+      var saved = null;
+      try {
+        saved = sessionStorage.getItem("feedcontext-briefing-mode");
+      } catch (_) { /* ignore */ }
+
+      if (saved === "narrative" || saved === "newspaper") {
+        setMode(saved);
+      } else {
+        setMode("newspaper");
+      }
+    })();
+  </script>
+</body>
+</html>

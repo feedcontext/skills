@@ -56,7 +56,9 @@ when the user asks to sign out, switch accounts, or clear a stale local session.
 - Use raw API calls and public resource boundaries through `actions/api.md`.
 - Compose local artifacts through `actions/artifact/README.md`.
 - Gather Feed Item aggregation sidecars through `actions/artifact/gather.md`.
-- Compose editorial HTML briefing pages through `actions/artifact/briefing-page.md`.
+- Compose editorial HTML briefing pages through `actions/artifact/combined-briefing.md`.
+  - Newspaper Briefing prose reference: `actions/artifact/briefing-page.md`.
+  - Narrative Briefing prose reference: `actions/artifact/narrative-briefing.md`.
 - Compose Audio Brief scripts and generated audio through `actions/artifact/audio-brief.md`.
 - Audio provider rendering remains a host/provider workflow. Follow
   `actions/artifact/audio-brief.md` and its rendering docs before using any
