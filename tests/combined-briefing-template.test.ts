@@ -156,4 +156,26 @@ describe("Combined Briefing Page template", () => {
     const list = sourceIndex!.querySelector("ol");
     expect(list).not.toBeNull();
   });
+
+  it("supports dark mode via prefers-color-scheme media query", () => {
+    const html = readFileSync(templatePath, "utf8");
+
+    // Declares both color schemes for the browser
+    expect(html).toContain("color-scheme: light dark");
+
+    // Has a dark mode media query
+    expect(html).toContain("@media (prefers-color-scheme: dark)");
+
+    // Dark mode overrides the key CSS variables
+    const darkBlock = html.match(
+      /@media\s*\(prefers-color-scheme:\s*dark\)\s*\{([^}]+)\}/s,
+    );
+    expect(darkBlock).not.toBeNull();
+
+    const darkCss = darkBlock![1];
+    expect(darkCss).toContain("--paper:");
+    expect(darkCss).toContain("--ink:");
+    expect(darkCss).toContain("--accent:");
+    expect(darkCss).toContain("--wash:");
+  });
 });
