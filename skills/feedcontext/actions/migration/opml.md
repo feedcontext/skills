@@ -17,7 +17,10 @@ Procedure:
 2. If the user provided a file path, read only that path. Do not search local
    directories for OPML or export files.
 3. Ask the host for approval before creating subscriptions.
-4. Import through the CLI:
+4. If the current session is anonymous and the import would exceed 100 active
+   Subscriptions, ask whether to import a smaller approved subset or run formal
+   login first.
+5. Import through the CLI:
 
 ```bash
 feedcontext subscription import-opml --file path/to/subscriptions.opml --confirm

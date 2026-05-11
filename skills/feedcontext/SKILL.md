@@ -17,8 +17,15 @@ feedcontext version
 The version action prints JSON with CLI package metadata. Use it as the first
 tool check before authenticated FeedContext CLI actions.
 
-Use `feedcontext logout` when the user asks to sign out, switch
-accounts, or clear a stale local session.
+Then run `feedcontext auth status` before auth-sensitive workflows. If there is
+no local Skill Session, do not ask the user to log in by default; run
+`feedcontext auth anonymous` to create an anonymous Skill Session for local
+Skill + CLI use. Ask the user to run formal login only when they want durable
+storage, cross-device sync, account switching, or an integration that requires a
+formal account.
+
+Use `feedcontext auth login` for formal login. Use `feedcontext auth logout`
+when the user asks to sign out, switch accounts, or clear a stale local session.
 
 ## Actions
 

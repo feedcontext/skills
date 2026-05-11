@@ -14,6 +14,10 @@ feedcontext subscription list
 `subscription list` returns all RSS/Atom Subscriptions currently exposed by the
 API. It is not paginated.
 
+Anonymous Skill Sessions may have up to 100 active Subscriptions. If an add or
+import would exceed that limit, ask the user whether to use formal login for
+durable account-backed management or continue with a smaller approved set.
+
 ## Add
 
 Before adding a Subscription, ask the host for approval. After approval, pass
