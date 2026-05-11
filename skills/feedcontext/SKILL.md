@@ -8,6 +8,26 @@ description: Provides first-party FeedContext workflows for authentication, Feed
 FeedContext is skill-first. Use this root skill to route to the action docs and
 the `feedcontext` CLI.
 
+## CLI Invocation
+
+Prefer the local `feedcontext` binary when it exists on `PATH`. If it is not
+available, use `npx -y feedcontext@latest` as a best-effort fallback for the
+same command:
+
+```bash
+feedcontext version || npx -y feedcontext@latest version
+```
+
+Apply the same fallback to other FeedContext CLI commands documented by this
+skill. For example, `feedcontext item list` becomes
+`npx -y feedcontext@latest item list` when the local binary is unavailable.
+This fallback is a convenience path, not a guaranteed runtime contract: it
+depends on npm registry access, a working Node/npm/npx installation, and sandbox
+permission to write npm cache and temporary files. If both the local CLI and the
+`npx` fallback fail, report that FeedContext CLI execution is unavailable in the
+current environment and ask the user to install the CLI with
+`npm install -g feedcontext`.
+
 Before any other FeedContext action in an agent session, run:
 
 ```bash
