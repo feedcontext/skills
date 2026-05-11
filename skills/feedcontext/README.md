@@ -2,9 +2,9 @@
 
 Installable FeedContext Skill artifact.
 
-The FeedContext Skill lets agents authenticate through `api`, store a local
-Skill Session, and call FeedContext v1 APIs for RSS/Atom Subscriptions and Feed
-Items. The skill should not expose Source as a public resource.
+The FeedContext Skill teaches agents how to use the published `feedcontext` CLI
+for authenticated FeedContext v1 APIs and how to compose traceable local
+artifacts. The skill should not expose Source as a public resource.
 
 Action docs:
 

@@ -108,8 +108,8 @@ script-only handoff   provider selection       artwork base generation
    and pass it to rendering with `--artwork-file`. The capability may be native,
    plugin-backed, externally configured, or CLI-backed; do not require a
    specific tool name. If the host cannot generate and hand off a local image
-   file, rely on the helper's deterministic fixed-template artwork base. Final
-   brand overlay and audio embedding happen during rendering.
+   file, use a simple text-free local template or continue without generated
+   artwork. Final brand overlay and audio embedding happen during rendering.
 9. If the user requested audio or did not specify script-only mode, follow
    `audio-brief/providers.md` to discover available provider paths and ask the
    user which one to use unless the user already specified a provider.
@@ -138,9 +138,9 @@ script-only handoff   provider selection       artwork base generation
   script-only handoff or audio rendering.
 - `audio-brief/providers.md` covers provider discovery, provider classes,
   privacy boundaries, and provider selection.
-- `audio-brief/rendering.md` covers helper commands, segments, Bing Edge TTS,
-  final audio assembly, embedded Timed Script playback text, and Final Audio
-  Review.
+- `audio-brief/rendering.md` covers provider diagnostics, segments, provider
+  paths, final audio assembly, embedded Timed Script playback text, and Final
+  Audio Review.
 - `audio-brief/run-feedback.md` covers post-run feedback notes that future
   Audio Brief runs may read before creating a new script.
 - `audio-brief/mechanical-delegation.md` covers the narrow cases where a host

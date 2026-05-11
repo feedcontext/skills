@@ -151,8 +151,9 @@ feedcontext-audio-brief-2026-05-07.bing-edge.lyrics.txt
 feedcontext-audio-brief-2026-05-07.bing-edge.render-manifest.json
 ```
 
-Use `schemas/show-script.schema.json` as the generated schema artifact and
-`node scripts/helper.mjs show-script schema` as the helper-backed schema source.
+Use `schemas/show-script.schema.json` as the generated schema artifact. If a
+local schema helper is available, use it only as a deterministic local
+validation aid.
 Do not add Timed Script fields to the Show Script JSON. Timed Script playback
 text is derived after audio rendering because it depends on the final audio
 file, provider pacing, segment manifest, and intro or outro assembly.
@@ -228,9 +229,9 @@ Minimum shape:
 }
 ```
 
-When `provider_voice` is omitted, the helper resolves a fixed Voice Persona for
-the spoken language and host gender. Host-level `provider_voice` remains the
-exact rendering voice and takes precedence over registry defaults. Host-level
-`voice_persona_id` records which fixed provider voice persona supplied the host
-name or voice metadata, while `name` is the stable host name used for spoken
-self-introductions.
+When `provider_voice` is omitted, the selected provider path should choose a
+stable Voice Persona for the spoken language and host gender before rendering.
+Host-level `provider_voice` remains the exact rendering voice and takes
+precedence over provider defaults. Host-level `voice_persona_id` records which
+fixed provider voice persona supplied the host name or voice metadata, while
+`name` is the stable host name used for spoken self-introductions.

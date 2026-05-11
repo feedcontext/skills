@@ -3,18 +3,13 @@
 Use this stage after the Show Script exists and a provider path has been
 selected.
 
-## Provider Doctor
+## Provider Diagnostics
 
 Use provider diagnostics before asking the user to choose an Audio Brief
-provider:
-
-```bash
-node scripts/helper.mjs audio provider doctor
-node scripts/helper.mjs audio provider doctor --provider bing-edge
-```
-
-The doctor output reports provider availability, invocation shape, and the
-privacy boundary for each provider path.
+provider when the chosen host tool, local CLI, or configured service exposes a
+diagnostic command. The diagnostic output should report provider availability,
+invocation shape, expected output format, and the privacy boundary for the
+provider path.
 
 ## Bing Edge TTS
 
@@ -22,58 +17,21 @@ Provider id: `bing-edge`
 
 Default: yes
 
-Bing Edge TTS uses the helper's built-in Edge Read Aloud client to call
-Microsoft Edge's online text-to-speech service. The implementation follows the
-same Microsoft Edge Read Aloud API shape used by `MsEdgeTTS`, but it is bundled
-directly into `scripts/helper.mjs` so installed skills do not need a Python
-package, an external `edge-tts` CLI, or runtime `node_modules`. It is still an
-external provider path: the Show Script text needed for the Audio Brief is sent
-to Microsoft's Edge online text-to-speech service. Availability is outside
-FeedContext's control and may change.
+Bing Edge TTS is an external provider path when available through a host tool,
+local CLI, or explicitly approved implementation. The Show Script text needed
+for the Audio Brief is sent to Microsoft's Edge online text-to-speech service.
+Availability is outside FeedContext's control and may change.
 
-Diagnostic:
-
-```bash
-node scripts/helper.mjs audio provider doctor --provider bing-edge
-```
-
-Helper-backed generation from a prepared spoken text file:
-
-```bash
-node scripts/helper.mjs audio render \
-  --text-file feedcontext-audio-brief-2026-05-07.spoken.txt \
-  --language en-US \
-  --out feedcontext-audio-brief-2026-05-07.bing-edge.m4a
-```
-
-Convert a Show Script into speaker-aware TTS segments:
-
-```bash
-node scripts/helper.mjs audio segments \
-  --script-file feedcontext-audio-brief-2026-05-07.script.json \
-  --out feedcontext-audio-brief-2026-05-07.segments.json
-```
-
-For longer Audio Briefs, prefer segmented rendering so independent sections can
-run concurrently and failed sections can be retried without regenerating the
-whole show:
-
-```bash
-node scripts/helper.mjs audio render \
-  --segments-file feedcontext-audio-brief-2026-05-07.segments.json \
-  --out-dir feedcontext-audio-brief-2026-05-07-segments \
-  --concurrency 4 \
-  --language en-US \
-  --final-out feedcontext-audio-brief-2026-05-07.bing-edge.m4a \
-  --out feedcontext-audio-brief-2026-05-07.bing-edge.segments.json
-```
+For longer Audio Briefs, prefer segmented rendering through the chosen provider
+path so independent sections can run concurrently and failed sections can be
+retried without regenerating the whole show.
 
 Pass `--intro-audio` and `--outro-audio` only to override the bundled defaults.
 Pass `--no-default-music` only for explicitly speech-only output.
 
 The segments file should contain the spoken `language`, Show Script `title`,
-and an ordered `segments` array. Each segment should carry the resolved fixed
-Voice Persona metadata when the helper selected a host voice:
+and an ordered `segments` array. Each segment should carry the selected
+provider voice metadata when a concrete host voice was chosen:
 
 ```json
 {
@@ -100,9 +58,8 @@ Voice Persona metadata when the helper selected a host voice:
 }
 ```
 
-If `--voice` is omitted, Bing Edge TTS chooses voices through the fixed Voice
-Persona registry. Exact host `provider_voice` values from the Show Script take
-precedence over registry defaults.
+Exact host `provider_voice` values from the Show Script take precedence over
+provider defaults when the chosen provider supports explicit voice selection.
 
 For Chinese Audio Briefs, avoid raw provider defaults when generating final
 audio. The default Edge voices can sound too broadcast-like or too childlike;
@@ -127,14 +84,11 @@ Before final assembly:
 3. Use `--no-default-music` only when the user explicitly asks for speech-only
    output or rejects the bundled defaults.
 
-The helper automatically prepends the bundled intro and appends the bundled
-outro when `--final-out` is used. Custom `--intro-audio` and `--outro-audio`
-paths override the bundled defaults.
-
-Use Bing Edge TTS as the default production audio provider when the user accepts
-the external service boundary. For longer Audio Briefs, generate by section and
-assemble the final audio file so a failed section can be retried without
-regenerating the whole show.
+Use the chosen provider path to prepend intro and append outro audio during
+final assembly, or use local `ffmpeg` assembly when the provider only returns
+speech segments. For longer Audio Briefs, generate by section and assemble the
+final audio file so a failed section can be retried without regenerating the
+whole show.
 
 ## Timed Script Playback Text
 
@@ -179,26 +133,28 @@ Artwork capability contract:
   synthesis context. Save it as `<audio-stem>.artwork-base.png` or
   `<audio-stem>.artwork-base.jpg`.
 - The generated base image must not contain title text, subtitles, dates,
-  captions, logos, watermarks, or provider branding. The helper owns the
-  FeedContext brand overlay and audio metadata owns the title.
-- Pass the local base image to helper rendering with `--artwork-file`.
+  captions, logos, watermarks, or provider branding. The final assembly path
+  owns the FeedContext brand overlay and audio metadata owns the title.
+- Pass the local base image to the chosen rendering or assembly path when that
+  path supports artwork embedding.
 - If image generation is unavailable, fails, or cannot produce a local file for
-  handoff, omit `--artwork-file` and let the helper use its deterministic
-  fixed-template artwork base.
+  handoff, use a simple text-free local template or continue without generated
+  artwork.
 
-The helper must apply the FeedContext brand mark as the final post-processing
-step for both generated and fixed-template artwork. Save the final cover next to
-the audio as `<audio-stem>.cover.png` and attempt to embed it into the final
-audio file using player-compatible cover encoding for the target container. The
-sidecar may remain PNG even when the M4A embedding path writes Apple-compatible
-`covr` artwork metadata or converts the attached artwork to JPEG/MJPEG for
-fallback compatibility. If embedding fails, keep the audio and sidecar image and
-record the artwork embedding failure in the render manifest.
+Apply the FeedContext brand mark as the final post-processing step for both
+generated and template artwork. Save the final cover next to the audio as
+`<audio-stem>.cover.png` and attempt to embed it into the final audio file using
+player-compatible cover encoding for the target container. The sidecar may
+remain PNG even when the M4A embedding path writes Apple-compatible `covr`
+artwork metadata or converts the attached artwork to JPEG/MJPEG for fallback
+compatibility. If embedding fails, keep the audio and sidecar image and record
+the artwork embedding failure in the render manifest.
 
 For Telegram delivery, do not rely on embedded audio artwork or artist metadata.
 Prepare a separate JPEG thumbnail no larger than 320x320 and less than 200 KB,
-then pass it to `artifact deliver` with `--telegram-thumbnail-file` along with
-explicit `--telegram-audio-title` and `--telegram-audio-performer` values.
+then pass it to the supported artifact delivery path with
+`--telegram-thumbnail-file` along with explicit `--telegram-audio-title` and
+`--telegram-audio-performer` values.
 
 Write the full spoken playback text to the audio file's lyrics or unsynchronized
 lyrics metadata when supported. Use comment or description metadata only as a
@@ -230,9 +186,9 @@ lyrics view does not reliably activate from ordinary local `lyrics` metadata,
 LRC text stored in a metadata field, or a local subtitle track, so do not treat
 that view as the v1 acceptance target for generated local files.
 
-If a provider does not return word-level timing data, helper-backed Timed Script
-generation may still create segment-level synchronized `.lrc` cues by reading
-the real rendered duration of each segment. If the helper cannot read actual
+If a provider does not return word-level timing data, the chosen assembly path
+may still create segment-level synchronized `.lrc` cues by reading the real
+rendered duration of each segment. If the assembly path cannot read actual
 segment durations, do not emit a fake synchronized track; preserve only the
 unsynchronized playback text and mark synchronized timing as unavailable in the
 render manifest.
@@ -245,14 +201,9 @@ whole render.
 ## Final Audio Review
 
 Final user delivery is M4A-first. Run Final Audio Review after rendering and
-before handing the Audio Brief to the user or submitting it for delivery:
-
-```bash
-node scripts/helper.mjs audio review \
-  --audio-file feedcontext-audio-brief-2026-05-07.bing-edge.m4a \
-  --manifest-file feedcontext-audio-brief-2026-05-07.bing-edge.segments.json \
-  --out feedcontext-audio-brief-2026-05-07.bing-edge.review.json
-```
+before handing the Audio Brief to the user or submitting it for delivery. The
+review may be performed by the host audio tool, a local metadata inspection
+tool, or the current agent reading `ffprobe` output and sidecar files.
 
 The review is a hard gate for the final M4A file. It must pass all checks:
 
@@ -263,7 +214,7 @@ The review is a hard gate for the final M4A file. It must pass all checks:
 - cover artwork is embedded in the audio container;
 - Timed Script playback text is embedded in the audio container.
 
-The helper may repair missing M4A metadata in place during review. It uses the
+The review path may repair missing M4A metadata in place. It should use the
 render manifest for display title recovery and the adjacent `.cover.png` and
 `.lyrics.txt` sidecars as repair inputs. This repair does not rewrite the audio
 program content; it only updates metadata and attached artwork in the same

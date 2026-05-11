@@ -58,14 +58,14 @@ Use `item get-many` for bounded concurrent detail reads when several selected
 Feed Items need content:
 
 ```bash
-node scripts/helper.mjs item get-many --id item_1 --id item_2 --id item_3
+feedcontext item get-many --id item_1 --id item_2 --id item_3
 ```
 
 ## Creation
 
-Use `schemas/structured-synthesis.schema.json` as the generated schema artifact
-and `node scripts/helper.mjs synthesis schema` as the canonical helper-backed
-schema source. Validate with:
+Use `schemas/structured-synthesis.schema.json` as the generated schema artifact.
+If a local schema helper is available, use it only as a deterministic local
+validation aid. Validate with the available local helper command:
 
 ```bash
 node scripts/helper.mjs synthesis validate --file path/to/artifact.synthesis.json

@@ -1,30 +1,28 @@
 ---
 name: feedcontext
-description: Provides first-party FeedContext helper workflows for authentication, Feed Item reading, RSS/Atom Subscription management, OPML import, and traceable local artifacts. Use when the user asks to connect FeedContext, inspect feeds, read Feed Items, manage Subscriptions, import OPML, or create feed-backed briefings or audio briefs.
+description: Provides first-party FeedContext workflows for authentication, Feed Item reading, RSS/Atom Subscription management, and traceable local artifacts. Use when the user asks to connect FeedContext, inspect feeds, read Feed Items, manage Subscriptions, or create feed-backed briefings or audio briefs.
 ---
 
 # FeedContext Skill
 
 FeedContext is skill-first. Use this root skill to route to the action docs and
-the packed helper script.
+the `feedcontext` CLI.
 
 Before any other FeedContext action in an agent session, run:
 
 ```bash
-node scripts/helper.mjs version
+feedcontext version
 ```
 
-The version action prints JSON with installed and latest git revisions,
-`upgrade_available`, and the `npx skills update feedcontext` update command.
-Use conversation context to decide whether to surface upgrade availability to
-the user.
+The version action prints JSON with CLI package metadata. Use it as the first
+tool check before authenticated FeedContext CLI actions.
 
-Use `node scripts/helper.mjs logout` when the user asks to sign out, switch
+Use `feedcontext logout` when the user asks to sign out, switch
 accounts, or clear a stale local session.
 
 ## Actions
 
-- Authenticate and manage the local Skill Session through `actions/auth.md`.
+- Authenticate and manage the local CLI Session through `actions/auth.md`.
 - Read Feed Items through `actions/feed-items.md`.
 - Manage Subscriptions through `actions/subscriptions.md`.
 - Manage delivery integrations through `actions/integrations.md`.
@@ -33,16 +31,11 @@ accounts, or clear a stale local session.
 - Gather Feed Item aggregation sidecars through `actions/artifact/gather.md`.
 - Compose editorial HTML briefing pages through `actions/artifact/briefing-page.md`.
 - Compose Audio Brief scripts and generated audio through `actions/artifact/audio-brief.md`.
-- Inspect Audio Brief provider availability with
-  `node scripts/helper.mjs audio provider doctor`.
-- Render prepared Audio Brief spoken text through supported providers with
-  `node scripts/helper.mjs audio render`; Bing Edge TTS is the default provider
-  path when available. Final renders should preserve embedded Timed Script
-  playback text when the output format supports it.
-- Convert Show Script JSON into speaker-aware TTS segments with
-  `node scripts/helper.mjs audio segments` before multi-host rendering.
+- Audio provider rendering remains a host/provider workflow. Follow
+  `actions/artifact/audio-brief.md` and its rendering docs before using any
+  host-provided audio tool or external provider.
 - Migrate from existing RSS readers through `actions/migration.md`.
-- Troubleshoot OAuth and local Skill Session storage through
+- Troubleshoot OAuth and local CLI Session storage through
   `actions/troubleshooting.md`.
 
 When the user asks to import or migrate existing subscriptions, follow
@@ -67,5 +60,6 @@ When the user asks to send a generated page or audio brief to Telegram, follow
 Structured Synthesis sidecar.
 
 This repository publishes the installable skill from `skills/feedcontext`.
-Helper source changes must refresh `scripts/helper.mjs` before release so this
-directory remains runnable.
+Service-interaction docs should use the published `feedcontext` CLI. Local
+helper docs must stay limited to deterministic local-only artifact mechanics
+such as schema validation.

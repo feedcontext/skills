@@ -16,9 +16,9 @@ Read first:
   Auth Entry.
 - Do not reference parent-directory paths, product-repository private source,
   product-repository workspace packages, or product-repository git submodules.
-- Keep the packed helper at `skills/feedcontext/scripts/helper.mjs` committed
-  because installs clone this repository.
-- The helper must not print OAuth tokens.
+- Service interaction goes through the published `feedcontext` CLI. The skill
+  may keep narrow local helpers only for deterministic local workflow mechanics.
+- Local helpers must not print OAuth tokens.
 
 ## Development Norms
 
@@ -28,12 +28,12 @@ Read first:
   session.
 - Every source code change must be followed by `pnpm run build` before handoff,
   staging, commit, or push.
-- Keep Write action safety as host approval plus helper `--confirm`; v1 has no
+- Keep Write action safety as host approval plus CLI `--confirm`; v1 has no
   server-side dry-run.
-- When API shape changes, update the handwritten raw-action allowlist and
-  action docs as needed.
-- OPML import remains helper-local fan-out to individual Subscription creates;
-  there is no OPML API endpoint in v1.
+- When API shape changes, update the published CLI first, then update skill
+  action docs to describe the supported CLI surface.
+- OPML import is a supported CLI workflow. The CLI parses the local OPML file
+  and creates Subscriptions through public `/v1` writes with `--confirm`.
 - Keep the Husky `pre-push` hook installed. The hook runs `pnpm run build`;
   because `build` regenerates skill artifacts and checks their git diff, a push
   must fail when generated artifacts are not aligned with the source code being
@@ -60,7 +60,7 @@ Read first:
 - Split Skill Behavior Evals into `offline` and `live` lanes. The `offline`
   lane is the default and should use fixtures or local inputs for stable
   workflow regression checks. The `live` lane may call the real FeedContext API,
-  but it must be explicitly opted into, require a valid Skill Session or test
+  but it must be explicitly opted into, require a valid CLI Session or test
   account, and remain outside the default pre-push lane.
 - Base `live` Skill Behavior Evals on a dedicated test account and stable
   fixture Subscription set. Do not use a maintainer's personal FeedContext
@@ -69,7 +69,7 @@ Read first:
 - `live` Skill Behavior Evals may cover Write actions only in the dedicated
   test account. Use identifiable test data, clean up created Subscriptions when
   practical, preserve diagnostic output when cleanup fails, and keep the Write
-  safety contract intact: host approval plus helper `--confirm`. Do not bypass
+  safety contract intact: host approval plus CLI `--confirm`. Do not bypass
   that contract for automation; evals should verify it.
 
 ## Verification

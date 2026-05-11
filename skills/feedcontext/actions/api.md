@@ -3,7 +3,7 @@
 Use this action doc as the API boundary map. Prefer the focused action docs for
 normal workflows:
 
-- Authenticate and manage the local Skill Session through `auth.md`.
+- Authenticate and manage the local CLI Session through `auth.md`.
 - Read Feed Items through `feed-items.md`.
 - Manage Subscriptions through `subscriptions.md`.
 - Manage Telegram delivery through `integrations.md`.
@@ -15,15 +15,15 @@ normal workflows:
 Run `version` before other FeedContext actions in an agent session:
 
 ```bash
-node scripts/helper.mjs version
+feedcontext version
 ```
 
-The helper starts OAuth login when requested, stores a local Skill Session, and
+The CLI starts OAuth login when requested, stores a local CLI Session, and
 prints JSON API responses. It must never print OAuth tokens.
 
 ## Raw API Calls
 
-Prefer high-level helper commands before using `raw`. Raw calls are allowed only
+Prefer high-level CLI commands before using `raw`. Raw calls are allowed only
 for the documented public `/v1` Subscription and Feed Item paths.
 
 Raw read calls are allowed only for these paths:
@@ -37,10 +37,10 @@ Raw read calls are allowed only for these paths:
 Example:
 
 ```bash
-node scripts/helper.mjs raw --method GET --path /v1/items
+feedcontext raw --method GET --path /v1/items
 ```
 
-Raw write calls require host approval and `--confirm`. The helper refuses
+Raw write calls require host approval and `--confirm`. The CLI refuses
 mutating calls before any network request when `--confirm` is missing.
 
 Allowed raw write paths:
@@ -55,7 +55,7 @@ Allowed raw write paths:
 Example after host approval:
 
 ```bash
-node scripts/helper.mjs raw \
+feedcontext raw \
   --method POST \
   --path /v1/subscriptions \
   --body '{"feed_url":"https://example.com/feed.xml"}' \

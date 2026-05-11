@@ -44,7 +44,7 @@ Feed Items; they are not Feed Items, not api resources, and not pages hosted by
    the final artifact file and its Structured Synthesis sidecar:
 
    ```bash
-   node scripts/helper.mjs artifact deliver \
+   feedcontext artifact deliver \
      --artifact-type briefing_page \
      --file briefing.html \
      --synthesis-file briefing.synthesis.json \
@@ -55,7 +55,7 @@ Feed Items; they are not Feed Items, not api resources, and not pages hosted by
    For audio briefs, use the final `.m4a` or `.mp3` file:
 
    ```bash
-   node scripts/helper.mjs artifact deliver \
+   feedcontext artifact deliver \
      --artifact-type audio_brief \
      --file daily-brief.m4a \
      --synthesis-file daily-brief.synthesis.json \

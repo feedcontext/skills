@@ -13,14 +13,14 @@ Use this doc for recovery paths.
   `--login-session <id>`.
 - Do not override `HOME` for login commands. Pending login state is temporary
   OS handoff state, while `FEEDCONTEXT_STATE_DIR` only affects persistent
-  fallback Skill Session files.
-- Retry `node scripts/helper.mjs login` if the pending pair code expired, then
+  fallback CLI Session files.
+- Retry `feedcontext login` if the pending pair code expired, then
   use the newest browser page and ignore older tabs.
 
 ## Session Storage Warning
 
-The helper prefers the system credential store. If that is unavailable, it
-stores the Skill Session in a local fallback file with restrictive permissions
+The CLI prefers the system credential store. If that is unavailable, it
+stores the CLI Session in a local fallback file with restrictive permissions
 and prints a warning. Tokens are not printed.
 
 ## Unauthorized API Calls
@@ -28,8 +28,8 @@ and prints a warning. Tokens are not printed.
 Clear the local session, then run login again:
 
 ```bash
-node scripts/helper.mjs logout
-node scripts/helper.mjs login
+feedcontext logout
+feedcontext login
 ```
 
 Then retry the read or approved write command.
@@ -41,5 +41,6 @@ Write commands require host approval and `--confirm`. Re-run the command with
 
 ## Unsupported API Path
 
-The helper allows only documented v1 Subscription and Feed Item paths. Use
-`actions/api.md` for the current allowlist.
+The CLI allows only documented v1 paths. Use high-level commands when possible.
+If a new public route is genuinely required, update the published CLI and
+`actions/api.md` together.

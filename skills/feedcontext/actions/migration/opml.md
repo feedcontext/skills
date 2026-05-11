@@ -6,8 +6,9 @@ dedicated playbook.
 
 ## OPML
 
-There is no OPML API endpoint. The helper parses OPML locally and creates one
-Subscription per RSS or Atom URL with bounded local concurrency.
+CLI v1 imports OPML by parsing the local OPML file and creating Subscriptions
+through public `/v1` writes. It is a host-approved write workflow, not an api
+bulk import resource.
 
 Procedure:
 
@@ -15,21 +16,17 @@ Procedure:
    text to a local `.opml` file.
 2. If the user provided a file path, read only that path. Do not search local
    directories for OPML or export files.
-3. Parse `<outline>` elements.
-4. Keep only unique `xmlUrl` values that are valid `http` or `https` RSS/Atom URLs.
-5. Ask the host for approval before creating subscriptions.
-6. Run:
+3. Ask the host for approval before creating subscriptions.
+4. Import through the CLI:
 
 ```bash
-node scripts/helper.mjs subscription import-opml --file "$OPML_FILE" --confirm
+feedcontext subscription import-opml --file path/to/subscriptions.opml --confirm
 ```
 
-The default local concurrency is `32`. Override it only when the host asks for a
-smaller or larger fan-out:
-
-```bash
-node scripts/helper.mjs subscription import-opml --file "$OPML_FILE" --concurrency 8 --confirm
-```
+The CLI keeps only unique `xmlUrl` values that are valid `http` or `https`
+URLs, ignores non-feed URLs, and creates subscriptions with bounded
+concurrency. Use `--concurrency <count>` only when the user or host environment
+needs a lower or higher write concurrency.
 
 If a feed already exists, the API is idempotent and returns the existing active
 Subscription. If a previously deleted Subscription is recreated, the API reuses
@@ -39,8 +36,7 @@ the existing Subscription id.
 
 If the user-specified file is XML, JSON, CSV, or a backup archive, inspect that
 file locally and look for RSS or Atom feed URLs. Convert valid `http` and
-`https` feed URLs into OPML, then import the OPML using the OPML procedure
-above.
+`https` feed URLs into an OPML file or a local report before import.
 
 Preserve a small local conversion report with:
 
@@ -48,7 +44,7 @@ Preserve a small local conversion report with:
 - duplicate URLs skipped;
 - invalid URLs skipped;
 - source file name;
-- generated OPML file path.
+- generated feed URL list path.
 
 ## Notes
 
