@@ -68,14 +68,15 @@ If a local schema helper is available, use it only as a deterministic local
 validation aid. Validate with the available local helper command:
 
 ```bash
-node scripts/helper.mjs synthesis validate --file path/to/artifact.synthesis.json
+node scripts/helper.mjs synthesis validate \
+  --file /tmp/feedcontext/2026-05-06-daily-briefing/feedcontext-briefing-2026-05-06.synthesis.json
 ```
 
 Keep the JSON sidecar next to the generated artifact when practical:
 
 ```text
-feedcontext-briefing-2026-05-06.html
-feedcontext-briefing-2026-05-06.synthesis.json
+/tmp/feedcontext/2026-05-06-daily-briefing/feedcontext-briefing-2026-05-06.html
+/tmp/feedcontext/2026-05-06-daily-briefing/feedcontext-briefing-2026-05-06.synthesis.json
 ```
 
 Minimum shape:

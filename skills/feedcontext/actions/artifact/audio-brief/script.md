@@ -141,14 +141,14 @@ sources, read URLs, or describe this evidence depth.
 Keep these files together when practical:
 
 ```text
-feedcontext-audio-brief-2026-05-07.synthesis.json
-feedcontext-audio-brief-2026-05-07.script.json
-feedcontext-audio-brief-2026-05-07.script.md
-feedcontext-audio-brief-2026-05-07.segments.json
-feedcontext-audio-brief-2026-05-07.bing-edge.m4a
-feedcontext-audio-brief-2026-05-07.bing-edge.cover.png
-feedcontext-audio-brief-2026-05-07.bing-edge.lyrics.txt
-feedcontext-audio-brief-2026-05-07.bing-edge.render-manifest.json
+/tmp/feedcontext/2026-05-07-daily-audio/feedcontext-audio-brief-2026-05-07.synthesis.json
+/tmp/feedcontext/2026-05-07-daily-audio/feedcontext-audio-brief-2026-05-07.script.json
+/tmp/feedcontext/2026-05-07-daily-audio/feedcontext-audio-brief-2026-05-07.script.md
+/tmp/feedcontext/2026-05-07-daily-audio/feedcontext-audio-brief-2026-05-07.segments.json
+/tmp/feedcontext/2026-05-07-daily-audio/feedcontext-audio-brief-2026-05-07.bing-edge.m4a
+/tmp/feedcontext/2026-05-07-daily-audio/feedcontext-audio-brief-2026-05-07.bing-edge.cover.png
+/tmp/feedcontext/2026-05-07-daily-audio/feedcontext-audio-brief-2026-05-07.bing-edge.lyrics.txt
+/tmp/feedcontext/2026-05-07-daily-audio/feedcontext-audio-brief-2026-05-07.bing-edge.render-manifest.json
 ```
 
 Use `schemas/show-script.schema.json` as the generated schema artifact. If a
@@ -167,7 +167,7 @@ Minimum shape:
 {
   "schema_version": "1",
   "source_synthesis": {
-    "file": "feedcontext-audio-brief-2026-05-07.synthesis.json"
+    "file": "/tmp/feedcontext/2026-05-07-daily-audio/feedcontext-audio-brief-2026-05-07.synthesis.json"
   },
   "intent": "script_then_audio",
   "language": "en-US",

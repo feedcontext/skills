@@ -83,12 +83,15 @@ script-only handoff   provider selection       artwork base generation
    Follow `audio-brief/script.md`, then validate it with:
 
    ```bash
-   node scripts/helper.mjs show-script validate --file path/to/audio-brief.script.json
+   node scripts/helper.mjs show-script validate \
+     --file /tmp/feedcontext/2026-05-12-daily-briefing/audio-brief.script.json
    ```
 
 5. Create a user-readable script Markdown file from the same Show Script. Keep
    source notes and evidence-depth details in that readable script, not in the
-   spoken text.
+   spoken text. Write the Show Script JSON, readable script, review notes,
+   rendered audio, artwork, thumbnails, manifests, and feedback note inside the
+   artifact session workspace.
 6. Review the Show Script before audio generation or script-only handoff. Follow
    `audio-brief/script-review.md`. Use a separate reviewer agent when the host
    environment supports it; otherwise the current agent must self-review with

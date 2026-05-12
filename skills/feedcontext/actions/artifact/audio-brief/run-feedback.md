@@ -28,7 +28,7 @@ captured.
 Keep the note next to the script and audio artifacts. Use a name such as:
 
 ```text
-feedcontext-audio-brief-2026-05-08.run-feedback.md
+/tmp/feedcontext/2026-05-08-daily-audio/feedcontext-audio-brief-2026-05-08.run-feedback.md
 ```
 
 Use this structure:
@@ -36,10 +36,10 @@ Use this structure:
 ```md
 # Audio Brief Run Feedback
 
-- source_synthesis: path/to/brief.synthesis.json
-- show_script: path/to/brief.script.json
-- readable_script: path/to/brief.script.md
-- final_audio: path/to/brief.mp3
+- source_synthesis: /tmp/feedcontext/2026-05-08-daily-audio/brief.synthesis.json
+- show_script: /tmp/feedcontext/2026-05-08-daily-audio/brief.script.json
+- readable_script: /tmp/feedcontext/2026-05-08-daily-audio/brief.script.md
+- final_audio: /tmp/feedcontext/2026-05-08-daily-audio/brief.mp3
 - review_verdict_history: ready | revise -> ready | blocked -> revise -> ready
 
 ## What Worked

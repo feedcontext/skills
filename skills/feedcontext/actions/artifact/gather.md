@@ -12,18 +12,20 @@ while Structured Synthesis records evidence-backed units for artifact rendering.
 Run the CLI discovery command and save the JSON response to a local file:
 
 ```bash
+mkdir -p /tmp/feedcontext/2026-05-12-daily-briefing
 feedcontext item list --all \
   --published-after 1700000000000 \
   --published-before 1700086400000 \
-  > today.items.json
+  > /tmp/feedcontext/2026-05-12-daily-briefing/today.items.json
 ```
 
-Then create `today.gather.json` locally from that response. The sidecar should
-preserve every in-scope Feed Item's discovery metadata and Summary, mark each
-entry with `summary_reviewed: true`, and include coverage counts such as total
-items and pages reviewed. Do not impose a semantic candidate limit before
-reviewing all in-scope Summaries. Page sizes, batches, and concurrency are
-execution details, not selection rules.
+Then create `/tmp/feedcontext/2026-05-12-daily-briefing/today.gather.json`
+locally from that response. The sidecar should preserve every in-scope Feed
+Item's discovery metadata and Summary, mark each entry with
+`summary_reviewed: true`, and include coverage counts such as total items and
+pages reviewed. Do not impose a semantic candidate limit before reviewing all
+in-scope Summaries. Page sizes, batches, and concurrency are execution details,
+not selection rules.
 
 After the Gather Sidecar exists, use it to decide which Feed Items need full
 reading through `item get` for one item or `item get-many` for several selected

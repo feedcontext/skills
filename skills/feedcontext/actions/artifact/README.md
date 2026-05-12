@@ -8,13 +8,23 @@ Feed Items; they are not Feed Items, not api resources, and not pages hosted by
 ## Shared Workflow
 
 1. Run `version` first if this is the first FeedContext action in the session.
-2. Use `item list` or `item list --all` to discover candidate Feed Items. For
+2. Before writing local files for this artifact session, create one unique
+   session workspace under the host system temporary directory, for example
+   `/tmp/feedcontext/2026-05-12-daily-briefing/`. Prefer the host-provided temp
+   root, such as `$TMPDIR` when it is available, but do not use a repository
+   relative `./tmp` folder. Put all generated session files there, including
+   discovery exports, Gather Sidecars, Structured Synthesis sidecars, review
+   notes, scripts, HTML pages, audio files, thumbnails, downloaded or generated
+   assets, provider logs, and final deliverable files. Do not write temporary
+   files or final artifacts directly into the current directory or repository
+   root. Create the folder lazily only when there is a file to write.
+3. Use `item list` or `item list --all` to discover candidate Feed Items. For
    Agent-Composed Feed Aggregation over multiple Feed Items, prefer creating a
    Gather Sidecar first with `gather.md` so all in-scope Summaries are reviewed
    before semantic selection.
-3. Apply deterministic filters with structured fields when possible, such as
+4. Apply deterministic filters with structured fields when possible, such as
    time range, Subscription id, item ids, or keyword filters.
-4. If the user asks the agent to organize, group, synthesize, explain, or
+5. If the user asks the agent to organize, group, synthesize, explain, or
    editorially structure the artifact but does not specify capacity, ask how
    many Artifact Topics to include before creating the Structured Synthesis.
    Offer 10, 20, 50, or 100 topics, recommending 20 for a broad briefing unless
@@ -25,29 +35,30 @@ Feed Items; they are not Feed Items, not api resources, and not pages hosted by
    Skip this prompt when the user supplies or selects an existing Structured
    Synthesis sidecar because that sidecar already fixes the artifact's topic
    set.
-5. If the user only asks for full Feed Item display, export, or listing, keep a
+6. If the user only asks for full Feed Item display, export, or listing, keep a
    Feed Item stream instead of forcing Artifact Topic synthesis or Structured
    Synthesis review. Preserve the scope, deterministic filter, and source index
    clearly in the artifact.
-6. Use `item get` to read one Feed Item, or `item get-many` to read several
+7. Use `item get` to read one Feed Item, or `item get-many` to read several
    selected Feed Items with bounded local concurrency, when those Feed Items
    materially support the artifact.
-7. Follow `structured-synthesis.md` to create, validate, and review a
+8. Follow `structured-synthesis.md` to create, validate, and review a
    Structured Synthesis sidecar JSON file before rendering HTML, writing a
    script, or generating audio.
 
-8. Keep sidecar files next to the generated artifact when practical so evidence,
+9. Keep sidecar files next to the generated artifact inside the session
+   workspace so evidence,
    selection rationale, and generation inputs remain inspectable.
 
-9. If the user asks to send the final page or audio to Telegram, first follow
+10. If the user asks to send the final page or audio to Telegram, first follow
    `../integrations.md` and confirm Telegram is connected. Then deliver only
    the final artifact file and its Structured Synthesis sidecar:
 
    ```bash
    feedcontext artifact deliver \
      --artifact-type briefing_page \
-     --file briefing.html \
-     --synthesis-file briefing.synthesis.json \
+     --file /tmp/feedcontext/2026-05-12-daily-briefing/briefing.html \
+     --synthesis-file /tmp/feedcontext/2026-05-12-daily-briefing/briefing.synthesis.json \
      --title "Daily Briefing" \
      --confirm
    ```
@@ -57,13 +68,13 @@ Feed Items; they are not Feed Items, not api resources, and not pages hosted by
    ```bash
    feedcontext artifact deliver \
      --artifact-type audio_brief \
-     --file daily-brief.m4a \
-     --synthesis-file daily-brief.synthesis.json \
+     --file /tmp/feedcontext/2026-05-12-daily-briefing/daily-brief.m4a \
+     --synthesis-file /tmp/feedcontext/2026-05-12-daily-briefing/daily-brief.synthesis.json \
      --title "Daily Audio Brief" \
      --telegram-audio-duration-seconds 603 \
      --telegram-audio-performer "FeedContext" \
      --telegram-audio-title "Daily Audio Brief" \
-     --telegram-thumbnail-file daily-brief.telegram-thumb.jpg \
+     --telegram-thumbnail-file /tmp/feedcontext/2026-05-12-daily-briefing/daily-brief.telegram-thumb.jpg \
      --caption "Today’s audio brief" \
      --confirm
    ```

@@ -21,10 +21,11 @@ Briefing** and a **Narrative Briefing** rendering, toggled by a header switch.
 6. Curate the page around the user's request. If the user does not give a
    precise scope, choose a coherent recent theme from visible Feed Items, but
    record the selection rule in the Structured Synthesis.
-7. If the page uses images, create a local temporary asset directory and copy,
-   download, or generate the image files there before referencing them from the
-   HTML.
-8. Write one standalone `.html` file with embedded CSS, using
+7. If the page uses images, create an `assets/` directory inside the artifact
+   session workspace and copy, download, or generate the image files there
+   before referencing them from the HTML.
+8. Write one standalone `.html` file with embedded CSS inside the artifact
+   session workspace, using
    `templates/combined-briefing.html` as the starting scaffold.
 
 ## Dual-Mode Output
@@ -116,7 +117,8 @@ Deliver as `briefing_page` type via `feedcontext artifact deliver --artifact-typ
 ```bash
 feedcontext artifact deliver \
   --artifact-type briefing_page \
-  --file path/to/combined-briefing.html \
-  --synthesis path/to/combined-briefing.synthesis.json \
-  --title "Your Briefing Title"
+  --file /tmp/feedcontext/2026-05-12-daily-briefing/combined-briefing.html \
+  --synthesis-file /tmp/feedcontext/2026-05-12-daily-briefing/combined-briefing.synthesis.json \
+  --title "Your Briefing Title" \
+  --confirm
 ```

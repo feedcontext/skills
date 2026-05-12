@@ -91,8 +91,9 @@ instead of forcing an unrelated visual.
 When using a remote image URL, download the image into a local temporary
 directory before referencing it from the page. This avoids broken rendering from
 cross-origin restrictions, hotlink protection, expiring URLs, or blocked remote
-requests. Prefer a dedicated directory such as `/tmp/feedcontext-briefing-*`;
-store generated images there as well. Reference those local files from the HTML
-with paths that work when the page is opened locally. If the user requires a
-single physical file with no sidecar assets, embed the local image data as a
-data URI instead of linking to the remote URL.
+requests. Store downloaded and generated images inside the artifact session
+workspace, such as `/tmp/feedcontext/2026-05-12-daily-briefing/assets/`.
+Reference those local files from the HTML with paths that work when the page is
+opened locally. If the user requires a single physical file with no sidecar
+assets, embed the local image data as a data URI instead of linking to the
+remote URL.

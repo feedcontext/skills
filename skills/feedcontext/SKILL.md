@@ -80,8 +80,9 @@ Items.
 When composing summaries, roundups, insights, briefings, briefing pages, or
 audio briefs, follow `actions/artifact/README.md`: create and validate a
 Structured Synthesis JSON sidecar before rendering prose, HTML, scripts, or
-audio. For audio briefs, create and validate a Show Script before generating
-audio.
+audio. Put generated local files in that action's per-session system temporary
+directory workspace, not directly in the current directory. For audio briefs,
+create and validate a Show Script before generating audio.
 
 When the user asks to send a generated page or audio brief to Telegram, follow
 `actions/integrations.md` to confirm Telegram is linked, then follow
