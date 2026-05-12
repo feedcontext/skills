@@ -150,11 +150,13 @@ artwork metadata or converts the attached artwork to JPEG/MJPEG for fallback
 compatibility. If embedding fails, keep the audio and sidecar image and record
 the artwork embedding failure in the render manifest.
 
-For Telegram delivery, do not rely on embedded audio artwork or artist metadata.
-Prepare a separate JPEG thumbnail no larger than 320x320 and less than 200 KB,
-then pass it to the supported artifact delivery path with
-`--telegram-thumbnail-file` along with explicit `--telegram-audio-title` and
-`--telegram-audio-performer` values.
+For Telegram delivery, do not rely on embedded audio duration, artwork, or
+artist metadata. Prepare a separate JPEG thumbnail no larger than 320x320 and
+less than 200 KB, then pass it to the supported artifact delivery path with
+`--telegram-thumbnail-file` along with explicit
+`--telegram-audio-duration-seconds`, `--telegram-audio-title`, and
+`--telegram-audio-performer` values. Round the rendered audio duration up to the
+nearest whole second.
 
 Write the full spoken playback text to the audio file's lyrics or unsynchronized
 lyrics metadata when supported. Use comment or description metadata only as a
