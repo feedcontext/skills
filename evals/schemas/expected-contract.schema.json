@@ -1,0 +1,164 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "hard_gates"],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "1"
+    },
+    "hard_gates": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "required_files": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "schema_validations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["file", "schema"],
+            "properties": {
+              "file": {
+                "type": "string",
+                "minLength": 1
+              },
+              "schema": {
+                "type": "string",
+                "enum": ["structured-synthesis", "show-script"]
+              }
+            }
+          }
+        },
+        "review_verdicts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["file", "verdict"],
+            "properties": {
+              "file": {
+                "type": "string",
+                "minLength": 1
+              },
+              "verdict": {
+                "type": "string",
+                "enum": ["ready", "revise", "blocked"]
+              }
+            }
+          }
+        },
+        "command_order": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "html_checks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["file", "contains"],
+            "properties": {
+              "file": {
+                "type": "string",
+                "minLength": 1
+              },
+              "contains": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            }
+          }
+        },
+        "json_path_checks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["file", "path", "expected"],
+            "properties": {
+              "file": {
+                "type": "string",
+                "minLength": 1
+              },
+              "path": {
+                "type": "string",
+                "minLength": 1
+              },
+              "expected": true
+            }
+          }
+        },
+        "forbidden_patterns": {
+          "type": "array",
+          "items": {
+            "oneOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["file", "pattern"],
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "pattern": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "artifact_boundaries": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "no_parent_repo_private_paths",
+              "no_install_artifact_pollution",
+              "no_skill_repo_writes",
+              "only_case_output_writes",
+              "no_live_api_without_permission",
+              "no_audio_provider_without_permission"
+            ]
+          }
+        }
+      }
+    },
+    "rubric": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "rubric_file": {
+          "type": "string",
+          "minLength": 1
+        },
+        "minimum_score": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100
+        }
+      }
+    }
+  }
+}

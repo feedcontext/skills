@@ -33,6 +33,8 @@ Delegable tasks include:
 - Render independent TTS segments through the selected provider.
 - Retry failed segments from an existing segment manifest.
 - Assemble a final audio file from completed segment files.
+- Inspect or repair final local audio metadata and artwork from existing
+  sidecars and render manifests.
 - Generate a readable Markdown script or spoken text file from an existing Show
   Script when the main agent has already made narrative decisions.
 - Check generated file presence, ordering, segment duration, and final output
@@ -43,6 +45,8 @@ Delegable tasks include:
 - Give each worker a concrete input file and output path.
 - Workers must not rewrite Structured Synthesis, alter Show Script text, change
   provider choice, or reinterpret Feed Items.
+- Workers must reuse matching completed segment files and retry only missing,
+  empty, failed, or manifest-mismatched files when resume inputs exist.
 - The main agent owns final inspection and user-facing reporting.
 - If the context is small or the provider render is already serial, do not
   split the work just to use sub-agents.

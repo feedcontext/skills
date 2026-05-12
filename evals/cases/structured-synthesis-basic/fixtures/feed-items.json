@@ -1,0 +1,32 @@
+{
+  "schema_version": "1",
+  "items": [
+    {
+      "id": "item_local_renderers",
+      "title": "Local renderers make briefing pages repeatable",
+      "url": "https://example.com/local-renderers",
+      "subscription_title": "FeedContext Engineering",
+      "published_at": 1778580000000,
+      "summary": "A local helper renderer turns reviewed Structured Synthesis into repeatable Briefing Pages without making web or api own artifact generation.",
+      "content_text": "The renderer accepts reviewed structured inputs, writes a complete local HTML artifact, and keeps source citations in a footer index. It should not call the FeedContext API."
+    },
+    {
+      "id": "item_audio_segments",
+      "title": "Audio Briefs move through script and segment manifests",
+      "url": "https://example.com/audio-segments",
+      "subscription_title": "Agent Audio Notes",
+      "published_at": 1778580300000,
+      "summary": "Audio Brief generation now requires a reviewed Show Script before segment manifests and final audio review.",
+      "content_text": "The recommended path is Structured Synthesis, Synthesis Review, Show Script, Script Review, segment manifest, provider rendering, final assembly, and Final Audio Review."
+    },
+    {
+      "id": "item_eval_loop",
+      "title": "Behavior evals should replay independent agent runs",
+      "url": "https://example.com/behavior-evals",
+      "subscription_title": "Agent Quality Weekly",
+      "published_at": 1778580600000,
+      "summary": "Skill behavior evals are most useful when a fresh agent follows the installed skill and produces traceable artifacts.",
+      "content_text": "Golden traces are useful references, but the acceptance signal comes from a new independent agent run graded against an expected output contract."
+    }
+  ]
+}

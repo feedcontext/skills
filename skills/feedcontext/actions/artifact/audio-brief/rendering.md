@@ -3,6 +3,10 @@
 Use this stage after the Show Script exists and a provider path has been
 selected.
 
+The output of this stage is a complete local Audio Brief file. Delivery through
+FeedContext is optional and happens after the local file has already passed the
+required review gate.
+
 ## Provider Diagnostics
 
 Use provider diagnostics before asking the user to choose an Audio Brief
@@ -61,6 +65,64 @@ provider voice metadata when a concrete host voice was chosen:
 Exact host `provider_voice` values from the Show Script take precedence over
 provider defaults when the chosen provider supports explicit voice selection.
 
+## Segment Manifest And Resume
+
+For any non-trivial Audio Brief, create or preserve a segment manifest before
+provider rendering. The manifest is the stable contract between the reviewed
+Show Script, the selected provider path, and final assembly. A Skill Local
+Helper may create the manifest from the Show Script when available:
+
+```bash
+node scripts/helper.mjs audio segments \
+  --script-file /tmp/feedcontext/2026-05-12-daily-briefing/audio-brief.script.json \
+  --out /tmp/feedcontext/2026-05-12-daily-briefing/audio-brief.segments.json
+```
+
+Render each segment to a stable file path derived from the segment id. When a
+provider path supports resume, reuse any segment file that exists, is non-empty,
+matches the manifest entry, and can be probed or played by the local audio
+tooling. Retry only missing, empty, failed, or manifest-mismatched segment
+files. Do not regenerate the entire Audio Brief just because one segment failed.
+
+When the Skill Local Helper is available, use `audio render --resume` to inspect
+the segment directory and write a render manifest before retrying provider work:
+
+```bash
+node scripts/helper.mjs audio render \
+  --segments-file /tmp/feedcontext/2026-05-12-daily-briefing/audio-brief.segments.json \
+  --segment-dir /tmp/feedcontext/2026-05-12-daily-briefing/segments \
+  --manifest-out /tmp/feedcontext/2026-05-12-daily-briefing/audio-brief.render-manifest.json \
+  --retry-out /tmp/feedcontext/2026-05-12-daily-briefing/audio-brief.retry-queue.json \
+  --resume
+```
+
+This command identifies reusable, missing, or empty segment files and may write
+a retry queue containing only the segments that still need provider work. It
+does not call the provider and does not by itself create the final assembled
+audio file.
+
+After the render manifest reports `ready_for_assembly: true`, use the Skill
+Local Helper to assemble the complete local Audio Brief file:
+
+```bash
+node scripts/helper.mjs audio assemble \
+  --render-manifest /tmp/feedcontext/2026-05-12-daily-briefing/audio-brief.render-manifest.json \
+  --out /tmp/feedcontext/2026-05-12-daily-briefing/audio-brief.m4a \
+  --manifest-out /tmp/feedcontext/2026-05-12-daily-briefing/audio-brief.assembly-manifest.json
+```
+
+`audio assemble` is deterministic local artifact rendering. It refuses render
+manifests that are not ready, preserves the reviewed segment order, writes the
+final local audio file, records the assembly inputs, embeds basic player
+metadata through `ffmpeg`, and writes a `.lyrics.txt` playback-text sidecar next
+to the final audio file. Use `--intro-audio` and `--outro-audio` only for
+custom music handoff. Use `--no-default-music` for speech-only output.
+
+Record segment status in a render manifest next to the final artifact. The
+manifest should make resumed files, retried files, provider errors, final
+assembly inputs, and review repair results inspectable. This is local workflow
+state, not an api resource and not a user-facing source appendix.
+
 For Chinese Audio Briefs, avoid raw provider defaults when generating final
 audio. The default Edge voices can sound too broadcast-like or too childlike;
 the fixed Chinese Edge defaults use `林晓` and `周熙` persona voices with lower
@@ -89,6 +151,12 @@ final assembly, or use local `ffmpeg` assembly when the provider only returns
 speech segments. For longer Audio Briefs, generate by section and assemble the
 final audio file so a failed section can be retried without regenerating the
 whole show.
+
+Final assembly is deterministic local artifact rendering. It may concatenate
+reviewed provider segment outputs, apply bundled intro and outro music, write
+M4A metadata, attach artwork, and preserve playback text sidecars. It should
+not change the Show Script wording, provider choice, segment order, or evidence
+interpretation.
 
 ## Timed Script Playback Text
 
@@ -221,6 +289,21 @@ render manifest for display title recovery and the adjacent `.cover.png` and
 `.lyrics.txt` sidecars as repair inputs. This repair does not rewrite the audio
 program content; it only updates metadata and attached artwork in the same
 final M4A file.
+
+When the Skill Local Helper is available, run review after assembly:
+
+```bash
+node scripts/helper.mjs audio review \
+  --file /tmp/feedcontext/2026-05-12-daily-briefing/audio-brief.m4a \
+  --assembly-manifest /tmp/feedcontext/2026-05-12-daily-briefing/audio-brief.assembly-manifest.json \
+  --out /tmp/feedcontext/2026-05-12-daily-briefing/audio-brief.review.json
+```
+
+`audio review` writes a review manifest with `ready`, `ready_repaired`, or
+`blocked`. By default it attempts an in-place metadata repair using `ffmpeg`
+when required sidecars are available, then verifies the repaired file with
+`ffprobe`. A `ready_repaired` verdict is deliverable; a `blocked` verdict is
+not.
 
 Sidecars are required recovery material, not acceptance substitutes. A final
 M4A that only has `.cover.png`, `.lyrics.txt`, or `.lrc` beside it must not be

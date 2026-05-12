@@ -1,0 +1,64 @@
+{
+  "schema_version": "1",
+  "hard_gates": {
+    "required_files": [
+      "briefing.synthesis.json",
+      "synthesis-review.json",
+      "briefing.html",
+      "command-trace.json"
+    ],
+    "schema_validations": [
+      {
+        "file": "briefing.synthesis.json",
+        "schema": "structured-synthesis"
+      }
+    ],
+    "review_verdicts": [
+      {
+        "file": "synthesis-review.json",
+        "verdict": "ready"
+      }
+    ],
+    "command_order": [
+      "version",
+      "synthesis validate",
+      "artifact render-page"
+    ],
+    "html_checks": [
+      {
+        "file": "briefing.html",
+        "contains": [
+          "data-mode-content=\"newspaper\"",
+          "data-mode-content=\"narrative\"",
+          "Source Index"
+        ]
+      }
+    ],
+    "json_path_checks": [
+      {
+        "file": "briefing.synthesis.json",
+        "path": "$.scope.request",
+        "expected": {
+          "includes": "combined briefing page"
+        }
+      },
+      {
+        "file": "synthesis-review.json",
+        "path": "$.ready_for_artifact",
+        "expected": true
+      }
+    ],
+    "forbidden_patterns": [
+      {
+        "file": "briefing.html",
+        "pattern": "host_a|host_b|speaker:"
+      }
+    ],
+    "artifact_boundaries": [
+      "no_skill_repo_writes",
+      "only_case_output_writes",
+      "no_live_api_without_permission",
+      "no_audio_provider_without_permission"
+    ]
+  }
+}

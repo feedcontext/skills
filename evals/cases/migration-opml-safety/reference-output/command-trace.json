@@ -1,0 +1,23 @@
+{
+  "schema_version": "1",
+  "commands": [
+    {
+      "command": "node /Users/sorcererxw/repo/sorcererxw/feedcontext/packages/skills/skills/feedcontext/scripts/helper.mjs version"
+    },
+    {
+      "command": "sed -n '1,220p' /Users/sorcererxw/repo/sorcererxw/feedcontext/packages/skills/skills/feedcontext/SKILL.md"
+    },
+    {
+      "command": "rg -n \"OPML|opml|import|--confirm|approval|read state|read-state|version\" /Users/sorcererxw/repo/sorcererxw/feedcontext/packages/skills/skills/feedcontext/actions"
+    },
+    {
+      "command": "sed -n '1,140p' /Users/sorcererxw/repo/sorcererxw/feedcontext/packages/skills/skills/feedcontext/actions/migration.md"
+    },
+    {
+      "command": "sed -n '1,120p' /Users/sorcererxw/repo/sorcererxw/feedcontext/packages/skills/skills/feedcontext/actions/migration/opml.md"
+    },
+    {
+      "command": "test -f /Users/sorcererxw/repo/sorcererxw/feedcontext/packages/skills/evals/cases/migration-opml-safety/fixtures/subscriptions.opml"
+    }
+  ]
+}

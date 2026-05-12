@@ -7,6 +7,9 @@ from FeedContext.
 An Audio Brief is a local agent-composed artifact. It is not feed-provided
 Episode Audio, not a FeedContext-hosted podcast, not a private RSS feed, and not
 an api or web resource.
+The final local audio file is the complete user-facing artifact. Server
+delivery is an optional later submission step, not the point where the audio
+becomes complete.
 
 ## Workflow Map
 
@@ -116,11 +119,13 @@ script-only handoff   provider selection       artwork base generation
 9. If the user requested audio or did not specify script-only mode, follow
    `audio-brief/providers.md` to discover available provider paths and ask the
    user which one to use unless the user already specified a provider.
-10. Generate audio through the selected provider path. Follow
-   `audio-brief/rendering.md` for segments, provider diagnostics, final
-   assembly, branded Audio Brief Artwork, and embedded Timed Script playback
-   text. Podcast-like final outputs use the bundled intro and outro music unless
-   the user explicitly asks for speech-only output or supplies custom assets.
+10. Generate audio through the selected provider path using segment manifests,
+   resumable segment files, and deterministic final assembly whenever the
+   provider path supports it. Follow `audio-brief/rendering.md` for segments,
+   provider diagnostics, final assembly, branded Audio Brief Artwork, and
+   embedded Timed Script playback text. Podcast-like final outputs use the
+   bundled intro and outro music unless the user explicitly asks for speech-only
+   output or supplies custom assets.
 11. Run Final Audio Review against the final M4A file before user delivery.
    The review must verify embedded player-facing metadata, embedded cover
    artwork, and embedded Timed Script playback text. It may repair the same M4A
@@ -165,3 +170,12 @@ such as converting an approved Show Script to segments, rendering independent
 TTS segments, assembling audio, or checking generated files. If the host agent
 environment does not support sub-agents or parallel worker orchestration, do
 not force a split; run the workflow in the main agent instead.
+
+## Local Renderer Boundary
+
+The Skill Local Helper may provide deterministic mechanics for complete local
+audio artifacts, such as converting a reviewed Show Script into a segment
+manifest, deriving spoken playback text, assembling already-rendered provider
+outputs, embedding or repairing metadata, and checking the final file. It must
+not become the service connector, own provider choice, reinterpret Feed Items,
+or hide provider execution behind FeedContext-owned business logic.

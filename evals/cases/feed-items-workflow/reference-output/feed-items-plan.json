@@ -1,0 +1,12 @@
+{
+  "workflow": "feed-items-workflow",
+  "uses_item_list_all_for_all_matching": true,
+  "list_returns_content": false,
+  "uses_get_many_after_selection": true,
+  "search_content_requires_explicit_request": true,
+  "commands": [
+    "feedcontext version",
+    "feedcontext item list --all --published-after <day_start_epoch_ms> --published-before <next_day_start_epoch_ms>",
+    "feedcontext item get-many --ids-file selected-feed-item-ids.json --concurrency 8"
+  ]
+}

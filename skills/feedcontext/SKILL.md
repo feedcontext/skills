@@ -92,4 +92,5 @@ Structured Synthesis sidecar.
 This repository publishes the installable skill from `skills/feedcontext`.
 Service-interaction docs should use the published `feedcontext` CLI. Local
 helper docs must stay limited to deterministic local-only artifact mechanics
-such as schema validation.
+such as schema validation and rendering complete local artifacts from reviewed
+structured sidecars.

@@ -1,0 +1,36 @@
+{
+  "schema_version": "1",
+  "hard_gates": {
+    "required_files": ["feed-items.snapshot.json", "command-trace.json"],
+    "command_order": ["version", "auth status", "item list"],
+    "json_path_checks": [
+      {
+        "file": "feed-items.snapshot.json",
+        "path": "$.workflow",
+        "expected": "recent_news"
+      },
+      {
+        "file": "feed-items.snapshot.json",
+        "path": "$.request",
+        "expected": "输出最近新闻"
+      },
+      {
+        "file": "feed-items.snapshot.json",
+        "path": "$.source",
+        "expected": "feedcontext_api"
+      },
+      {
+        "file": "feed-items.snapshot.json",
+        "path": "$.items",
+        "expected": { "min_length": 1 }
+      },
+      {
+        "file": "feed-items.snapshot.json",
+        "path": "$.auth_checked",
+        "expected": true
+      }
+    ],
+    "forbidden_patterns": ["access_token|refresh_token|password|auth login|auth anonymous|auth logout|--confirm"],
+    "artifact_boundaries": ["no_skill_repo_writes", "only_case_output_writes"]
+  }
+}

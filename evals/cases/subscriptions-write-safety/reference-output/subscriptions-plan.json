@@ -1,0 +1,14 @@
+{
+  "workflow": "subscriptions-write-safety",
+  "list_command": "feedcontext subscription list",
+  "write_requires_host_approval": true,
+  "add_requires_confirm": true,
+  "delete_requires_confirm": true,
+  "commands": [
+    "feedcontext version",
+    "feedcontext subscription list",
+    "feedcontext subscription add --feed-url https://example.com/feed.xml --confirm",
+    "feedcontext subscription delete --id sub_123 --confirm"
+  ],
+  "does_not_delete_source": true
+}

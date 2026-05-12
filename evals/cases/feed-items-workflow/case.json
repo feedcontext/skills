@@ -1,0 +1,18 @@
+{
+  "schema_version": "1",
+  "id": "feed-items-workflow",
+  "lane": "offline",
+  "permissions": {
+    "shell": true,
+    "network": false,
+    "feedcontext_cli": false,
+    "skill_repo_write": false,
+    "output_write": true
+  },
+  "skill": "../../../skills/feedcontext",
+  "prompt_file": "prompt.md",
+  "fixture_files": [],
+  "expected_contract_file": "expected.contract.json",
+  "timeout_seconds": 240,
+  "account_policy": "none"
+}

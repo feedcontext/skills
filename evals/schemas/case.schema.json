@@ -1,0 +1,95 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "id",
+    "lane",
+    "permissions",
+    "skill",
+    "fixture_files",
+    "expected_contract_file",
+    "timeout_seconds",
+    "account_policy"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "1"
+    },
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "lane": {
+      "type": "string",
+      "enum": ["offline", "live"]
+    },
+    "permissions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "shell",
+        "network",
+        "feedcontext_cli",
+        "skill_repo_write",
+        "output_write"
+      ],
+      "properties": {
+        "shell": {
+          "type": "boolean"
+        },
+        "network": {
+          "type": "boolean"
+        },
+        "feedcontext_cli": {
+          "type": "boolean"
+        },
+        "skill_repo_write": {
+          "type": "boolean",
+          "const": false
+        },
+        "output_write": {
+          "type": "boolean",
+          "const": true
+        }
+      }
+    },
+    "skill": {
+      "type": "string",
+      "minLength": 1
+    },
+    "prompt_file": {
+      "type": "string",
+      "minLength": 1
+    },
+    "turns_file": {
+      "type": "string",
+      "minLength": 1
+    },
+    "fixture_files": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "expected_contract_file": {
+      "type": "string",
+      "minLength": 1
+    },
+    "timeout_seconds": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "account_policy": {
+      "type": "string",
+      "enum": ["none", "dedicated_eval_account_required"]
+    }
+  },
+  "anyOf": [
+    { "required": ["prompt_file"] },
+    { "required": ["turns_file"] }
+  ]
+}

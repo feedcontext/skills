@@ -1,0 +1,32 @@
+{
+  "schema_version": "1",
+  "items": [
+    {
+      "id": "item_render_page",
+      "title": "Briefing Pages use a dual-mode renderer",
+      "url": "https://example.com/briefing-page-renderer",
+      "subscription_title": "Artifact Systems",
+      "published_at": 1778581000000,
+      "summary": "A combined Briefing Page includes Newspaper and Narrative modes in one standalone HTML file.",
+      "content_text": "The renderer uses reviewed Structured Synthesis, a header mode switch, dual mode containers, and a footer source index."
+    },
+    {
+      "id": "item_source_index",
+      "title": "Source indexes keep evidence visible without turning pages into audits",
+      "url": "https://example.com/source-index",
+      "subscription_title": "Editorial Tools",
+      "published_at": 1778581300000,
+      "summary": "Briefing pages should keep a complete source index while preserving editorial reading flow.",
+      "content_text": "The source index supports traceability, while inline marks and module source marks keep the page readable."
+    },
+    {
+      "id": "item_narrative_mode",
+      "title": "Narrative mode should not become a Show Script",
+      "url": "https://example.com/narrative-mode",
+      "subscription_title": "Artifact Writing",
+      "published_at": 1778581600000,
+      "summary": "Narrative Briefing prose is for silent reading and must not include host turns or spoken pacing.",
+      "content_text": "The narrative mode flows across Artifact Topics with inline source citations and drop-cap transitions rather than host labels."
+    }
+  ]
+}

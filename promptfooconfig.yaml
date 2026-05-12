@@ -1,0 +1,60 @@
+description: FeedContext Skill behavior evals
+
+prompts:
+  - "{{case_id}}"
+
+providers:
+  - id: file://./evals/promptfoo-provider.mjs
+    label: feedcontext-skill-independent-agent
+
+tests:
+  - vars:
+      case_id: structured-synthesis-basic
+    assert:
+      - type: equals
+        value: pass
+  - vars:
+      case_id: combined-briefing-page
+    assert:
+      - type: equals
+        value: pass
+  - vars:
+      case_id: audio-brief-script
+    assert:
+      - type: equals
+        value: pass
+  - vars:
+      case_id: auth-anonymous-routing
+    assert:
+      - type: equals
+        value: pass
+  - vars:
+      case_id: feed-items-workflow
+    assert:
+      - type: equals
+        value: pass
+  - vars:
+      case_id: subscriptions-write-safety
+    assert:
+      - type: equals
+        value: pass
+  - vars:
+      case_id: integrations-delivery
+    assert:
+      - type: equals
+        value: pass
+  - vars:
+      case_id: migration-opml-safety
+    assert:
+      - type: equals
+        value: pass
+  - vars:
+      case_id: api-boundary
+    assert:
+      - type: equals
+        value: pass
+  - vars:
+      case_id: troubleshooting
+    assert:
+      - type: equals
+        value: pass

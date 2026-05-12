@@ -1,0 +1,38 @@
+{
+  "schema_version": "1",
+  "hard_gates": {
+    "required_files": ["troubleshooting-plan.json", "command-trace.json"],
+    "json_path_checks": [
+      {
+        "file": "troubleshooting-plan.json",
+        "path": "$.workflow",
+        "expected": "troubleshooting"
+      },
+      {
+        "file": "troubleshooting-plan.json",
+        "path": "$.checks_auth_status_first",
+        "expected": true
+      },
+      {
+        "file": "troubleshooting-plan.json",
+        "path": "$.retries_login_when_pair_code_expired",
+        "expected": true
+      },
+      {
+        "file": "troubleshooting-plan.json",
+        "path": "$.does_not_override_home",
+        "expected": true
+      },
+      {
+        "file": "troubleshooting-plan.json",
+        "path": "$.uses_high_level_commands_before_raw_api",
+        "expected": true
+      }
+    ],
+    "artifact_boundaries": [
+      "no_skill_repo_writes",
+      "only_case_output_writes",
+      "no_live_api_without_permission"
+    ]
+  }
+}

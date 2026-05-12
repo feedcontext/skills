@@ -1,0 +1,44 @@
+{
+  "schema_version": "1",
+  "hard_gates": {
+    "required_files": ["integrations-plan.json", "command-trace.json"],
+    "json_path_checks": [
+      {
+        "file": "integrations-plan.json",
+        "path": "$.workflow",
+        "expected": "integrations-delivery"
+      },
+      {
+        "file": "integrations-plan.json",
+        "path": "$.checks_telegram_status_first",
+        "expected": true
+      },
+      {
+        "file": "integrations-plan.json",
+        "path": "$.delivers_only_final_artifacts",
+        "expected": true
+      },
+      {
+        "file": "integrations-plan.json",
+        "path": "$.uploads_drafts",
+        "expected": false
+      },
+      {
+        "file": "integrations-plan.json",
+        "path": "$.uses_structured_synthesis_sidecar",
+        "expected": true
+      }
+    ],
+    "forbidden_patterns": [
+      {
+        "file": "integrations-plan.json",
+        "pattern": "upload drafts|deliver drafts|skip telegram status"
+      }
+    ],
+    "artifact_boundaries": [
+      "no_skill_repo_writes",
+      "only_case_output_writes",
+      "no_live_api_without_permission"
+    ]
+  }
+}

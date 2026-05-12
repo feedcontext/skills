@@ -1,0 +1,39 @@
+{
+  "schema_version": "1",
+  "hard_gates": {
+    "required_files": ["api-boundary-plan.json", "command-trace.json"],
+    "json_path_checks": [
+      {
+        "file": "api-boundary-plan.json",
+        "path": "$.workflow",
+        "expected": "api-boundary"
+      },
+      {
+        "file": "api-boundary-plan.json",
+        "path": "$.uses_documented_v1_paths_only",
+        "expected": true
+      },
+      {
+        "file": "api-boundary-plan.json",
+        "path": "$.exposes_internal_source_ids",
+        "expected": false
+      },
+      {
+        "file": "api-boundary-plan.json",
+        "path": "$.prints_oauth_tokens",
+        "expected": false
+      }
+    ],
+    "forbidden_patterns": [
+      {
+        "file": "api-boundary-plan.json",
+        "pattern": "AUTH_DB|BIZ_DB|OAuth token"
+      }
+    ],
+    "artifact_boundaries": [
+      "no_skill_repo_writes",
+      "only_case_output_writes",
+      "no_live_api_without_permission"
+    ]
+  }
+}

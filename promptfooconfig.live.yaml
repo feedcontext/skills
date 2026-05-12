@@ -1,0 +1,34 @@
+description: FeedContext Skill live behavior evals
+
+prompts:
+  - "{{case_id}}"
+
+providers:
+  - id: file://./evals/promptfoo-provider.mjs
+    label: feedcontext-skill-live-agent
+
+tests:
+  - vars:
+      case_id: live-short-subscriptions
+      matrix_label: live-readonly
+    assert:
+      - type: equals
+        value: pass
+  - vars:
+      case_id: live-short-recent-news
+      matrix_label: live-readonly
+    assert:
+      - type: equals
+        value: pass
+  - vars:
+      case_id: live-short-briefing
+      matrix_label: live-readonly
+    assert:
+      - type: equals
+        value: pass
+  - vars:
+      case_id: live-multiturn-brief-to-audio
+      matrix_label: live-multiturn
+    assert:
+      - type: equals
+        value: pass

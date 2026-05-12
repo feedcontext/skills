@@ -1,0 +1,32 @@
+{
+  "schema_version": "1",
+  "items": [
+    {
+      "id": "item_story_setup",
+      "title": "Audio scripts need story setup before analysis",
+      "url": "https://example.com/story-setup",
+      "subscription_title": "Audio Editorial",
+      "published_at": 1778582000000,
+      "summary": "Show Scripts should explain what happened, who is involved, and why it matters before moving into analysis.",
+      "content_text": "The strongest audio brief sections open with concrete events and listener relevance, then use host turns to clarify the story."
+    },
+    {
+      "id": "item_two_hosts",
+      "title": "Second hosts should ask useful clarifying questions",
+      "url": "https://example.com/two-hosts",
+      "subscription_title": "Show Design",
+      "published_at": 1778582300000,
+      "summary": "A second host should not just repeat the first host; they should ask short clarifying questions and add restrained reaction.",
+      "content_text": "Two-host scripts work when the second host acts as a listener proxy and helps translate dense claims into spoken meaning."
+    },
+    {
+      "id": "item_segments",
+      "title": "Segment manifests make audio rendering resumable",
+      "url": "https://example.com/segments",
+      "subscription_title": "Audio Operations",
+      "published_at": 1778582600000,
+      "summary": "After Script Review, a segment manifest lets provider rendering resume failed or missing segments without rewriting the Show Script.",
+      "content_text": "The manifest is generated from a reviewed Show Script and preserves speaker, text, voice metadata, and evidence ids for each turn."
+    }
+  ]
+}

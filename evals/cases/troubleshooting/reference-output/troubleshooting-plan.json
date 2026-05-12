@@ -1,0 +1,9 @@
+{
+  "workflow": "troubleshooting",
+  "checks_auth_status_first": true,
+  "retries_login_when_pair_code_expired": true,
+  "does_not_override_home": true,
+  "uses_high_level_commands_before_raw_api": true,
+  "unsupported_path_guidance": "For unsupported paths, stay within the documented public v1 surface: GET /v1/status, GET /v1/subscriptions, GET /v1/items, GET /v1/items/{item_id}, GET /v1/integrations/telegram, and the documented write paths for subscriptions, Telegram integration, uploads, and artifacts. Prefer high-level commands such as feedcontext auth status, feedcontext auth logout, feedcontext auth login, feedcontext subscription list, feedcontext subscription add/delete, item commands, integration commands, and artifact commands before raw API calls. If a new public route is required, update the published CLI and actions/api.md together.",
+  "write_refused_guidance": "Write actions are refused unless the host has approved the mutation and the CLI command includes --confirm. After approval, retry the documented high-level write command or an allowed raw v1 write path with --confirm; do not bypass the host approval plus --confirm safety contract."
+}

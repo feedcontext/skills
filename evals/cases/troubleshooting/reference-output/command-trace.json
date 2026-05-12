@@ -1,0 +1,32 @@
+{
+  "schema_version": "1",
+  "commands": [
+    {
+      "command": "rg -n \"packages/skills|Skill Behavior Eval|troubleshooting|pair code|host approval|--confirm|unsupported\" /Users/sorcererxw/.codex/memories/MEMORY.md"
+    },
+    {
+      "command": "sed -n '1,220p' /Users/sorcererxw/repo/sorcererxw/feedcontext/packages/skills/skills/feedcontext/SKILL.md"
+    },
+    {
+      "command": "pwd"
+    },
+    {
+      "command": "sed -n '1,260p' /Users/sorcererxw/repo/sorcererxw/feedcontext/packages/skills/skills/feedcontext/actions/troubleshooting.md"
+    },
+    {
+      "command": "sed -n '1,260p' /Users/sorcererxw/repo/sorcererxw/feedcontext/packages/skills/skills/feedcontext/actions/auth.md"
+    },
+    {
+      "command": "sed -n '1,260p' /Users/sorcererxw/repo/sorcererxw/feedcontext/packages/skills/skills/feedcontext/actions/api.md"
+    },
+    {
+      "command": "sed -n '1,220p' /Users/sorcererxw/repo/sorcererxw/feedcontext/packages/skills/skills/feedcontext/actions/subscriptions.md"
+    },
+    {
+      "command": "node /Users/sorcererxw/repo/sorcererxw/feedcontext/packages/skills/skills/feedcontext/scripts/helper.mjs version"
+    },
+    {
+      "command": "node -e \"for (const f of ['troubleshooting-plan.json','command-trace.json']) JSON.parse(require('fs').readFileSync(f,'utf8'));\""
+    }
+  ]
+}

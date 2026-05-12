@@ -1,0 +1,84 @@
+{
+  "schema_version": "1",
+  "hard_gates": {
+    "required_files": [
+      "briefing.synthesis.json",
+      "synthesis-review.json",
+      "show-script.json",
+      "script-review.json",
+      "segments.json",
+      "command-trace.json"
+    ],
+    "schema_validations": [
+      {
+        "file": "briefing.synthesis.json",
+        "schema": "structured-synthesis"
+      },
+      {
+        "file": "show-script.json",
+        "schema": "show-script"
+      }
+    ],
+    "review_verdicts": [
+      {
+        "file": "synthesis-review.json",
+        "verdict": "ready"
+      },
+      {
+        "file": "script-review.json",
+        "verdict": "ready"
+      }
+    ],
+    "command_order": [
+      "version",
+      "synthesis validate",
+      "show-script validate",
+      "audio segments"
+    ],
+    "json_path_checks": [
+      {
+        "file": "briefing.synthesis.json",
+        "path": "$.scope.request",
+        "expected": {
+          "includes": "audio brief script"
+        }
+      },
+      {
+        "file": "show-script.json",
+        "path": "$.intent",
+        "expected": "script_then_audio"
+      },
+      {
+        "file": "show-script.json",
+        "path": "$.format",
+        "expected": "two_host"
+      },
+      {
+        "file": "script-review.json",
+        "path": "$.ready_for_audio",
+        "expected": true
+      },
+      {
+        "file": "segments.json",
+        "path": "$.schema_version",
+        "expected": "1"
+      }
+    ],
+    "forbidden_patterns": [
+      {
+        "file": "show-script.json",
+        "pattern": "https?://"
+      },
+      {
+        "file": "show-script.json",
+        "pattern": "洞见一|不是.*而是"
+      }
+    ],
+    "artifact_boundaries": [
+      "no_skill_repo_writes",
+      "only_case_output_writes",
+      "no_live_api_without_permission",
+      "no_audio_provider_without_permission"
+    ]
+  }
+}

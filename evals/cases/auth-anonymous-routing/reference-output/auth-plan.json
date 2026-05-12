@@ -1,0 +1,18 @@
+{
+  "workflow": "auth-anonymous-routing",
+  "uses_anonymous_by_default": true,
+  "prompts_for_formal_login_by_default": false,
+  "commands": [
+    "feedcontext version",
+    "feedcontext auth status",
+    "feedcontext auth anonymous"
+  ],
+  "formal_login_when": [
+    "the user explicitly asks for durable login or durable long-term storage",
+    "the user wants cross-device sync",
+    "the user wants account switching",
+    "the user wants an integration that requires a formal account",
+    "the anonymous Subscription limit is reached or an import would exceed it"
+  ],
+  "home_override_allowed": false
+}

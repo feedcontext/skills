@@ -1,0 +1,19 @@
+{
+  "schema_version": "1",
+  "id": "live-multiturn-brief-to-audio",
+  "lane": "live",
+  "permissions": {
+    "shell": true,
+    "network": true,
+    "feedcontext_cli": true,
+    "skill_repo_write": false,
+    "output_write": true
+  },
+  "skill": "../../../skills/feedcontext",
+  "prompt_file": "prompt.md",
+  "turns_file": "turns.json",
+  "fixture_files": [],
+  "expected_contract_file": "expected.contract.json",
+  "timeout_seconds": 540,
+  "account_policy": "dedicated_eval_account_required"
+}

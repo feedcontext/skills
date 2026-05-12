@@ -1,0 +1,88 @@
+{
+  "schema_version": "1",
+  "scope": {
+    "request": "Structured Synthesis only from the provided local Feed Items fixture; local self-verification; no Briefing Page, no Show Script, no live FeedContext API.",
+    "time_range": {
+      "published_after": 1778580000000,
+      "published_before": 1778580600000,
+      "label": "Provided local fixture"
+    },
+    "candidate_count": 3,
+    "active_subscription_count": 3,
+    "selection_rule": "Grouped the three fixture Feed Items into exactly two Artifact Topics by workflow role: local artifact structure and gated audio/eval behavior.",
+    "used_contextual_evidence": false
+  },
+  "units": [
+    {
+      "id": "local-artifact-structure",
+      "type": "insight",
+      "title": "Local artifact generation stays repeatable and boundary-safe",
+      "claim": "The fixture supports a base output structure where reviewed Structured Synthesis drives later local artifacts while avoiding FeedContext API calls or product-repository ownership of rendering.",
+      "supporting_evidence": [
+        {
+          "kind": "feed_item",
+          "feed_item_id": "item_local_renderers",
+          "url": "https://example.com/local-renderers",
+          "subscription_title": "FeedContext Engineering",
+          "title": "Local renderers make briefing pages repeatable",
+          "published_at": 1778580000000,
+          "relevance": "direct",
+          "reason": "States that local helper renderers turn reviewed Structured Synthesis into repeatable artifacts and should not call the FeedContext API."
+        },
+        {
+          "kind": "feed_item",
+          "feed_item_id": "item_eval_loop",
+          "url": "https://example.com/behavior-evals",
+          "subscription_title": "Agent Quality Weekly",
+          "title": "Behavior evals should replay independent agent runs",
+          "published_at": 1778580600000,
+          "relevance": "supporting",
+          "reason": "Connects independent agent runs to traceable artifacts, matching the eval requirement for local output files."
+        }
+      ],
+      "selection_rationale": "This is the lead Artifact Topic because the eval asks for shared base output files and explicitly excludes live API access and final rendering.",
+      "rendering_priority": "lead"
+    },
+    {
+      "id": "ordered-review-gates",
+      "type": "insight",
+      "title": "Ordered review gates protect downstream audio and artifact work",
+      "claim": "The fixture reinforces that Structured Synthesis and review are the base gates before Show Script, segment manifests, audio rendering, or final artifact work.",
+      "supporting_evidence": [
+        {
+          "kind": "feed_item",
+          "feed_item_id": "item_audio_segments",
+          "url": "https://example.com/audio-segments",
+          "subscription_title": "Agent Audio Notes",
+          "title": "Audio Briefs move through script and segment manifests",
+          "published_at": 1778580300000,
+          "relevance": "direct",
+          "reason": "Lists the required order from Structured Synthesis through review, Show Script, segment manifest, provider rendering, assembly, and Final Audio Review."
+        },
+        {
+          "kind": "feed_item",
+          "feed_item_id": "item_eval_loop",
+          "url": "https://example.com/behavior-evals",
+          "subscription_title": "Agent Quality Weekly",
+          "title": "Behavior evals should replay independent agent runs",
+          "published_at": 1778580600000,
+          "relevance": "supporting",
+          "reason": "Frames the acceptance signal as a fresh agent run graded against the expected output contract."
+        }
+      ],
+      "selection_rationale": "This Artifact Topic is included because the prompt scopes the run to Structured Synthesis only, making the review gate the final allowed stage.",
+      "rendering_priority": "main"
+    }
+  ],
+  "secondary_items": [
+    {
+      "feed_item_id": "item_eval_loop",
+      "url": "https://example.com/behavior-evals",
+      "title": "Behavior evals should replay independent agent runs",
+      "subscription_title": "Agent Quality Weekly",
+      "published_at": 1778580600000,
+      "group": "supplemental",
+      "reason": "Useful as eval-process context, but it supports both topics rather than forming a separate third Artifact Topic."
+    }
+  ]
+}

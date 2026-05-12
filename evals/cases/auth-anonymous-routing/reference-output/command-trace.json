@@ -1,0 +1,29 @@
+{
+  "schema_version": "1",
+  "commands": [
+    {
+      "command": "rg -n \"auth anonymous|home_override|anonymous|formal login|auth login|auth status\" /Users/sorcererxw/.codex/memories/MEMORY.md"
+    },
+    {
+      "command": "node /Users/sorcererxw/repo/sorcererxw/feedcontext/packages/skills/skills/feedcontext/scripts/helper.mjs version"
+    },
+    {
+      "command": "sed -n '1,220p' /Users/sorcererxw/repo/sorcererxw/feedcontext/packages/skills/skills/feedcontext/SKILL.md"
+    },
+    {
+      "command": "rg -n \"auth anonymous|auth status|auth login|formal|anonymous|HOME|home|durable|sync|account|integration\" /Users/sorcererxw/repo/sorcererxw/feedcontext/packages/skills/skills/feedcontext/actions"
+    },
+    {
+      "command": "sed -n '1,130p' /Users/sorcererxw/repo/sorcererxw/feedcontext/packages/skills/skills/feedcontext/actions/auth.md"
+    },
+    {
+      "command": "sed -n '1,55p' /Users/sorcererxw/repo/sorcererxw/feedcontext/packages/skills/skills/feedcontext/actions/troubleshooting.md"
+    },
+    {
+      "command": "sed -n '1,45p' /Users/sorcererxw/repo/sorcererxw/feedcontext/packages/skills/skills/feedcontext/actions/subscriptions.md"
+    },
+    {
+      "command": "node -e \"for (const f of ['auth-plan.json','command-trace.json']) JSON.parse(require('fs').readFileSync(f,'utf8')); console.log('json ok')\""
+    }
+  ]
+}

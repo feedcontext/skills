@@ -1,0 +1,47 @@
+{
+  "schema_version": "1",
+  "commands": [
+    {
+      "command": "node /Users/sorcererxw/repo/sorcererxw/feedcontext/packages/skills/skills/feedcontext/scripts/helper.mjs version"
+    },
+    {
+      "command": "sed -n '1,240p' /Users/sorcererxw/repo/sorcererxw/feedcontext/packages/skills/README.md"
+    },
+    {
+      "command": "sed -n '1,260p' /Users/sorcererxw/repo/sorcererxw/feedcontext/packages/skills/skills/feedcontext/SKILL.md"
+    },
+    {
+      "command": "find /Users/sorcererxw/repo/sorcererxw/feedcontext/packages/skills/skills/feedcontext/actions -maxdepth 1 -type f -print"
+    },
+    {
+      "command": "sed -n '1,260p' /Users/sorcererxw/repo/sorcererxw/feedcontext/packages/skills/skills/feedcontext/actions/integrations.md"
+    },
+    {
+      "command": "sed -n '1,320p' /Users/sorcererxw/repo/sorcererxw/feedcontext/packages/skills/skills/feedcontext/actions/artifact/README.md"
+    },
+    {
+      "command": "find /Users/sorcererxw/repo/sorcererxw/feedcontext/packages/skills/skills/feedcontext/actions/artifact -maxdepth 2 -type f -print"
+    },
+    {
+      "command": "rg -n \"artifact (upload|deliver|delivery)|artifact upload|deliver\" /Users/sorcererxw/repo/sorcererxw/feedcontext/packages/skills/skills/feedcontext/actions /Users/sorcererxw/repo/sorcererxw/feedcontext/packages/skills/skills/feedcontext/SKILL.md"
+    },
+    {
+      "command": "sed -n '1,220p' /Users/sorcererxw/repo/sorcererxw/feedcontext/packages/skills/skills/feedcontext/actions/api.md"
+    },
+    {
+      "command": "rg -n \"artifact (upload|deliver)|uploads|/v1/uploads|/v1/artifacts\" /Users/sorcererxw/repo/sorcererxw/feedcontext/packages/skills /Users/sorcererxw/repo/sorcererxw/feedcontext/packages/cli"
+    },
+    {
+      "command": "sed -n '1,180p' /Users/sorcererxw/repo/sorcererxw/feedcontext/packages/skills/evals/cases/integrations-delivery/expected.contract.json"
+    },
+    {
+      "command": "sed -n '250,360p' /Users/sorcererxw/repo/sorcererxw/feedcontext/packages/cli/src/index.ts"
+    },
+    {
+      "command": "sed -n '660,745p' /Users/sorcererxw/repo/sorcererxw/feedcontext/packages/cli/tests/status.test.mjs"
+    },
+    {
+      "command": "jq . integrations-plan.json >/dev/null && jq . command-trace.json >/dev/null"
+    }
+  ]
+}

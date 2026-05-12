@@ -1,0 +1,38 @@
+description: FeedContext Skill diagnostic low-end model evals
+
+prompts:
+  - "{{case_id}}"
+
+providers:
+  - id: file://./evals/promptfoo-provider.mjs
+    label: feedcontext-skill-diagnostic-agent
+
+tests:
+  - vars:
+      case_id: live-short-subscriptions
+      codex_model: gpt-5.4-mini
+      matrix_label: low-end-readonly
+    assert:
+      - type: equals
+        value: pass
+  - vars:
+      case_id: live-short-recent-news
+      codex_model: gpt-5.4-mini
+      matrix_label: low-end-readonly
+    assert:
+      - type: equals
+        value: pass
+  - vars:
+      case_id: live-short-briefing
+      codex_model: gpt-5.4-mini
+      matrix_label: low-end-briefing
+    assert:
+      - type: equals
+        value: pass
+  - vars:
+      case_id: live-multiturn-brief-to-audio
+      codex_model: gpt-5.4-mini
+      matrix_label: low-end-multiturn
+    assert:
+      - type: equals
+        value: pass

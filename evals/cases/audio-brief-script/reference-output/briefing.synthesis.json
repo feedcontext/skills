@@ -1,0 +1,68 @@
+{
+  "schema_version": "1",
+  "scope": {
+    "request": "audio brief script from fixture Feed Items",
+    "time_range": {
+      "published_after": 1778582000000,
+      "published_before": 1778582600000,
+      "label": "Fixture Feed Items for audio brief script eval"
+    },
+    "candidate_count": 3,
+    "active_subscription_count": 3,
+    "selection_rule": "Grouped the fixture Feed Items into exactly two Artifact Topic units: one for show-style story setup and two-host structure, and one for post-review segment manifest readiness.",
+    "used_contextual_evidence": false
+  },
+  "units": [
+    {
+      "id": "story-setup-and-host-dynamic",
+      "type": "briefing_section",
+      "title": "A useful audio brief starts with story setup and a real second host",
+      "claim": "The script should open like a show, explain what happened and why it matters, then use the second host to ask clarifying questions instead of repeating the lead.",
+      "supporting_evidence": [
+        {
+          "kind": "feed_item",
+          "feed_item_id": "item_story_setup",
+          "url": "https://example.com/story-setup",
+          "subscription_title": "Audio Editorial",
+          "title": "Audio scripts need story setup before analysis",
+          "published_at": 1778582000000,
+          "relevance": "direct",
+          "reason": "The item states that strong sections open with concrete events, listener relevance, and host turns that clarify the story."
+        },
+        {
+          "kind": "feed_item",
+          "feed_item_id": "item_two_hosts",
+          "url": "https://example.com/two-hosts",
+          "subscription_title": "Show Design",
+          "title": "Second hosts should ask useful clarifying questions",
+          "published_at": 1778582300000,
+          "relevance": "direct",
+          "reason": "The item says the second host should act as a listener proxy and translate dense claims into spoken meaning."
+        }
+      ],
+      "selection_rationale": "This is the lead unit because it defines the editorial behavior the Show Script must demonstrate before any audio rendering is considered.",
+      "rendering_priority": "lead"
+    },
+    {
+      "id": "reviewed-script-to-segment-manifest",
+      "type": "briefing_section",
+      "title": "Reviewed scripts become resumable segment manifests",
+      "claim": "After Script Review is ready, the local helper can convert the Show Script into a segment manifest that preserves speaker, text, voice metadata, and evidence links for later rendering.",
+      "supporting_evidence": [
+        {
+          "kind": "feed_item",
+          "feed_item_id": "item_segments",
+          "url": "https://example.com/segments",
+          "subscription_title": "Audio Operations",
+          "title": "Segment manifests make audio rendering resumable",
+          "published_at": 1778582600000,
+          "relevance": "direct",
+          "reason": "The item explains that segment manifests are generated from reviewed Show Scripts and make provider rendering resumable."
+        }
+      ],
+      "selection_rationale": "This unit is included because the requested path stops at the script-only and segment-manifest boundary, before provider rendering or assembly.",
+      "rendering_priority": "main"
+    }
+  ],
+  "secondary_items": []
+}

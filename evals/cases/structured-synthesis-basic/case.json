@@ -1,0 +1,18 @@
+{
+  "schema_version": "1",
+  "id": "structured-synthesis-basic",
+  "lane": "offline",
+  "permissions": {
+    "shell": true,
+    "network": false,
+    "feedcontext_cli": false,
+    "skill_repo_write": false,
+    "output_write": true
+  },
+  "skill": "../../../skills/feedcontext",
+  "prompt_file": "prompt.md",
+  "fixture_files": ["fixtures/feed-items.json"],
+  "expected_contract_file": "expected.contract.json",
+  "timeout_seconds": 300,
+  "account_policy": "none"
+}

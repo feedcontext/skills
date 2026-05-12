@@ -1,0 +1,14 @@
+{
+  "workflow": "integrations-delivery",
+  "checks_telegram_status_first": true,
+  "delivers_only_final_artifacts": true,
+  "uploads_drafts": false,
+  "requires_user_approval_for_delivery": true,
+  "commands": [
+    "feedcontext version",
+    "feedcontext integration telegram status",
+    "feedcontext artifact deliver --artifact-type briefing_page --file /tmp/feedcontext/integrations-delivery/final-briefing.html --synthesis-file /tmp/feedcontext/integrations-delivery/final-briefing.synthesis.json --title \"Final Briefing\" --confirm",
+    "feedcontext artifact deliver --artifact-type briefing_page --file /tmp/feedcontext/integrations-delivery/final-briefing.html --synthesis-file /tmp/feedcontext/integrations-delivery/final-briefing.synthesis.json --title \"Final Briefing\" --confirm"
+  ],
+  "uses_structured_synthesis_sidecar": true
+}

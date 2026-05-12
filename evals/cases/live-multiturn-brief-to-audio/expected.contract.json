@@ -1,0 +1,91 @@
+{
+  "schema_version": "1",
+  "hard_gates": {
+    "required_files": [
+      "feed-items.snapshot.json",
+      "turn-1-summary.json",
+      "briefing.synthesis.json",
+      "synthesis-review.json",
+      "show-script.json",
+      "script-review.json",
+      "segments.json",
+      "command-trace.json"
+    ],
+    "schema_validations": [
+      {
+        "file": "briefing.synthesis.json",
+        "schema": "structured-synthesis"
+      },
+      {
+        "file": "show-script.json",
+        "schema": "show-script"
+      }
+    ],
+    "review_verdicts": [
+      {
+        "file": "synthesis-review.json",
+        "verdict": "ready"
+      },
+      {
+        "file": "script-review.json",
+        "verdict": "ready"
+      }
+    ],
+    "command_order": [
+      "version",
+      "auth status",
+      "item list",
+      "synthesis validate",
+      "show-script validate",
+      "audio segments"
+    ],
+    "json_path_checks": [
+      {
+        "file": "feed-items.snapshot.json",
+        "path": "$.items",
+        "expected": { "min_length": 1 }
+      },
+      {
+        "file": "turn-1-summary.json",
+        "path": "$.workflow",
+        "expected": "recent_news_turn"
+      },
+      {
+        "file": "turn-1-summary.json",
+        "path": "$.used_live_api",
+        "expected": true
+      },
+      {
+        "file": "briefing.synthesis.json",
+        "path": "$.scope.request",
+        "expected": { "includes": "基于刚才的内容输出我的简报" }
+      },
+      {
+        "file": "synthesis-review.json",
+        "path": "$.ready_for_artifact",
+        "expected": true
+      },
+      {
+        "file": "show-script.json",
+        "path": "$.intent",
+        "expected": "script_then_audio"
+      },
+      {
+        "file": "script-review.json",
+        "path": "$.ready_for_audio",
+        "expected": true
+      },
+      {
+        "file": "segments.json",
+        "path": "$.segments",
+        "expected": { "min_length": 1 }
+      }
+    ],
+    "forbidden_patterns": ["access_token|refresh_token|password|auth login|auth anonymous|auth logout|--confirm|洞见一|不是.*而是"],
+    "artifact_boundaries": [
+      "no_skill_repo_writes",
+      "only_case_output_writes",
+      "no_audio_provider_without_permission"
+    ]
+  }
+}

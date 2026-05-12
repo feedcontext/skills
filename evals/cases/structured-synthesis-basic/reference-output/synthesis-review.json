@@ -1,0 +1,10 @@
+{
+  "verdict": "ready",
+  "required_edits": [],
+  "story_material_gaps": [],
+  "unsupported_or_overbroad_claims": [],
+  "missing_content_reads": [],
+  "artifact_topic_capacity_notes": "The user explicitly required exactly two units; each unit is treated as one Artifact Topic.",
+  "secondary_coverage_notes": "The eval-process item is also listed as supplemental secondary coverage because it supports the local behavior-eval framing without requiring a third Artifact Topic.",
+  "ready_for_artifact": true
+}

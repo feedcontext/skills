@@ -1,0 +1,11 @@
+{
+  "schema_version": "1",
+  "verdict": "ready",
+  "required_edits": [],
+  "story_material_gaps": [],
+  "unsupported_or_overbroad_claims": [],
+  "missing_content_reads": [],
+  "artifact_topic_capacity_notes": "The user explicitly required exactly two Artifact Topic units; the synthesis contains two units.",
+  "secondary_coverage_notes": "All three fixture Feed Items are used as direct evidence across the two units, so no secondary coverage is needed.",
+  "ready_for_artifact": true
+}

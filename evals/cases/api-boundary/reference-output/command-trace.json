@@ -1,0 +1,35 @@
+{
+  "schema_version": "1",
+  "commands": [
+    {
+      "command": "rg -n \"api-boundary|public /v1|OAuth tokens|actions|version|artifacts|integrations/telegram|subscriptions|items\" /Users/sorcererxw/.codex/memories/MEMORY.md"
+    },
+    {
+      "command": "sed -n '1,240p' /Users/sorcererxw/repo/sorcererxw/feedcontext/packages/skills/skills/feedcontext/SKILL.md"
+    },
+    {
+      "command": "find /Users/sorcererxw/repo/sorcererxw/feedcontext/packages/skills/skills/feedcontext/actions -maxdepth 1 -type f -name '*.md' -print | sort"
+    },
+    {
+      "command": "node /Users/sorcererxw/repo/sorcererxw/feedcontext/packages/skills/skills/feedcontext/scripts/helper.mjs version"
+    },
+    {
+      "command": "sed -n '1,260p' /Users/sorcererxw/repo/sorcererxw/feedcontext/packages/skills/skills/feedcontext/actions/api.md"
+    },
+    {
+      "command": "sed -n '1,220p' /Users/sorcererxw/repo/sorcererxw/feedcontext/packages/skills/skills/feedcontext/actions/feed-items.md"
+    },
+    {
+      "command": "sed -n '1,220p' /Users/sorcererxw/repo/sorcererxw/feedcontext/packages/skills/skills/feedcontext/actions/subscriptions.md"
+    },
+    {
+      "command": "sed -n '1,240p' /Users/sorcererxw/repo/sorcererxw/feedcontext/packages/skills/skills/feedcontext/actions/integrations.md"
+    },
+    {
+      "command": "sed -n '1,260p' /Users/sorcererxw/repo/sorcererxw/feedcontext/packages/skills/skills/feedcontext/actions/artifact/README.md"
+    },
+    {
+      "command": "node -e \"const fs=require('fs'); for (const f of ['api-boundary-plan.json','command-trace.json']) JSON.parse(fs.readFileSync(f,'utf8'));\""
+    }
+  ]
+}

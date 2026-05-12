@@ -6,4 +6,10 @@
 
 # Test and TypeScript output
 /coverage/
+/evals/runs/
+/evals/live-state/
+/.promptfoo/
+/promptfoo.db
+/promptfoo.sqlite
+/promptfoo-output.json
 *.tsbuildinfo

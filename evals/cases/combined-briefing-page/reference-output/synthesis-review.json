@@ -1,0 +1,10 @@
+{
+  "verdict": "ready",
+  "required_edits": [],
+  "story_material_gaps": [],
+  "unsupported_or_overbroad_claims": [],
+  "missing_content_reads": [],
+  "artifact_topic_capacity_notes": "The eval prompt explicitly requires exactly two Artifact Topic units.",
+  "secondary_coverage_notes": "The narrative-mode fixture item is preserved as supplemental secondary coverage and supporting evidence without creating a Show Script.",
+  "ready_for_artifact": true
+}

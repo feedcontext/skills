@@ -1,0 +1,162 @@
+{
+  "schema_version": "1",
+  "source_synthesis": {
+    "file": "/Users/sorcererxw/repo/sorcererxw/feedcontext/packages/skills/evals/runs/audio-brief-script/2026-05-12T13-04-11-159Z/briefing.synthesis.json"
+  },
+  "intent": "script_then_audio",
+  "language": "en-US",
+  "format": "two_host",
+  "title": "Audio Brief Workflow Check",
+  "listening_context": "short workflow briefing",
+  "target_duration_seconds": 90,
+  "hosts": [
+    {
+      "id": "host_a",
+      "name": "Mira",
+      "role": "narrative_lead",
+      "gender": "female",
+      "voice": "calm, clear, editorial",
+      "provider_voice": "en-US-AvaNeural",
+      "voice_persona_id": "bing-edge/en-US-AvaNeural"
+    },
+    {
+      "id": "host_b",
+      "name": "Theo",
+      "role": "listener_proxy",
+      "gender": "male",
+      "voice": "curious, concise, practical",
+      "provider_voice": "en-US-GuyNeural",
+      "voice_persona_id": "bing-edge/en-US-GuyNeural"
+    }
+  ],
+  "sections": [
+    {
+      "id": "opening",
+      "title": "Opening",
+      "target_duration_seconds": 20,
+      "synthesis_unit_ids": [
+        "story-setup-and-host-dynamic"
+      ],
+      "turns": [
+        {
+          "speaker": "host_a",
+          "text": "Welcome back. I'm Mira, and Theo is here with me for a quick look at how an audio brief becomes a show instead of a read-aloud note.",
+          "synthesis_unit_ids": [
+            "story-setup-and-host-dynamic"
+          ],
+          "evidence_ids": [
+            "item_story_setup"
+          ],
+          "pacing": "warm and direct",
+          "emotion": "focused",
+          "transition": "show welcome"
+        },
+        {
+          "speaker": "host_b",
+          "text": "Good to be here. The question is simple: before anyone presses render, what has to be true on the page?",
+          "synthesis_unit_ids": [
+            "story-setup-and-host-dynamic"
+          ],
+          "evidence_ids": [
+            "item_two_hosts"
+          ],
+          "pacing": "conversational",
+          "emotion": "curious",
+          "transition": "listener question"
+        }
+      ]
+    },
+    {
+      "id": "story-setup",
+      "title": "Story Setup Before Analysis",
+      "target_duration_seconds": 40,
+      "synthesis_unit_ids": [
+        "story-setup-and-host-dynamic"
+      ],
+      "turns": [
+        {
+          "speaker": "host_a",
+          "text": "The fixture points to a clear editorial rule. A strong audio section starts with the concrete event, names who is involved, and tells the listener why this topic is coming up now. Only after that setup should the hosts move into analysis.",
+          "synthesis_unit_ids": [
+            "story-setup-and-host-dynamic"
+          ],
+          "evidence_ids": [
+            "item_story_setup"
+          ],
+          "pacing": "measured",
+          "emotion": "explanatory",
+          "transition": "news setup"
+        },
+        {
+          "speaker": "host_b",
+          "text": "So the second host should slow down the dense parts for the listener, right? Ask the useful question, translate the consequence, and avoid just echoing the lead.",
+          "synthesis_unit_ids": [
+            "story-setup-and-host-dynamic"
+          ],
+          "evidence_ids": [
+            "item_two_hosts"
+          ],
+          "pacing": "curious",
+          "emotion": "engaged",
+          "transition": "clarifying question"
+        },
+        {
+          "speaker": "host_a",
+          "text": "Exactly. In this script, that means the host handoff is part of the explanation. One voice carries the thread; the other checks whether the story is understandable in ordinary spoken language.",
+          "synthesis_unit_ids": [
+            "story-setup-and-host-dynamic"
+          ],
+          "evidence_ids": [
+            "item_story_setup",
+            "item_two_hosts"
+          ],
+          "pacing": "clear",
+          "emotion": "confident",
+          "transition": "practical implication"
+        }
+      ]
+    },
+    {
+      "id": "segment-manifest",
+      "title": "Reviewed Script To Segments",
+      "target_duration_seconds": 30,
+      "synthesis_unit_ids": [
+        "reviewed-script-to-segment-manifest"
+      ],
+      "turns": [
+        {
+          "speaker": "host_b",
+          "text": "Once the review says the script is ready, the next local step is mechanical: turn these spoken turns into a segment manifest.",
+          "synthesis_unit_ids": [
+            "reviewed-script-to-segment-manifest"
+          ],
+          "evidence_ids": [
+            "item_segments"
+          ],
+          "pacing": "steady",
+          "emotion": "practical",
+          "transition": "workflow handoff"
+        },
+        {
+          "speaker": "host_a",
+          "text": "That manifest keeps each turn resumable for a future provider run. It carries the speaker, the text, the voice metadata, and the evidence links, while stopping before provider rendering, assembly, or final audio review.",
+          "synthesis_unit_ids": [
+            "reviewed-script-to-segment-manifest"
+          ],
+          "evidence_ids": [
+            "item_segments"
+          ],
+          "pacing": "precise",
+          "emotion": "matter-of-fact",
+          "transition": "script-only close"
+        }
+      ]
+    }
+  ],
+  "provider_requirements": {
+    "multi_voice": true,
+    "long_form": false,
+    "segment_generation": true,
+    "preferred_output_format": "m4a"
+  }
+}

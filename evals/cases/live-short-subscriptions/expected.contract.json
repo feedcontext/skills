@@ -1,0 +1,36 @@
+{
+  "schema_version": "1",
+  "hard_gates": {
+    "required_files": ["subscriptions.snapshot.json", "command-trace.json"],
+    "command_order": ["version", "auth status", "subscription list"],
+    "json_path_checks": [
+      {
+        "file": "subscriptions.snapshot.json",
+        "path": "$.workflow",
+        "expected": "subscriptions_list"
+      },
+      {
+        "file": "subscriptions.snapshot.json",
+        "path": "$.request",
+        "expected": "获取我的订阅"
+      },
+      {
+        "file": "subscriptions.snapshot.json",
+        "path": "$.source",
+        "expected": "feedcontext_api"
+      },
+      {
+        "file": "subscriptions.snapshot.json",
+        "path": "$.subscriptions",
+        "expected": { "min_length": 1 }
+      },
+      {
+        "file": "subscriptions.snapshot.json",
+        "path": "$.auth_checked",
+        "expected": true
+      }
+    ],
+    "forbidden_patterns": ["access_token|refresh_token|password|auth login|auth anonymous|auth logout|--confirm"],
+    "artifact_boundaries": ["no_skill_repo_writes", "only_case_output_writes"]
+  }
+}

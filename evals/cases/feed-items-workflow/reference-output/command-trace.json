@@ -1,0 +1,23 @@
+{
+  "schema_version": "1",
+  "commands": [
+    {
+      "command": "rg -n \"public skill repo packaging|feed-items|item list|item get-many|Skill Behavior\" /Users/sorcererxw/.codex/memories/MEMORY.md"
+    },
+    {
+      "command": "sed -n '1,220p' /Users/sorcererxw/repo/sorcererxw/feedcontext/packages/skills/skills/feedcontext/SKILL.md"
+    },
+    {
+      "command": "pwd && rg --files"
+    },
+    {
+      "command": "sed -n '1,260p' /Users/sorcererxw/repo/sorcererxw/feedcontext/packages/skills/skills/feedcontext/actions/feed-items.md"
+    },
+    {
+      "command": "node /Users/sorcererxw/repo/sorcererxw/feedcontext/packages/skills/skills/feedcontext/scripts/helper.mjs version"
+    },
+    {
+      "command": "node -e \"for (const f of ['feed-items-plan.json','command-trace.json']) { JSON.parse(require('fs').readFileSync(f, 'utf8')); console.log(f + ' ok'); }\""
+    }
+  ]
+}

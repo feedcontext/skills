@@ -1,0 +1,41 @@
+{
+  "schema_version": "1",
+  "commands": [
+    {
+      "command": "node /Users/sorcererxw/repo/sorcererxw/feedcontext/packages/skills/skills/feedcontext/scripts/helper.mjs version"
+    },
+    {
+      "command": "sed -n '1,220p' /Users/sorcererxw/repo/sorcererxw/feedcontext/packages/skills/skills/feedcontext/SKILL.md"
+    },
+    {
+      "command": "sed -n '1,240p' /Users/sorcererxw/repo/sorcererxw/feedcontext/packages/skills/evals/cases/structured-synthesis-basic/fixtures/feed-items.json"
+    },
+    {
+      "command": "sed -n '1,260p' /Users/sorcererxw/repo/sorcererxw/feedcontext/packages/skills/skills/feedcontext/actions/artifact/README.md"
+    },
+    {
+      "command": "node /Users/sorcererxw/repo/sorcererxw/feedcontext/packages/skills/skills/feedcontext/scripts/helper.mjs --help"
+    },
+    {
+      "command": "ls /Users/sorcererxw/repo/sorcererxw/feedcontext/packages/skills/skills/feedcontext/actions/artifact"
+    },
+    {
+      "command": "sed -n '1,260p' /Users/sorcererxw/repo/sorcererxw/feedcontext/packages/skills/skills/feedcontext/actions/artifact/structured-synthesis.md"
+    },
+    {
+      "command": "sed -n '1,220p' /Users/sorcererxw/repo/sorcererxw/feedcontext/packages/skills/skills/feedcontext/actions/artifact/synthesis-review.md"
+    },
+    {
+      "command": "node /Users/sorcererxw/repo/sorcererxw/feedcontext/packages/skills/skills/feedcontext/scripts/helper.mjs help synthesis"
+    },
+    {
+      "command": "node /Users/sorcererxw/repo/sorcererxw/feedcontext/packages/skills/skills/feedcontext/scripts/helper.mjs synthesis schema"
+    },
+    {
+      "command": "node /Users/sorcererxw/repo/sorcererxw/feedcontext/packages/skills/skills/feedcontext/scripts/helper.mjs synthesis validate --file /Users/sorcererxw/repo/sorcererxw/feedcontext/packages/skills/evals/runs/structured-synthesis-basic/2026-05-12T13-04-11-160Z/briefing.synthesis.json"
+    },
+    {
+      "command": "node -e \"const fs=require('fs'); const syn=JSON.parse(fs.readFileSync('briefing.synthesis.json','utf8')); const rev=JSON.parse(fs.readFileSync('synthesis-review.json','utf8')); const tr=JSON.parse(fs.readFileSync('command-trace.json','utf8')); if(syn.units.length!==2) throw new Error('expected two units'); if(!syn.scope.request.includes('local self-verification')) throw new Error('missing local self-verification'); if(!syn.secondary_items?.length) throw new Error('missing secondary_items'); if(rev.verdict!=='ready'||rev.ready_for_artifact!==true||rev.required_edits.length!==0) throw new Error('review contract mismatch'); if(tr.schema_version!=='1'||!tr.commands[0].command.includes('helper.mjs version')||!tr.commands.some(c=>c.command.includes('synthesis validate'))) throw new Error('trace contract mismatch'); console.log('local contract check passed');\""
+    }
+  ]
+}

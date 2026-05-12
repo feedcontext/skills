@@ -1,0 +1,26 @@
+{
+  "schema_version": "1",
+  "commands": [
+    {
+      "command": "node /Users/sorcererxw/repo/sorcererxw/feedcontext/packages/skills/skills/feedcontext/scripts/helper.mjs version"
+    },
+    {
+      "command": "node /Users/sorcererxw/repo/sorcererxw/feedcontext/packages/skills/skills/feedcontext/scripts/helper.mjs synthesis validate --file /Users/sorcererxw/repo/sorcererxw/feedcontext/packages/skills/evals/runs/combined-briefing-page/2026-05-12T13-04-11-160Z/briefing.synthesis.json"
+    },
+    {
+      "command": "jq '.units | length' /Users/sorcererxw/repo/sorcererxw/feedcontext/packages/skills/evals/runs/combined-briefing-page/2026-05-12T13-04-11-160Z/briefing.synthesis.json"
+    },
+    {
+      "command": "node /Users/sorcererxw/repo/sorcererxw/feedcontext/packages/skills/skills/feedcontext/scripts/helper.mjs artifact render-page --synthesis-file /Users/sorcererxw/repo/sorcererxw/feedcontext/packages/skills/evals/runs/combined-briefing-page/2026-05-12T13-04-11-160Z/briefing.synthesis.json --out /Users/sorcererxw/repo/sorcererxw/feedcontext/packages/skills/evals/runs/combined-briefing-page/2026-05-12T13-04-11-160Z/briefing.html"
+    },
+    {
+      "command": "rg -n \"data-mode-content=\\\"newspaper\\\"|data-mode-content=\\\"narrative\\\"|source-index|Source Index\" /Users/sorcererxw/repo/sorcererxw/feedcontext/packages/skills/evals/runs/combined-briefing-page/2026-05-12T13-04-11-160Z/briefing.html"
+    },
+    {
+      "command": "rg -n \"item_render_page|item_source_index|item_narrative_mode|Narrative mode should not become a Show Script\" /Users/sorcererxw/repo/sorcererxw/feedcontext/packages/skills/evals/runs/combined-briefing-page/2026-05-12T13-04-11-160Z/briefing.html"
+    },
+    {
+      "command": "jq -e '.schema_version == \"1\" and (.commands[0].command | contains(\"helper.mjs version\")) and ([.commands[].command] | any(contains(\"synthesis validate\"))) and ([.commands[].command] | any(contains(\"artifact render-page\")))' /Users/sorcererxw/repo/sorcererxw/feedcontext/packages/skills/evals/runs/combined-briefing-page/2026-05-12T13-04-11-160Z/command-trace.json"
+    }
+  ]
+}

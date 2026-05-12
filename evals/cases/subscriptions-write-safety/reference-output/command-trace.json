@@ -1,0 +1,23 @@
+{
+  "schema_version": "1",
+  "commands": [
+    {
+      "command": "rg -n \"subscriptions-write-safety|Subscription|Write action|--confirm|version\" /Users/sorcererxw/.codex/memories/MEMORY.md"
+    },
+    {
+      "command": "sed -n '1,220p' /Users/sorcererxw/repo/sorcererxw/feedcontext/packages/skills/skills/feedcontext/SKILL.md"
+    },
+    {
+      "command": "rg --files /Users/sorcererxw/repo/sorcererxw/feedcontext/packages/skills/skills/feedcontext/actions"
+    },
+    {
+      "command": "sed -n '1,240p' /Users/sorcererxw/repo/sorcererxw/feedcontext/packages/skills/skills/feedcontext/actions/subscriptions.md"
+    },
+    {
+      "command": "node /Users/sorcererxw/repo/sorcererxw/feedcontext/packages/skills/skills/feedcontext/scripts/helper.mjs version"
+    },
+    {
+      "command": "node -e \"const fs=require('fs'); for (const f of ['subscriptions-plan.json','command-trace.json']) JSON.parse(fs.readFileSync(f,'utf8'));\""
+    }
+  ]
+}

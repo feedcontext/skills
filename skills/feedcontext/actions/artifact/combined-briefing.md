@@ -6,6 +6,8 @@ summary from FeedContext. This is the primary briefing page action; see
 
 The output is a single-file local HTML page that contains both a **Newspaper
 Briefing** and a **Narrative Briefing** rendering, toggled by a header switch.
+The local HTML file is the complete user-facing artifact. Server delivery is an
+optional later submission step, not the point where the page becomes complete.
 
 ## Workflow
 
@@ -24,9 +26,26 @@ Briefing** and a **Narrative Briefing** rendering, toggled by a header switch.
 7. If the page uses images, create an `assets/` directory inside the artifact
    session workspace and copy, download, or generate the image files there
    before referencing them from the HTML.
-8. Write one standalone `.html` file with embedded CSS inside the artifact
-   session workspace, using
+8. When a Skill Local Helper page renderer is available, use it to render the
+   reviewed Structured Synthesis into a complete standalone `.html` file inside
+   the artifact session workspace. The renderer should use the combined
+   briefing template and deterministic structure checks instead of asking the
+   agent to regenerate the full HTML and CSS as freeform output on every run.
+   The target command shape is:
+
+   ```bash
+   node scripts/helper.mjs artifact render-page \
+     --synthesis-file /tmp/feedcontext/2026-05-12-daily-briefing/combined-briefing.synthesis.json \
+     --out /tmp/feedcontext/2026-05-12-daily-briefing/combined-briefing.html
+   ```
+
+   If the helper renderer is not available yet, write one standalone `.html`
+   file with embedded CSS inside the artifact session workspace, using
    `templates/combined-briefing.html` as the starting scaffold.
+9. Verify the complete local page before handoff: both mode containers exist,
+   the page has a header switch, rendered Artifact Topic modules match the
+   Structured Synthesis units, and the source index covers every material
+   Feed Item evidence reference.
 
 ## Dual-Mode Output
 
@@ -59,8 +78,10 @@ dual-mode page (both modes in one file).
 
 ## Prose Approach Per Mode
 
-You write two prose versions per Artifact Topic. In the HTML, each topic unit
-contains both a `.newspaper-module` (compact module for the grid) and a
+The complete page contains two prose versions per Artifact Topic. When using a
+helper renderer, generate or provide the structured text fields it needs rather
+than hand-writing the entire page shell. In the HTML, each topic unit contains
+both a `.newspaper-module` (compact module for the grid) and a
 `.narrative-prose` block (flowing text for the narrative view). The toggle
 switch shows one set and hides the other.
 
@@ -82,12 +103,12 @@ rich-text annotations. Follow `narrative-briefing.md` for editorial voice.
 
 ## Starting Template
 
-Use `templates/combined-briefing.html` as the starting scaffold. Adapt the
-template to the user's request: fill in the masthead theme, deck, and date;
-write Newspaper modules into `.newspaper-module` containers inside
-`[data-mode-content="newspaper"] > .grid`; write Narrative prose into
-`.narrative-prose` blocks inside `[data-mode-content="narrative"]`; and populate
-the shared footer source index.
+Use `templates/combined-briefing.html` as the starting scaffold or renderer
+template. Adapt the template to the user's request: fill in the masthead theme,
+deck, and date; write Newspaper modules into `.newspaper-module` containers
+inside `[data-mode-content="newspaper"] > .grid`; write Narrative prose into
+`.narrative-prose` blocks inside `[data-mode-content="narrative"]`; and
+populate the shared footer source index.
 
 If the user asks for a single-mode output (Newspaper-only or Narrative-only),
 keep the template's dual-mode structure but leave the unused mode's DOM empty
