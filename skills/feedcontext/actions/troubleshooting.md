@@ -4,6 +4,21 @@ Use `auth.md` for the normal `version`, `auth status`, `auth anonymous`,
 `auth login`, pair-code, and `auth logout` flows. Use this doc for recovery
 paths.
 
+## Fast Recovery Plan
+
+For unauthorized, expired login, write-refused, or unsupported-path scenarios:
+
+1. Check `feedcontext auth status` before retrying the failed action.
+2. If a pair code expired, rerun `feedcontext auth login`, use the newest
+   browser page, and ignore older pair-code tabs.
+3. Do not override `HOME`. Pending pair-code login state is temporary OS
+   handoff state; `FEEDCONTEXT_STATE_DIR` only affects persistent fallback CLI
+   Session files.
+4. Prefer high-level CLI commands before `raw` API calls.
+5. For unsupported raw paths, use documented public v1 paths or update the
+   published CLI and `actions/api.md` together.
+6. For refused writes, get host approval and rerun with `--confirm`.
+
 ## Login Does Not Complete
 
 - Confirm the browser opened an `api.feedcontext.io` Google login URL.

@@ -6,7 +6,8 @@ description: Provides first-party FeedContext workflows for authentication, Feed
 # FeedContext Skill
 
 FeedContext is skill-first. Use this root skill to route to the action docs and
-the `feedcontext` CLI.
+the `feedcontext` CLI. Read only the action doc needed for the user's current
+workflow; do not load every action doc by default.
 
 ## CLI Invocation
 
@@ -28,14 +29,22 @@ permission to write npm cache and temporary files. If both the local CLI and the
 current environment and ask the user to install the CLI with
 `npm install -g feedcontext`.
 
-Before any other FeedContext action in an agent session, run:
+Before any other FeedContext action in an agent session, run the version check:
 
 ```bash
-feedcontext version
+feedcontext version || npx -y feedcontext@latest version
 ```
 
 The version action prints JSON with CLI package metadata. Use it as the first
 tool check before authenticated FeedContext CLI actions.
+
+When the host prompt provides an explicit local helper path for validation or
+rendering, use that exact path for local-only helper commands. The first helper
+command in a local artifact workflow should still be `version`, for example:
+
+```bash
+node /path/to/skills/feedcontext/scripts/helper.mjs version
+```
 
 Then run `feedcontext auth status` before auth-sensitive workflows. If there is
 no local Skill Session, do not ask the user to log in by default; run
@@ -47,25 +56,23 @@ formal account.
 Use `feedcontext auth login` for formal login. Use `feedcontext auth logout`
 when the user asks to sign out, switch accounts, or clear a stale local session.
 
-## Actions
+## Action Router
 
-- Authenticate and manage the local CLI Session through `actions/auth.md`.
-- Read Feed Items through `actions/feed-items.md`.
-- Manage Subscriptions through `actions/subscriptions.md`.
-- Manage delivery integrations through `actions/integrations.md`.
-- Use raw API calls and public resource boundaries through `actions/api.md`.
-- Compose local artifacts through `actions/artifact/README.md`.
-- Gather Feed Item aggregation sidecars through `actions/artifact/gather.md`.
-- Compose editorial HTML briefing pages through `actions/artifact/combined-briefing.md`.
-  - Newspaper Briefing prose reference: `actions/artifact/briefing-page.md`.
-  - Narrative Briefing prose reference: `actions/artifact/narrative-briefing.md`.
-- Compose Audio Brief scripts and generated audio through `actions/artifact/audio-brief.md`.
-- Audio provider rendering remains a host/provider workflow. Follow
-  `actions/artifact/audio-brief.md` and its rendering docs before using any
-  host-provided audio tool or external provider.
-- Migrate from existing RSS readers through `actions/migration.md`.
-- Troubleshoot OAuth and local CLI Session storage through
-  `actions/troubleshooting.md`.
+- `actions/auth.md`: CLI Session status, anonymous auth, formal login, pair
+  code completion, logout, and account switching.
+- `actions/feed-items.md`: Feed Item discovery, pagination, reading, and
+  `get-many` for selected items.
+- `actions/subscriptions.md`: Subscription list, approved add, and approved
+  delete.
+- `actions/integrations.md`: Telegram binding status and final artifact
+  delivery readiness.
+- `actions/api.md`: public `/v1` boundary and raw calls when high-level CLI
+  commands are not enough.
+- `actions/artifact/README.md`: shared artifact workflow for briefings,
+  pages, audio briefs, and full Feed Item streams.
+- `actions/migration.md`: RSS reader migration and OPML import routing.
+- `actions/troubleshooting.md`: recovery paths after auth, write, or API
+  boundary failures.
 
 When the user asks to import or migrate existing subscriptions, follow
 `actions/migration.md` first. If the user did not name the source platform and
@@ -78,11 +85,11 @@ page by default. Use `item list --all` when the user asks for all matching Feed
 Items.
 
 When composing summaries, roundups, insights, briefings, briefing pages, or
-audio briefs, follow `actions/artifact/README.md`: create and validate a
-Structured Synthesis JSON sidecar before rendering prose, HTML, scripts, or
-audio. Put generated local files in that action's per-session system temporary
-directory workspace, not directly in the current directory. For audio briefs,
-create and validate a Show Script before generating audio.
+audio briefs, follow `actions/artifact/README.md`. Artifact workflows are
+file-backed: use one per-session system temporary directory workspace, create a
+Structured Synthesis JSON sidecar before final prose or rendering, and preserve
+review notes beside the output. For audio briefs, create and validate a Show
+Script before generating audio.
 
 When the user asks to send a generated page or audio brief to Telegram, follow
 `actions/integrations.md` to confirm Telegram is linked, then follow
@@ -90,7 +97,6 @@ When the user asks to send a generated page or audio brief to Telegram, follow
 Structured Synthesis sidecar.
 
 This repository publishes the installable skill from `skills/feedcontext`.
-Service-interaction docs should use the published `feedcontext` CLI. Local
-helper docs must stay limited to deterministic local-only artifact mechanics
-such as schema validation and rendering complete local artifacts from reviewed
-structured sidecars.
+Service interaction uses the published `feedcontext` CLI. Local helpers are for
+deterministic local-only mechanics, such as schema validation and rendering
+complete local artifacts from reviewed structured sidecars.

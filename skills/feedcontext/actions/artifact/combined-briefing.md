@@ -12,7 +12,9 @@ optional later submission step, not the point where the page becomes complete.
 ## Workflow
 
 1. Run `version` first if this is the first FeedContext action in the session.
-2. Use `item list` or `item list --all` to discover candidate Feed Items.
+2. Use `item list` or `item list --all` to discover candidate Feed Items. If a
+   local Feed Item fixture/export is provided, use it directly as the candidate
+   set and do not call the live API.
 3. If the user asks for an organized, grouped, synthesized page but does not
    specify capacity, ask how many Artifact Topics to include. Offer 10, 20, 50,
    or 100 topics, recommending 20 for a broad briefing.
@@ -49,6 +51,23 @@ optional later submission step, not the point where the page becomes complete.
    contains at least one external source link when Feed Item evidence is
    present, and the source index covers every material Feed Item evidence
    reference.
+
+## Offline Fixture Path
+
+When a prompt supplies fixture Feed Items and requires direct output files,
+write the Structured Synthesis, Synthesis Review, rendered HTML, and command
+trace directly in the requested output directory. Use the provided helper path
+when present:
+
+```bash
+node /path/to/skills/feedcontext/scripts/helper.mjs version
+node /path/to/skills/feedcontext/scripts/helper.mjs synthesis validate --file briefing.synthesis.json
+node /path/to/skills/feedcontext/scripts/helper.mjs artifact render-page \
+  --synthesis-file briefing.synthesis.json \
+  --out briefing.html
+```
+
+Do not run auth, `item list`, or live API commands for fixture-only prompts.
 
 ## Dual-Mode Output
 
