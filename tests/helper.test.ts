@@ -942,9 +942,13 @@ describe("FeedContext Structured Synthesis validation", () => {
     expect(html).toContain("<title>Daily Platform Brief</title>");
     expect(html).toContain('data-mode-content="newspaper"');
     expect(html).toContain('data-mode-content="narrative"');
+    expect(html).toContain('data-document-format="magazine"');
+    expect(html).toContain('data-document-format="longform"');
     expect(html).toContain('data-unit-id="platform-release"');
     expect(html).toContain('data-unit-id="agent-handoff"');
-    expect(html).toContain("https://example.com/release");
-    expect(html).toContain("https://example.com/handoff");
+    expect(html).toContain('<a href="https://example.com/release">');
+    expect(html).toContain('<a class="inline-source" href="https://example.com/release">');
+    expect(html).toContain('<a href="https://example.com/handoff">');
+    expect(html).toContain('<a class="inline-source" href="https://example.com/handoff">');
   });
 });

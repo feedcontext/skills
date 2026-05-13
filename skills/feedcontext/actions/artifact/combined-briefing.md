@@ -44,8 +44,11 @@ optional later submission step, not the point where the page becomes complete.
    `templates/combined-briefing.html` as the starting scaffold.
 9. Verify the complete local page before handoff: both mode containers exist,
    the page has a header switch, rendered Artifact Topic modules match the
-   Structured Synthesis units, and the source index covers every material
-   Feed Item evidence reference.
+   Structured Synthesis units, light and dark color schemes are declared, both
+   document-format markers exist (`magazine` and `longform`), each mode
+   contains at least one external source link when Feed Item evidence is
+   present, and the source index covers every material Feed Item evidence
+   reference.
 
 ## Dual-Mode Output
 
@@ -54,12 +57,13 @@ The combined briefing page contains two rendering modes in one file:
 - **Newspaper Briefing**: See `briefing-page.md` for editorial shape and prose
   guidance. Renders Artifact Topics as independent modules in a multi-column
   editorial grid with a masthead, figures, pull quotes, and compact source
-  marks.
+  marks. The HTML marks this reader-facing format as `magazine`.
 
 - **Narrative Briefing**: See `narrative-briefing.md` for editorial shape and
   prose guidance. Dissolves Artifact Topics into one continuous polished
   magazine-feature prose with inline rich-text source citations and drop-cap
-  section breaks between topic shifts.
+  section breaks between topic shifts. The HTML marks this reader-facing format
+  as `longform`.
 
 Both modes share the same masthead, footer source index, and Structured
 Synthesis sidecar. A header toggle switch lets the reader flip between modes,

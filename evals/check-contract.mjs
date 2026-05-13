@@ -132,7 +132,7 @@ async function checkHtml(outputDir, checks) {
     const target = resolveFrom(outputDir, check.file);
     assertInside(outputDir, target, "html check file");
     const html = await readFile(target, "utf8");
-    for (const needle of check.contains) {
+    for (const needle of check.contains ?? []) {
       results.push(
         result(
           `html_checks:${check.file}:${needle}`,
@@ -141,8 +141,68 @@ async function checkHtml(outputDir, checks) {
         ),
       );
     }
+    for (const structure of check.structures ?? []) {
+      results.push(checkHtmlStructure(check.file, html, structure));
+    }
   }
   return results;
+}
+
+function sectionHtml(html, mode) {
+  const startPattern = new RegExp(`<section\\b[^>]*data-mode-content="${mode}"[^>]*>`, "u");
+  const startMatch = startPattern.exec(html);
+  if (!startMatch) return "";
+  const startIndex = startMatch.index;
+  const nextModeMatch = new RegExp(`<section\\b[^>]*data-mode-content="(?!${mode}")`, "u").exec(
+    html.slice(startIndex + startMatch[0].length),
+  );
+  const endIndex = nextModeMatch
+    ? startIndex + startMatch[0].length + nextModeMatch.index
+    : html.indexOf('<section class="source-index"', startIndex);
+  return html.slice(startIndex, endIndex === -1 ? undefined : endIndex);
+}
+
+function hasExternalLink(fragment) {
+  return /<a\b[^>]*href="https?:\/\//u.test(fragment);
+}
+
+function checkHtmlStructure(file, html, structure) {
+  if (structure === "dual_document_formats") {
+    const pass = html.includes('data-mode-content="newspaper"') &&
+      html.includes('data-document-format="magazine"') &&
+      html.includes('data-mode-content="narrative"') &&
+      html.includes('data-document-format="longform"');
+    return result(
+      `html_checks:${file}:structure:${structure}`,
+      pass,
+      pass ? "" : "expected magazine and longform document-format markers on the two mode sections",
+    );
+  }
+
+  if (structure === "light_dark_modes") {
+    const pass = html.includes("color-scheme: light dark") &&
+      /@media\s*\(prefers-color-scheme:\s*dark\)/u.test(html) &&
+      /--paper:\s*#[0-9a-fA-F]{3,6}/u.test(html) &&
+      /--ink:\s*#[0-9a-fA-F]{3,6}/u.test(html);
+    return result(
+      `html_checks:${file}:structure:${structure}`,
+      pass,
+      pass ? "" : "expected color-scheme declaration, dark media query, and core light/dark variables",
+    );
+  }
+
+  if (structure === "mode_external_links") {
+    const newspaper = sectionHtml(html, "newspaper");
+    const narrative = sectionHtml(html, "narrative");
+    const pass = hasExternalLink(newspaper) && hasExternalLink(narrative);
+    return result(
+      `html_checks:${file}:structure:${structure}`,
+      pass,
+      pass ? "" : "expected at least one external source link in both newspaper/magazine and narrative/longform modes",
+    );
+  }
+
+  return result(`html_checks:${file}:structure:${structure}`, false, "unknown html structure check");
 }
 
 async function checkJsonPaths(outputDir, checks) {

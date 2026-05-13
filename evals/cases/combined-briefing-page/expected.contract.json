@@ -30,7 +30,16 @@
         "contains": [
           "data-mode-content=\"newspaper\"",
           "data-mode-content=\"narrative\"",
+          "data-document-format=\"magazine\"",
+          "data-document-format=\"longform\"",
+          "color-scheme: light dark",
+          "@media (prefers-color-scheme: dark)",
           "Source Index"
+        ],
+        "structures": [
+          "dual_document_formats",
+          "light_dark_modes",
+          "mode_external_links"
         ]
       }
     ],

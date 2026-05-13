@@ -48,6 +48,7 @@ describe("Combined Briefing Page template", () => {
 
     const newspaperSection = doc.querySelector("[data-mode-content='newspaper']");
     expect(newspaperSection).not.toBeNull();
+    expect(newspaperSection!.getAttribute("data-document-format")).toBe("magazine");
 
     const grid = newspaperSection!.querySelector(".grid");
     expect(grid).not.toBeNull();
@@ -58,6 +59,7 @@ describe("Combined Briefing Page template", () => {
 
     const narrativeSection = doc.querySelector("[data-mode-content='narrative']");
     expect(narrativeSection).not.toBeNull();
+    expect(narrativeSection!.getAttribute("data-document-format")).toBe("longform");
 
     const prose = narrativeSection!.querySelector(".narrative-prose");
     expect(prose).not.toBeNull();
@@ -155,6 +157,16 @@ describe("Combined Briefing Page template", () => {
 
     const list = sourceIndex!.querySelector("ol");
     expect(list).not.toBeNull();
+  });
+
+  it("contains external source links inside both document modes", () => {
+    const doc = loadTemplate();
+
+    const newspaperLink = doc.querySelector("[data-mode-content='newspaper'] a[href^='https://']");
+    expect(newspaperLink).not.toBeNull();
+
+    const narrativeLink = doc.querySelector("[data-mode-content='narrative'] a[href^='https://']");
+    expect(narrativeLink).not.toBeNull();
   });
 
   it("supports dark mode via prefers-color-scheme media query", () => {

@@ -63,6 +63,10 @@ function escapeHtml(value: string) {
     .replaceAll("'", "&#39;");
 }
 
+function escapeAttribute(value: string) {
+  return escapeHtml(value);
+}
+
 function evidenceItems(unit: SynthesisUnit) {
   return unit.supporting_evidence.filter((evidence): evidence is FeedItemEvidence =>
     evidence.kind === "feed_item" &&
@@ -80,10 +84,13 @@ function formatDate(timestamp: number | null | undefined) {
   return new Date(timestamp as number).toISOString().slice(0, 10);
 }
 
-function sourceLabel(items: FeedItemEvidence[]) {
+function sourceLinks(items: FeedItemEvidence[], linkClass = "") {
   if (items.length === 0) return "Sources: contextual evidence";
+  const classAttribute = linkClass ? ` class="${escapeAttribute(linkClass)}"` : "";
   return `Sources: ${items
-    .map((item) => `${item.subscription_title}, ${item.title}`)
+    .map((item) =>
+      `<a${classAttribute} href="${escapeAttribute(item.url)}">${escapeHtml(item.subscription_title)}, ${escapeHtml(item.title)}</a>`,
+    )
     .join("; ")}`;
 }
 
@@ -137,12 +144,12 @@ function renderNewspaper(synthesis: StructuredSynthesis) {
             <figcaption>${escapeHtml(unit.selection_rationale)}</figcaption>
           </figure>`
         : "";
-      return `<article${tag} data-unit-id="${escapeHtml(unit.id)}">
+      return `<article${tag} data-unit-id="${escapeAttribute(unit.id)}">
           ${visual}
           <${heading}>${escapeHtml(unit.title)}</${heading}>
           <p>${escapeHtml(unit.claim)}</p>
           <p>${escapeHtml(unit.selection_rationale)}</p>
-          <span class="source-mark">${escapeHtml(sourceLabel(items))}</span>
+          <span class="source-mark">${sourceLinks(items)}</span>
         </article>`;
     })
     .join("\n\n        ");
@@ -154,12 +161,14 @@ function renderNarrative(synthesis: StructuredSynthesis) {
       const items = evidenceItems(unit);
       const sourceText = items.length > 0
         ? ` Supported by ${items
-            .map((item) => `${item.subscription_title}'s "${item.title}"`)
+            .map((item) =>
+              `<a class="inline-source" href="${escapeAttribute(item.url)}">${escapeHtml(item.subscription_title)}'s "${escapeHtml(item.title)}"</a>`,
+            )
             .join("; ")}.`
         : "";
       const className = index === 0 ? ` class="drop-cap"` : "";
-      return `<article data-unit-id="${escapeHtml(unit.id)}">
-          <p${className}>${escapeHtml(unit.claim)}${escapeHtml(sourceText)}</p>
+      return `<article data-unit-id="${escapeAttribute(unit.id)}">
+          <p${className}>${escapeHtml(unit.claim)}${sourceText}</p>
           <p>${escapeHtml(unit.selection_rationale)}</p>
         </article>`;
     })
@@ -169,7 +178,7 @@ function renderNarrative(synthesis: StructuredSynthesis) {
 function renderSourceIndex(synthesis: StructuredSynthesis) {
   return uniqueFeedItems(synthesis)
     .map((item) =>
-      `<li><a href="${escapeHtml(item.url)}">${escapeHtml(item.title)}</a> - ${escapeHtml(item.subscription_title)}, ${escapeHtml(formatDate(item.published_at))}. <span>${escapeHtml(item.reason)}</span></li>`,
+      `<li><a href="${escapeAttribute(item.url)}">${escapeHtml(item.title)}</a> - ${escapeHtml(item.subscription_title)}, ${escapeHtml(formatDate(item.published_at))}. <span>${escapeHtml(item.reason)}</span></li>`,
     )
     .join("\n        ");
 }
@@ -218,17 +227,27 @@ function verifyRenderedPage(html: string, synthesis: StructuredSynthesis) {
   const errors: string[] = [];
   if (!html.includes('data-mode-content="newspaper"')) errors.push("missing newspaper mode container");
   if (!html.includes('data-mode-content="narrative"')) errors.push("missing narrative mode container");
+  if (!html.includes('data-document-format="magazine"')) errors.push("missing magazine document format marker");
+  if (!html.includes('data-document-format="longform"')) errors.push("missing longform document format marker");
   if (!html.includes('class="mode-toggle"')) errors.push("missing mode toggle");
   for (const unit of synthesis.units) {
-    const marker = `data-unit-id="${escapeHtml(unit.id)}"`;
+    const marker = `data-unit-id="${escapeAttribute(unit.id)}"`;
     const occurrences = html.split(marker).length - 1;
     if (occurrences < 2) {
       errors.push(`unit ${unit.id} is not rendered in both modes`);
     }
   }
   for (const item of uniqueFeedItems(synthesis)) {
-    if (!html.includes(escapeHtml(item.url))) {
+    if (!html.includes(escapeAttribute(item.url))) {
       errors.push(`source index missing ${item.feed_item_id}`);
+    }
+  }
+  for (const mode of ["newspaper", "narrative"]) {
+    const modeMatch = html.match(
+      new RegExp(`<section[^>]+data-mode-content="${mode}"[\\s\\S]*?<\\/section>\\s*(?:<section|<\\/main>)`, "u"),
+    );
+    if (!modeMatch?.[0]?.includes("<a ")) {
+      errors.push(`${mode} mode is missing an external source link`);
     }
   }
   return errors;
