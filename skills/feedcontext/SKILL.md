@@ -91,6 +91,15 @@ Structured Synthesis JSON sidecar before final prose or rendering, and preserve
 review notes beside the output. For audio briefs, create and validate a Show
 Script before generating audio.
 
+When the user asks to generate a page, briefing page, digest page, roundup page,
+or HTML-like FeedContext artifact from live Feed Items, the default output is a
+server-rendered Artifact submitted through `feedcontext artifact
+submit-definition`. Do not stop after local helper rendering unless the user
+explicitly asks for a local-only HTML file, the prompt supplies an offline
+fixture/export, or live FeedContext API access is unavailable. Local helper
+rendering is a validation and offline-output path, not a substitute for the
+server DSL submission path.
+
 When the user asks to send a generated page or audio brief to Telegram, follow
 `actions/integrations.md` to confirm Telegram is linked, then follow
 `actions/artifact/README.md` to upload and deliver the final artifact with its
@@ -98,5 +107,6 @@ Structured Synthesis sidecar.
 
 This repository publishes the installable skill from `skills/feedcontext`.
 Service interaction uses the published `feedcontext` CLI. Local helpers are for
-deterministic local-only mechanics, such as schema validation and rendering
-complete local artifacts from reviewed structured sidecars.
+deterministic local-only mechanics, such as schema validation, offline fixture
+outputs, and explicit local-only artifact rendering from reviewed structured
+sidecars.

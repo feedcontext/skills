@@ -5,6 +5,14 @@ a server-rendered artifact. Artifacts are defined locally by the agent from the
 user's visible Feed Items, then submitted to `api` as reviewed Artifact
 Definition Bundles for rendering, viewing, and delivery.
 
+Default to server submission for live FeedContext artifact requests. A request
+such as "generate a page", "briefing page", "digest page", "roundup page", or
+"convert updates to a page" means: create the reviewed DSL bundle, run
+`feedcontext artifact submit-definition`, and report the artifact id, render
+status, and private viewer URL. Local HTML rendering is only appropriate when
+the user explicitly requests a local-only file, the workflow is fixture/offline,
+or the live API/submit step is blocked and the blocker is reported.
+
 Read this shared workflow first, then load only the artifact-specific doc that
 matches the requested output.
 
@@ -38,6 +46,10 @@ matches the requested output.
    before submission. Keep the reviewed Structured Synthesis, reviews, DSL
    files, and final Artifact Definition Bundle together in the session
    workspace.
+10. For live artifact requests, submit the reviewed bundle with
+    `feedcontext artifact submit-definition`. Do not replace this with
+    `helper.mjs artifact render-page` unless the user explicitly asked for a
+    local-only file, the workflow is fixture/offline, or submission is blocked.
 
 ## Artifact Router
 
@@ -87,6 +99,11 @@ returned artifact id only after the render status is `ready`:
 Do not submit Gather Sidecars, raw candidate lists, browser captures, provider
 logs, agent logs, chain-of-thought, unrelated local files, or locally rendered
 final HTML/audio files.
+
+Do not treat local helper render output as the final answer for a live Briefing
+Page request. If local rendering is also useful for validation, keep it beside
+the sidecars, then still submit the reviewed DSL bundle unless one of the
+local-only exceptions above applies.
 
 Do not request a server re-render for an existing artifact. Each submitted
 Artifact Definition Bundle creates one artifact; repeated generation or DSL
