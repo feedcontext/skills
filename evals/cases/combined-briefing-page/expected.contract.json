@@ -44,9 +44,8 @@
         "structures": [
           "dual_document_formats",
           "light_dark_modes",
-          "mode_external_links",
-          "compact_source_icons",
-          "inline_citation_popovers",
+          "source_index_links",
+          "no_inline_source_controls",
           "generated_masthead_title",
           "narrative_no_article_rules",
           "stable_masthead_layout"

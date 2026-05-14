@@ -55,8 +55,9 @@ matches the requested output.
    workspace.
    For Briefing Pages, the Newspaper DSL should carry module-level layout
    intent and topic-scoped long-form text (`layout_role`, `display_format`,
-   `rendering_priority`, `body_units`, source refs, and optional image fields)
-   rather than relying on web SSR to expand short summaries.
+   `rendering_priority`, `body_units`, `rich_text` Evidence Links, source refs,
+   and optional image fields) rather than relying on web SSR to expand short
+   summaries or infer inline citations.
 10. For live artifact requests, submit the reviewed bundle with
     `feedcontext artifact submit-definition`. Do not replace this with
     `helper.mjs artifact render-page` unless the user explicitly asked for a

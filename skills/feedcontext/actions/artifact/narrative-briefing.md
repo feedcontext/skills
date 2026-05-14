@@ -6,8 +6,8 @@ Structured Synthesis, review, mode selection, delivery), see
 `combined-briefing.md`.
 
 The Narrative Briefing dissolves Artifact Topics into one continuous polished
-magazine-feature prose. The agent writes structured text units and citation
-points; the server renderer owns the final HTML and CSS.
+magazine-feature prose. The agent writes structured text units and rich-text
+Evidence Links; the server renderer owns the final HTML and CSS.
 
 ## Editorial Shape
 
@@ -59,20 +59,22 @@ flow.
 
 ### Source Citations
 
-Cite sources inline as rich-text annotations within the prose. Instead of a
-separate source-mark block, weave attribution naturally:
+Cite sources inline as `rich_text: [{ text, evidence_ref? }]` annotations
+within the prose. Instead of a separate source-mark block, weave attribution
+naturally:
 
 > Reporting from Stratechery suggests the shift began in early Q2...
 
-Use structured citation points with supporting Feed Item references. Every
-claim traceable to a Feed Item should carry at least one inline citation point
-near the point of use.
+Use short natural phrases as the linked span; do not paste the Feed Item title
+into the paragraph just to create a citation. Every claim traceable to a Feed
+Item should carry an Evidence Link near the point of use when the phrase can be
+written naturally. Otherwise, keep the item in the footer source index.
 
 ### Supplemental Items
 
 - **`supplemental` secondary items**: Include as a brief "Also of note"
-  paragraph near the end of the narrative. One sentence per item, still with
-  inline source links.
+  paragraph near the end of the narrative. One sentence per item; use an inline
+  Evidence Link only when it reads naturally.
 - **`low_information_gain` and `out_of_scope` secondary items**: Skip
   entirely from the narrative prose. They appear only in the footer source
   index.

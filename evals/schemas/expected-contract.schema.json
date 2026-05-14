@@ -96,7 +96,11 @@
                   "enum": [
                     "dual_document_formats",
                     "light_dark_modes",
-                    "mode_external_links"
+                    "source_index_links",
+                    "no_inline_source_controls",
+                    "generated_masthead_title",
+                    "narrative_no_article_rules",
+                    "stable_masthead_layout"
                   ]
                 }
               }

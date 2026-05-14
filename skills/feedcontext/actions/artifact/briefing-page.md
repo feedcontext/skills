@@ -70,20 +70,21 @@ For legacy preview or fallback paths, a short `text` field may remain, but the
 server renderer must not expand it during SSR. The long-form prose belongs in
 `body_units`.
 
-Each `body_units[]` entry may include explicit `evidence_refs`. Use
-paragraph-level `evidence_refs` for strong claims, numbers, risk conclusions,
-or trend judgments. When a paragraph has no explicit `evidence_refs`, the
-module-level Sources affordance remains the traceability surface.
+Each `body_units[]` entry may include `rich_text` spans with `evidence_ref` on
+short natural-language phrases. Use those Evidence Links for strong claims,
+numbers, risk conclusions, or trend judgments. Keep `evidence_refs` for
+provenance and validation; renderers must not infer inline links from
+`evidence_refs`.
 
 Write as an editor: cut fluff, keep density, and make every sentence earn its
 space.
 
 ## Sources
 
-Use compact source marks inside modules. The server renderer presents the
-module source control as a Sources popover and the footer source index grouped
-by Subscription/source. The DSL should provide source references; it should not
-hard-code UI grouping, popover markup, or visual icon implementation.
+Do not use compact source marks inside modules. The server renderer presents one
+footer source index grouped by Subscription/source. The DSL should provide
+source references and rich-text Evidence Links; it should not hard-code UI
+grouping, popover markup, or visual icon implementation.
 
 Every Feed Item shown as evidence or as a listed item should link to its
 original URL when the Feed Item provides one. Add a complete source index at the
@@ -95,9 +96,10 @@ through the framing and include the supporting items in the source index.
 
 Expose explainability lightly:
 
-- evidence links may include hover text from the evidence `reason`;
+- Evidence Links should use natural phrases in the prose, not pasted article
+  titles;
 - use coarse labels such as `direct`, `supporting`, or `background`;
-- use sentence-level marks for strong claims, numbers, risk conclusions, or
+- use inline rich-text spans for strong claims, numbers, risk conclusions, or
   trend judgments;
 - avoid visible numeric relevance scores;
 - do not turn the page into an AI audit interface.

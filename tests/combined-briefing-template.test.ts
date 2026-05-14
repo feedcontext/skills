@@ -170,24 +170,21 @@ describe("Combined Briefing Page template", () => {
     expect(list).not.toBeNull();
   });
 
-  it("contains external source links inside both document modes", () => {
+  it("keeps external source links in the shared source index", () => {
     const doc = loadTemplate();
 
-    const newspaperLink = doc.querySelector("[data-mode-content='newspaper'] a[href^='https://']");
-    expect(newspaperLink).not.toBeNull();
-
-    const narrativeLink = doc.querySelector("[data-mode-content='narrative'] a[href^='https://']");
-    expect(narrativeLink).not.toBeNull();
+    expect(doc.querySelector("[data-mode-content='newspaper'] a[href^='https://']")).toBeNull();
+    expect(doc.querySelector("[data-mode-content='narrative'] a[href^='https://']")).toBeNull();
+    expect(doc.querySelector(".source-index a[href^='https://']")).not.toBeNull();
   });
 
-  it("keeps body sources compact and hover-revealed", () => {
+  it("does not render inline source controls in body placeholders", () => {
     const doc = loadTemplate();
 
-    const sourceCluster = doc.querySelector("[data-mode-content='newspaper'] .source-cluster");
-    expect(sourceCluster).not.toBeNull();
-    expect(sourceCluster!.querySelector(".source-chip img")).not.toBeNull();
-    expect(sourceCluster!.querySelector(".source-tooltip")).not.toBeNull();
-    expect(doc.querySelector("[data-mode-content='narrative'] .inline-citation .citation-tooltip")).not.toBeNull();
+    expect(doc.querySelector("[data-mode-content='newspaper'] .source-cluster")).toBeNull();
+    expect(doc.querySelector("[data-mode-content='newspaper'] .source-chip")).toBeNull();
+    expect(doc.querySelector("[data-mode-content='narrative'] .inline-citation")).toBeNull();
+    expect(doc.querySelectorAll(".source-index").length).toBe(1);
   });
 
   it("keeps narrative prose flowing without article separator rules", () => {

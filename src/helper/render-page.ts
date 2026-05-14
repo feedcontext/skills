@@ -103,19 +103,6 @@ function formatDate(timestamp: number | null | undefined) {
   return new Date(timestamp as number).toISOString().slice(0, 10);
 }
 
-function hostForUrl(url: string) {
-  try {
-    return new URL(url).hostname.replace(/^www\./u, "");
-  } catch {
-    return "source";
-  }
-}
-
-function faviconUrl(url: string) {
-  const host = hostForUrl(url);
-  return `https://www.google.com/s2/favicons?domain=${encodeURIComponent(host)}&sz=32`;
-}
-
 function titleCaseFragment(value: string) {
   return value
     .replace(/[“”"']/gu, "")
@@ -174,37 +161,6 @@ function generatedTitle(synthesis: StructuredSynthesis) {
 
 function deckText(synthesis: StructuredSynthesis) {
   return synthesis.units[0]?.claim ?? synthesis.scope.selection_rule;
-}
-
-function sourceTooltipItems(items: FeedItemEvidence[]) {
-  return `<span class="source-tooltip" role="tooltip">${items
-    .map((item) =>
-      `<span class="source-tooltip-item"><strong>${escapeHtml(item.subscription_title)}</strong><span>${escapeHtml(item.title)}</span></span>`,
-    )
-    .join("")}</span>`;
-}
-
-function sourceLinks(items: FeedItemEvidence[]) {
-  if (items.length === 0) return `<span class="source-empty">Contextual evidence</span>`;
-  return `<span class="source-cluster" aria-label="${items.length} supporting sources">${items
-    .map((item, index) =>
-      `<a class="source-chip" href="${escapeAttribute(item.url)}" title="${escapeAttribute(`${item.subscription_title}: ${item.title}`)}" style="--source-index:${index}">
-        <img alt="" src="${escapeAttribute(faviconUrl(item.url))}" />
-      </a>`,
-    )
-    .join("")}${sourceTooltipItems(items)}</span>`;
-}
-
-function citationPopover(items: FeedItemEvidence[], index: number) {
-  if (items.length === 0) return "";
-  return `<span class="inline-citation" tabindex="0" aria-label="${items.length} supporting sources">
-    <span class="citation-badge">[${index + 1}]</span>
-    <span class="citation-tooltip" role="tooltip">${items
-      .map((item) =>
-        `<a href="${escapeAttribute(item.url)}"><strong>${escapeHtml(item.subscription_title)}</strong><span>${escapeHtml(item.title)}</span></a>`,
-      )
-      .join("")}</span>
-  </span>`;
 }
 
 function evidenceContext(unit: SynthesisUnit, items: FeedItemEvidence[]) {
@@ -298,7 +254,7 @@ function bodyUnitsForUnit(unit: SynthesisUnit, items: FeedItemEvidence[]): Newsp
 function renderNewspaperBody(unit: SynthesisUnit, items: FeedItemEvidence[]) {
   return bodyUnitsForUnit(unit, items)
     .map((bodyUnit) =>
-      `<p data-body-role="${bodyUnit.role}">${escapeHtml(bodyUnit.text)} <span class="source-mark">${sourceLinks(items)}</span></p>`,
+      `<p data-body-role="${bodyUnit.role}">${escapeHtml(bodyUnit.text)}</p>`,
     )
     .join("\n          ");
 }
@@ -333,7 +289,7 @@ function renderNarrative(synthesis: StructuredSynthesis) {
       const className = index === 0 ? ` class="drop-cap"` : "";
       const context = evidenceContext(unit, items);
       return `<article data-unit-id="${escapeAttribute(unit.id)}">
-          <p${className}>${escapeHtml(unit.claim)} ${citationPopover(items, index)}</p>
+          <p${className}>${escapeHtml(unit.claim)}</p>
           <p>${escapeHtml(unit.selection_rationale)}</p>
           ${context ? `<p>${escapeHtml(context)}</p>` : ""}
         </article>`;
@@ -400,8 +356,8 @@ function verifyRenderedPage(html: string, synthesis: StructuredSynthesis) {
     errors.push("masthead must use explicit grid areas to keep title, deck, meta, and toggle aligned");
   }
   if (html.includes("Supported by")) errors.push('narrative mode must not render literal "Supported by" source text');
-  if (!html.includes('class="source-cluster"')) errors.push("newspaper mode is missing compact source icon clusters");
-  if (!html.includes('class="inline-citation"')) errors.push("narrative mode is missing inline citation popovers");
+  if (html.includes('class="source-cluster"')) errors.push("newspaper mode must not render inline source icon clusters");
+  if (html.includes('class="inline-citation"')) errors.push("narrative mode must not render inline citation popovers");
   const request = synthesis.scope.request?.trim();
   if (request && instructionLikeRequest(request) && html.includes(`<h1>${escapeHtml(request)}</h1>`)) {
     errors.push("masthead title must be a generated briefing title, not the raw user request");
@@ -418,14 +374,8 @@ function verifyRenderedPage(html: string, synthesis: StructuredSynthesis) {
       errors.push(`source index missing ${item.feed_item_id}`);
     }
   }
-  for (const mode of ["newspaper", "narrative"]) {
-    const modeMatch = html.match(
-      new RegExp(`<section[^>]+data-mode-content="${mode}"[\\s\\S]*?<\\/section>\\s*(?:<section|<\\/main>)`, "u"),
-    );
-    if (!modeMatch?.[0]?.includes("<a ")) {
-      errors.push(`${mode} mode is missing an external source link`);
-    }
-  }
+  const sourcesHeadingCount = html.match(/<h2>Source Index<\/h2>/gu)?.length ?? 0;
+  if (sourcesHeadingCount !== 1) errors.push("page must render exactly one footer source index");
   const narrative = html.match(/<section[^>]+data-mode-content="narrative"[\s\S]*?<section class="source-index"/u)?.[0] ?? "";
   const shortArticle = [...narrative.matchAll(/<article[^>]*>[\s\S]*?<\/article>/gu)].find((match) => {
     const text = plainTextFromHtml(match[0]);

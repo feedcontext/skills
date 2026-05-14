@@ -191,39 +191,30 @@ function checkHtmlStructure(file, html, structure) {
     );
   }
 
-  if (structure === "mode_external_links") {
-    const newspaper = sectionHtml(html, "newspaper");
-    const narrative = sectionHtml(html, "narrative");
-    const pass = hasExternalLink(newspaper) && hasExternalLink(narrative);
+  if (structure === "source_index_links") {
+    const sourceIndex = html.match(/<section class="source-index"[\s\S]*?<\/section>/u)?.[0] ?? "";
+    const pass = hasExternalLink(sourceIndex);
     return result(
       `html_checks:${file}:structure:${structure}`,
       pass,
-      pass ? "" : "expected at least one external source link in both newspaper/magazine and narrative/longform modes",
+      pass ? "" : "expected external source links in the shared footer source index",
     );
   }
 
-  if (structure === "compact_source_icons") {
+  if (structure === "no_inline_source_controls") {
     const newspaper = sectionHtml(html, "newspaper");
-    const pass = newspaper.includes('class="source-cluster"') &&
-      newspaper.includes('class="source-chip"') &&
-      newspaper.includes('class="source-tooltip"') &&
-      !/<span class="source-mark">\s*Sources?:/u.test(newspaper);
-    return result(
-      `html_checks:${file}:structure:${structure}`,
-      pass,
-      pass ? "" : "expected newspaper source marks to use compact icon clusters with hover tooltips, not visible source-title text",
-    );
-  }
-
-  if (structure === "inline_citation_popovers") {
     const narrative = sectionHtml(html, "narrative");
-    const pass = narrative.includes('class="inline-citation"') &&
-      narrative.includes('class="citation-tooltip"') &&
+    const pass = !newspaper.includes('class="source-cluster"') &&
+      !newspaper.includes('class="source-chip"') &&
+      !newspaper.includes('class="source-tooltip"') &&
+      !newspaper.includes('class="source-mark"') &&
+      !narrative.includes('class="inline-citation"') &&
+      !narrative.includes('class="citation-tooltip"') &&
       !narrative.includes("Supported by");
     return result(
       `html_checks:${file}:structure:${structure}`,
       pass,
-      pass ? "" : "expected narrative sources to be inline citation popovers without literal Supported by text",
+      pass ? "" : "expected body sections to avoid inline source controls; source links belong in rich-text DSL or footer index",
     );
   }
 
