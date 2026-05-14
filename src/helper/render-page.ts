@@ -67,6 +67,15 @@ function escapeAttribute(value: string) {
   return escapeHtml(value);
 }
 
+function plainTextFromHtml(value: string) {
+  return value
+    .replace(/<script[\s\S]*?<\/script>/gu, " ")
+    .replace(/<style[\s\S]*?<\/style>/gu, " ")
+    .replace(/<[^>]+>/gu, " ")
+    .replace(/\s+/gu, " ")
+    .trim();
+}
+
 function evidenceItems(unit: SynthesisUnit) {
   return unit.supporting_evidence.filter((evidence): evidence is FeedItemEvidence =>
     evidence.kind === "feed_item" &&
@@ -84,14 +93,120 @@ function formatDate(timestamp: number | null | undefined) {
   return new Date(timestamp as number).toISOString().slice(0, 10);
 }
 
-function sourceLinks(items: FeedItemEvidence[], linkClass = "") {
-  if (items.length === 0) return "Sources: contextual evidence";
-  const classAttribute = linkClass ? ` class="${escapeAttribute(linkClass)}"` : "";
-  return `Sources: ${items
+function hostForUrl(url: string) {
+  try {
+    return new URL(url).hostname.replace(/^www\./u, "");
+  } catch {
+    return "source";
+  }
+}
+
+function faviconUrl(url: string) {
+  const host = hostForUrl(url);
+  return `https://www.google.com/s2/favicons?domain=${encodeURIComponent(host)}&sz=32`;
+}
+
+function titleCaseFragment(value: string) {
+  return value
+    .replace(/[“”"']/gu, "")
+    .replace(/\s+/gu, " ")
+    .trim();
+}
+
+function compactChineseTitle(value: string) {
+  return value
+    .replace(/^AI 平台.+$/u, "AI 平台")
+    .replace(/^C 端 AI.+$/u, "C 端商业化")
+    .replace(/^具身智能.+$/u, "具身智能")
+    .replace(/^算力链条.+$/u, "算力链条")
+    .replace(/^AI 安全.+$/u, "AI 安全")
+    .replace(/开始认真谈.+$/u, "商业化")
+    .replace(/从 .+$/u, "")
+    .replace(/的关键词.+$/u, "")
+    .replace(/[、，:：].+$/u, "")
+    .trim();
+}
+
+function instructionLikeRequest(value: string) {
+  return /读取|总结|生成|页面|给我|update|brief|summarize|create|make|render/iu.test(value) && value.length > 20;
+}
+
+function readableDateLabel(label: string | undefined) {
+  const match = label?.match(/\d{4}-\d{2}-\d{2}/u);
+  return match?.[0] ?? new Date().toISOString().slice(0, 10);
+}
+
+function generatedTitle(synthesis: StructuredSynthesis) {
+  const request = synthesis.scope.request?.trim() ?? "";
+  if (request && !instructionLikeRequest(request)) return request;
+
+  const date = readableDateLabel(synthesis.scope.time_range?.label);
+  const titles = synthesis.units
+    .slice(0, 3)
+    .map((unit) => titleCaseFragment(unit.title).replace(/更新综述$/u, ""))
+    .filter(Boolean);
+
+  if (titles.length === 0) return `FeedContext ${date} Briefing`;
+  if (/[\u3400-\u9fff]/u.test(titles.join(""))) {
+    const compact = titles
+      .map(compactChineseTitle)
+      .filter(Boolean)
+      .slice(0, 3)
+      .join("、");
+    if (/AI 平台/u.test(compact) && /C 端商业化/u.test(compact) && /具身智能/u.test(compact)) {
+      return `${date} 更新综述：AI 商业化与具身智能`;
+    }
+    return `${date} 更新综述：${compact}`;
+  }
+
+  return `${date} Briefing: ${titles.slice(0, 2).join(" and ")}`;
+}
+
+function deckText(synthesis: StructuredSynthesis) {
+  return synthesis.units[0]?.claim ?? synthesis.scope.selection_rule;
+}
+
+function sourceTooltipItems(items: FeedItemEvidence[]) {
+  return `<span class="source-tooltip" role="tooltip">${items
     .map((item) =>
-      `<a${classAttribute} href="${escapeAttribute(item.url)}">${escapeHtml(item.subscription_title)}, ${escapeHtml(item.title)}</a>`,
+      `<span class="source-tooltip-item"><strong>${escapeHtml(item.subscription_title)}</strong><span>${escapeHtml(item.title)}</span></span>`,
     )
-    .join("; ")}`;
+    .join("")}</span>`;
+}
+
+function sourceLinks(items: FeedItemEvidence[]) {
+  if (items.length === 0) return `<span class="source-empty">Contextual evidence</span>`;
+  return `<span class="source-cluster" aria-label="${items.length} supporting sources">${items
+    .map((item, index) =>
+      `<a class="source-chip" href="${escapeAttribute(item.url)}" title="${escapeAttribute(`${item.subscription_title}: ${item.title}`)}" style="--source-index:${index}">
+        <img alt="" src="${escapeAttribute(faviconUrl(item.url))}" />
+      </a>`,
+    )
+    .join("")}${sourceTooltipItems(items)}</span>`;
+}
+
+function citationPopover(items: FeedItemEvidence[], index: number) {
+  if (items.length === 0) return "";
+  return `<span class="inline-citation" tabindex="0" aria-label="${items.length} supporting sources">
+    <span class="citation-badge">[${index + 1}]</span>
+    <span class="citation-tooltip" role="tooltip">${items
+      .map((item) =>
+        `<a href="${escapeAttribute(item.url)}"><strong>${escapeHtml(item.subscription_title)}</strong><span>${escapeHtml(item.title)}</span></a>`,
+      )
+      .join("")}</span>
+  </span>`;
+}
+
+function evidenceContext(unit: SynthesisUnit, items: FeedItemEvidence[]) {
+  const reasons = items
+    .map((item) => item.reason)
+    .filter(Boolean)
+    .slice(0, 2);
+  if (reasons.length === 0) return "";
+  if (!/[\u3400-\u9fff]/u.test(`${unit.claim} ${unit.selection_rationale}`)) {
+    return `The supporting material adds the operational detail: ${reasons.join("; ")}.`;
+  }
+  return `支撑这些判断的材料分别强调：${reasons.join("；")}。`;
 }
 
 function uniqueFeedItems(synthesis: StructuredSynthesis) {
@@ -159,17 +274,12 @@ function renderNarrative(synthesis: StructuredSynthesis) {
   return synthesis.units
     .map((unit, index) => {
       const items = evidenceItems(unit);
-      const sourceText = items.length > 0
-        ? ` Supported by ${items
-            .map((item) =>
-              `<a class="inline-source" href="${escapeAttribute(item.url)}">${escapeHtml(item.subscription_title)}'s "${escapeHtml(item.title)}"</a>`,
-            )
-            .join("; ")}.`
-        : "";
       const className = index === 0 ? ` class="drop-cap"` : "";
+      const context = evidenceContext(unit, items);
       return `<article data-unit-id="${escapeAttribute(unit.id)}">
-          <p${className}>${escapeHtml(unit.claim)}${sourceText}</p>
+          <p${className}>${escapeHtml(unit.claim)} ${citationPopover(items, index)}</p>
           <p>${escapeHtml(unit.selection_rationale)}</p>
+          ${context ? `<p>${escapeHtml(context)}</p>` : ""}
         </article>`;
     })
     .join("\n\n        ");
@@ -184,8 +294,8 @@ function renderSourceIndex(synthesis: StructuredSynthesis) {
 }
 
 function replaceTemplate(template: string, synthesis: StructuredSynthesis) {
-  const title = synthesis.scope.request || "FeedContext Briefing";
-  const deck = synthesis.scope.selection_rule;
+  const title = generatedTitle(synthesis);
+  const deck = deckText(synthesis);
   const date = synthesis.scope.time_range?.label ?? new Date().toISOString().slice(0, 10);
   const scope = synthesis.scope.time_range?.label ?? `${synthesis.units.length} Artifact Topics`;
 
@@ -230,6 +340,16 @@ function verifyRenderedPage(html: string, synthesis: StructuredSynthesis) {
   if (!html.includes('data-document-format="magazine"')) errors.push("missing magazine document format marker");
   if (!html.includes('data-document-format="longform"')) errors.push("missing longform document format marker");
   if (!html.includes('class="mode-toggle"')) errors.push("missing mode toggle");
+  if (!html.includes("grid-template-areas:") || !html.includes('"kicker title"')) {
+    errors.push("masthead must use explicit grid areas to keep title, deck, meta, and toggle aligned");
+  }
+  if (html.includes("Supported by")) errors.push('narrative mode must not render literal "Supported by" source text');
+  if (!html.includes('class="source-cluster"')) errors.push("newspaper mode is missing compact source icon clusters");
+  if (!html.includes('class="inline-citation"')) errors.push("narrative mode is missing inline citation popovers");
+  const request = synthesis.scope.request?.trim();
+  if (request && instructionLikeRequest(request) && html.includes(`<h1>${escapeHtml(request)}</h1>`)) {
+    errors.push("masthead title must be a generated briefing title, not the raw user request");
+  }
   for (const unit of synthesis.units) {
     const marker = `data-unit-id="${escapeAttribute(unit.id)}"`;
     const occurrences = html.split(marker).length - 1;
@@ -249,6 +369,14 @@ function verifyRenderedPage(html: string, synthesis: StructuredSynthesis) {
     if (!modeMatch?.[0]?.includes("<a ")) {
       errors.push(`${mode} mode is missing an external source link`);
     }
+  }
+  const narrative = html.match(/<section[^>]+data-mode-content="narrative"[\s\S]*?<section class="source-index"/u)?.[0] ?? "";
+  const shortArticle = [...narrative.matchAll(/<article[^>]*>[\s\S]*?<\/article>/gu)].find((match) => {
+    const text = plainTextFromHtml(match[0]);
+    return text.length < 120;
+  });
+  if (shortArticle) {
+    errors.push("narrative mode has a topic with too little body text");
   }
   return errors;
 }

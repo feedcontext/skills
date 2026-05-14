@@ -1,9 +1,9 @@
 # Agent-Composed Artifacts
 
 Use these actions when the user asks FeedContext to turn visible Feed Items into
-a local artifact. Artifacts are composed by the agent from the user's visible
-Feed Items; they are not Feed Items, not api resources, and not pages hosted by
-`web`.
+a server-rendered artifact. Artifacts are defined locally by the agent from the
+user's visible Feed Items, then submitted to `api` as reviewed Artifact
+Definition Bundles for rendering, viewing, and delivery.
 
 Read this shared workflow first, then load only the artifact-specific doc that
 matches the requested output.
@@ -31,63 +31,66 @@ matches the requested output.
 7. Read supporting content with `item get` or `item get-many` when the selected
    Feed Items materially support the artifact.
 8. Create and validate a Structured Synthesis sidecar with
-   `structured-synthesis.md`, then run `synthesis-review.md`. Do not render
-   HTML, write an Audio Brief script, or generate audio unless the latest
-   Synthesis Review verdict is `ready`.
-9. Keep sidecars, review notes, scripts, pages, audio files, assets, provider
-   logs, and final deliverables together in the session workspace.
+   `structured-synthesis.md`, then run `synthesis-review.md`. Do not derive
+   artifact-specific DSL files unless the latest Synthesis Review verdict is
+   `ready`.
+9. Create artifact-specific DSL files and matching Artifact Format Review files
+   before submission. Keep the reviewed Structured Synthesis, reviews, DSL
+   files, and final Artifact Definition Bundle together in the session
+   workspace.
 
 ## Artifact Router
 
 - `gather.md`: local Gather Sidecars before semantic Feed Item aggregation.
 - `structured-synthesis.md`: shared evidence-backed synthesis stage.
 - `synthesis-review.md`: required review before artifact-specific output.
-- `combined-briefing.md`: primary local dual-mode HTML Briefing Page.
+- `combined-briefing.md`: dual-DSL Briefing Page definition and submission.
 - `briefing-page.md`: Newspaper Briefing prose reference, only when needed.
 - `narrative-briefing.md`: Narrative Briefing prose reference, only when
   needed.
-- `audio-brief.md`: Audio Brief script, review, provider, rendering, and final
-  audio gates.
+- `audio-brief.md`: Audio Brief Show Script DSL, review, and server-render
+  submission.
 
 ## Delivery
 
-If the user asks to send the final page or audio to Telegram, first follow
-`../integrations.md` and confirm Telegram is connected. Then deliver only the
-final artifact file and its reviewed Structured Synthesis sidecar:
+Submit reviewed Artifact Definition Bundles for server rendering:
 
    ```bash
-   feedcontext artifact deliver \
+   feedcontext artifact submit-definition \
      --artifact-type briefing_page \
-     --file /tmp/feedcontext/2026-05-12-daily-briefing/briefing.html \
-     --synthesis-file /tmp/feedcontext/2026-05-12-daily-briefing/briefing.synthesis.json \
+     --bundle-file /tmp/feedcontext/2026-05-12-daily-briefing/briefing.bundle.json \
      --title "Daily Briefing" \
      --confirm
    ```
 
-   For audio briefs, use the final `.m4a` or `.mp3` file:
+For Audio Briefs, submit the reviewed bundle and let `api` render audio through
+the server-side Edge TTS Audio Renderer:
 
    ```bash
-   feedcontext artifact deliver \
+   feedcontext artifact submit-definition \
      --artifact-type audio_brief \
-     --file /tmp/feedcontext/2026-05-12-daily-briefing/daily-brief.m4a \
-     --synthesis-file /tmp/feedcontext/2026-05-12-daily-briefing/daily-brief.synthesis.json \
+     --bundle-file /tmp/feedcontext/2026-05-12-daily-briefing/daily-audio.bundle.json \
      --title "Daily Audio Brief" \
-     --telegram-audio-duration-seconds 603 \
-     --telegram-audio-performer "FeedContext" \
-     --telegram-audio-title "Daily Audio Brief" \
-     --telegram-thumbnail-file /tmp/feedcontext/2026-05-12-daily-briefing/daily-brief.telegram-thumb.jpg \
-     --caption "Today’s audio brief" \
      --confirm
    ```
 
-Telegram audio cards do not reliably read embedded M4A/MP3 duration, artwork,
-or artist metadata. Pass player-facing duration, title, performer, and a JPEG
-thumbnail explicitly when delivering Audio Briefs. Round duration up to the
-nearest whole second. The Telegram thumbnail must be JPEG, no larger than
-320x320, and less than 200 KB.
+Delivery remains explicit and user-approved after rendering is ready. Use the
+returned artifact id only after the render status is `ready`:
 
-Delivery is explicit and user-approved. Do not upload drafts, Gather Sidecars,
-raw browser captures, provider logs, or unrelated local files.
+   ```bash
+   feedcontext artifact deliver-rendered \
+     --id art_example \
+     --caption "Daily Briefing" \
+     --confirm
+   ```
+
+Do not submit Gather Sidecars, raw candidate lists, browser captures, provider
+logs, agent logs, chain-of-thought, unrelated local files, or locally rendered
+final HTML/audio files.
+
+Do not request a server re-render for an existing artifact. Each submitted
+Artifact Definition Bundle creates one artifact; repeated generation or DSL
+changes create a new artifact by submitting a new bundle.
 
 ## Evidence Rules
 

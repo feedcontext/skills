@@ -4,12 +4,11 @@ Use this action when the user asks for a podcast-like audio briefing, spoken
 briefing, listening version, commute briefing, or long-form audio explanation
 from FeedContext.
 
-An Audio Brief is a local agent-composed artifact. It is not feed-provided
-Episode Audio, not a FeedContext-hosted podcast, not a private RSS feed, and not
-an api or web resource.
-The final local audio file is the complete user-facing artifact. Server
-delivery is an optional later submission step, not the point where the audio
-becomes complete.
+An Audio Brief is an agent-composed artifact definition rendered by `api`. It is
+not feed-provided Episode Audio, not a FeedContext-hosted podcast, not a private
+RSS feed, and not a web-authored resource. The agent owns Structured Synthesis,
+the Show Script DSL, and review gates; `api` owns server-side Edge TTS
+rendering, segment retry, final assembly, storage, viewing, and delivery.
 
 This file is the default Audio Brief execution path. Load the child stage docs
 only when that stage is active.
@@ -40,20 +39,17 @@ only when that stage is active.
    source notes and evidence-depth details in the readable script or appendix,
    not in spoken text.
 6. Review the Show Script with `audio-brief/script-review.md` before
-   script-only handoff or audio rendering. A `ready` verdict is required.
+   script-only handoff or Artifact Definition Bundle submission. A `ready`
+   verdict is required.
    `revise` returns to script editing; `blocked` returns to missing evidence,
    scope, or user decisions.
 7. If the user requested script-only mode, stop after preserving the reviewed
    Show Script JSON, readable script, and `ready` review note.
-8. If audio is requested, choose a provider with `audio-brief/providers.md`
-   unless the user already specified one. Preserve the privacy boundary before
-   sending Show Script text to any external provider.
-9. Render through `audio-brief/rendering.md`: create a segment manifest, render
-   resumable segment files when possible, assemble the final audio, embed
-   player-facing metadata and Timed Script playback text, then run Final Audio
-   Review. Do not deliver a final M4A unless review reports `ready` or
-   `ready_repaired`.
-10. Preserve a Run Feedback note after script-only handoff or final audio
+8. If audio is requested, pack the reviewed Structured Synthesis, Synthesis
+   Review, Show Script DSL, Script Review, and render metadata into an Artifact
+   Definition Bundle, then submit it with `feedcontext artifact
+   submit-definition --artifact-type audio_brief --confirm`.
+9. Preserve a Run Feedback note after script-only handoff or server render
     generation. Follow `audio-brief/run-feedback.md`.
 
 ## Stage Docs
@@ -66,11 +62,9 @@ only when that stage is active.
   depth, spoken style, runtime scaling, and script file shape.
 - `audio-brief/script-review.md` covers the required review checklist and
   review-note shape before script-only handoff or audio rendering.
-- `audio-brief/providers.md` covers provider discovery, privacy boundaries, and
-  provider selection.
-- `audio-brief/rendering.md` covers segments, resume behavior, provider
-  diagnostics, final assembly, Timed Script playback text, artwork, and Final
-  Audio Review.
+- `audio-brief/providers.md` records the server-side Edge TTS provider boundary.
+- `audio-brief/rendering.md` records the server render contract, segment retry,
+  final assembly, Timed Script playback text, artwork, and Final Audio Review.
 - `audio-brief/run-feedback.md` covers post-run feedback notes.
 - `audio-brief/mechanical-delegation.md` covers the narrow cases where a host
   agent may delegate mechanical conversion, rendering, or validation work after
@@ -87,16 +81,13 @@ multi-agent orchestration, but the reviewer must use the existing synthesis and
 script as inputs rather than reopening source selection or evidence gathering.
 
 Use delegation only for mechanical work with stable inputs and clear outputs,
-such as converting an approved Show Script to segments, rendering independent
-TTS segments, assembling audio, or checking generated files. If the host agent
-environment does not support sub-agents or parallel worker orchestration, do
-not force a split; run the workflow in the main agent instead.
+such as validating bundle shape or checking that Show Script turns reference
+reviewed synthesis evidence. Do not delegate provider execution or final audio
+assembly in the local agent environment; those belong to `api`.
 
-## Local Renderer Boundary
+## Local Helper Boundary
 
-The Skill Local Helper may provide deterministic mechanics for complete local
-audio artifacts, such as converting a reviewed Show Script into a segment
-manifest, deriving spoken playback text, assembling already-rendered provider
-outputs, embedding or repairing metadata, and checking the final file. It must
-not become the service connector, own provider choice, reinterpret Feed Items,
-or hide provider execution behind FeedContext-owned business logic.
+The Skill Local Helper may validate Show Script and bundle shape before
+submission. It must not become the audio service connector, own provider
+execution, reinterpret Feed Items, assemble final audio, or hide provider calls
+inside local workflow mechanics.

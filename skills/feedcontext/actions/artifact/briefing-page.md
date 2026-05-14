@@ -6,8 +6,8 @@ Structured Synthesis, review, mode selection, delivery), see
 `combined-briefing.md`.
 
 The Newspaper Briefing renders Artifact Topics as independent modules in a
-multi-column editorial grid. The starting template is at
-`templates/combined-briefing.html`.
+multi-column editorial grid. The agent writes structured DSL fields; the server
+renderer owns the final HTML and CSS.
 
 ## Editorial Shape
 
@@ -42,9 +42,9 @@ pressure: lead modules for the most important topics, major sections for
 clusters, compact modules for smaller topics, and supplemental sections for
 lower-priority topics.
 
-Each Artifact Topic becomes a `.newspaper-module` inside
-`[data-mode-content="newspaper"] > .grid`. Use `.lead` for the top story,
-`.wide` for cross-feed patterns, `<aside>` with `.pullquote` for rhythm breaks.
+Each Artifact Topic should declare its renderer role, such as `lead`, `wide`,
+`main`, `sidebar`, or `supplemental`, so the server renderer can place it in the
+newspaper layout deterministically.
 
 ## Module Prose
 
@@ -88,12 +88,6 @@ material, or generate images when the environment supports it. If no image
 clearly improves the page, rely on typography, borders, hierarchy, and captions
 instead of forcing an unrelated visual.
 
-When using a remote image URL, download the image into a local temporary
-directory before referencing it from the page. This avoids broken rendering from
-cross-origin restrictions, hotlink protection, expiring URLs, or blocked remote
-requests. Store downloaded and generated images inside the artifact session
-workspace, such as `/tmp/feedcontext/2026-05-12-daily-briefing/assets/`.
-Reference those local files from the HTML with paths that work when the page is
-opened locally. If the user requires a single physical file with no sidecar
-assets, embed the local image data as a data URI instead of linking to the
-remote URL.
+When using images, include image intent and source references in the DSL rather
+than linking local files from final HTML. The server renderer decides whether a
+safe remote image, generated asset, or typography-only treatment is available.

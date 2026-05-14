@@ -1,19 +1,19 @@
 # Audio Brief Rendering
 
-Use this stage after the Show Script exists and a provider path has been
-selected.
+Use this stage as the server-render contract after the Show Script exists and
+its review verdict is `ready`.
 
-The output of this stage is a complete local Audio Brief file. Delivery through
-FeedContext is optional and happens after the local file has already passed the
-required review gate.
+The local agent does not render final audio. The output of the agent workflow is
+an Artifact Definition Bundle submitted with `feedcontext artifact
+submit-definition --artifact-type audio_brief --confirm`. `api` owns Edge TTS
+segment rendering, distributed retry, deterministic assembly, metadata, Final
+Audio Review, private storage, and delivery.
 
 ## Provider Diagnostics
 
-Use provider diagnostics before asking the user to choose an Audio Brief
-provider when the chosen host tool, local CLI, or configured service exposes a
-diagnostic command. The diagnostic output should report provider availability,
-invocation shape, expected output format, and the privacy boundary for the
-provider path.
+Provider diagnostics are server-side operational concerns. The agent should
+validate the Show Script and bundle shape locally, then rely on render status
+from the returned artifact id.
 
 ## Bing Edge TTS
 
@@ -21,21 +21,19 @@ Provider id: `bing-edge`
 
 Default: yes
 
-Bing Edge TTS is an external provider path when available through a host tool,
-local CLI, or explicitly approved implementation. The Show Script text needed
-for the Audio Brief is sent to Microsoft's Edge online text-to-speech service.
-Availability is outside FeedContext's control and may change.
+Bing Edge TTS is the v1 server-side provider path. The Show Script text needed
+for the Audio Brief is sent to Microsoft's Edge online text-to-speech service by
+`api`, not by the local agent. Availability is outside FeedContext's control and
+may change.
 
-For longer Audio Briefs, prefer segmented rendering through the chosen provider
-path so independent sections can run concurrently and failed sections can be
-retried without regenerating the whole show.
-
-Pass `--intro-audio` and `--outro-audio` only to override the bundled defaults.
-Pass `--no-default-music` only for explicitly speech-only output.
+For longer Audio Briefs, the server renderer uses segmented rendering so
+independent sections can run concurrently and failed sections can be retried
+without regenerating the whole show.
 
 The segments file should contain the spoken `language`, Show Script `title`,
 and an ordered `segments` array. Each segment should carry the selected
-provider voice metadata when a concrete host voice was chosen:
+provider voice metadata when a concrete host voice was chosen by the server
+renderer:
 
 ```json
 {
@@ -101,22 +99,21 @@ a retry queue containing only the segments that still need provider work. It
 does not call the provider and does not by itself create the final assembled
 audio file.
 
-After the render manifest reports `ready_for_assembly: true`, use the Skill
-Local Helper to assemble the complete local Audio Brief file:
+After the render manifest reports `ready_for_assembly: true`, submit the
+Artifact Definition Bundle to api. The server render control plane reads the
+stored segment manifest from R2, renders segment MP3 files through Edge TTS,
+and sends final assembly to the backend audio container.
 
 ```bash
-node scripts/helper.mjs audio assemble \
-  --render-manifest /tmp/feedcontext/2026-05-12-daily-briefing/audio-brief.render-manifest.json \
-  --out /tmp/feedcontext/2026-05-12-daily-briefing/audio-brief.m4a \
-  --manifest-out /tmp/feedcontext/2026-05-12-daily-briefing/audio-brief.assembly-manifest.json
+feedcontext artifact submit-definition \
+  --file /tmp/feedcontext/2026-05-12-daily-briefing/artifact-definition.json
 ```
 
-`audio assemble` is deterministic local artifact rendering. It refuses render
-manifests that are not ready, preserves the reviewed segment order, writes the
-final local audio file, records the assembly inputs, embeds basic player
-metadata through `ffmpeg`, and writes a `.lyrics.txt` playback-text sidecar next
-to the final audio file. Use `--intro-audio` and `--outro-audio` only for
-custom music handoff. Use `--no-default-music` for speech-only output.
+The final Audio Brief is a server-rendered MP3. The backend container owns
+FFmpeg/FFprobe assembly, duration inspection, cover art metadata when present,
+and Segment-Timed Lyrics metadata generated from the accepted `segments.json`.
+The agent must not write or repair the final prose or final audio container
+outside the submitted DSL.
 
 Record segment status in a render manifest next to the final artifact. The
 manifest should make resumed files, retried files, provider errors, final
@@ -218,13 +215,15 @@ artwork metadata or converts the attached artwork to JPEG/MJPEG for fallback
 compatibility. If embedding fails, keep the audio and sidecar image and record
 the artwork embedding failure in the render manifest.
 
-For Telegram delivery, do not rely on embedded audio duration, artwork, or
-artist metadata. Prepare a separate JPEG thumbnail no larger than 320x320 and
-less than 200 KB, then pass it to the supported artifact delivery path with
-`--telegram-thumbnail-file` along with explicit
-`--telegram-audio-duration-seconds`, `--telegram-audio-title`, and
-`--telegram-audio-performer` values. Round the rendered audio duration up to the
-nearest whole second.
+For Telegram delivery, do not upload a local final audio file. Wait until the
+server-rendered artifact is `ready`, then use:
+
+```bash
+feedcontext artifact deliver-rendered \
+  --id art_example \
+  --caption "Daily Audio Brief" \
+  --confirm
+```
 
 Write the full spoken playback text to the audio file's lyrics or unsynchronized
 lyrics metadata when supported. Use comment or description metadata only as a
@@ -282,32 +281,27 @@ The review is a hard gate for the final M4A file. It must pass all checks:
 - album metadata is embedded;
 - album artist metadata is embedded;
 - cover artwork is embedded in the audio container;
-- Timed Script playback text is embedded in the audio container.
+- Timed Script playback text is embedded as Segment-Timed Lyrics metadata in
+  the server-rendered MP3 when the backend assembler can do so.
 
-The review path may repair missing M4A metadata in place. It should use the
-render manifest for display title recovery and the adjacent `.cover.png` and
-`.lyrics.txt` sidecars as repair inputs. This repair does not rewrite the audio
-program content; it only updates metadata and attached artwork in the same
-final M4A file.
+The review path checks the server-rendered MP3 and the assembly metadata
+warnings returned by api. Metadata repair is a backend assembler concern; a
+local helper may inspect manifests, but it must not become the source of final
+audio truth for submitted artifacts.
 
 When the Skill Local Helper is available, run review after assembly:
 
 ```bash
-node scripts/helper.mjs audio review \
-  --file /tmp/feedcontext/2026-05-12-daily-briefing/audio-brief.m4a \
-  --assembly-manifest /tmp/feedcontext/2026-05-12-daily-briefing/audio-brief.assembly-manifest.json \
-  --out /tmp/feedcontext/2026-05-12-daily-briefing/audio-brief.review.json
+feedcontext artifact status --id art_example
 ```
 
-`audio review` writes a review manifest with `ready`, `ready_repaired`, or
-`blocked`. By default it attempts an in-place metadata repair using `ffmpeg`
-when required sidecars are available, then verifies the repaired file with
-`ffprobe`. A `ready_repaired` verdict is deliverable; a `blocked` verdict is
-not.
+An artifact is deliverable only when api reports `status: "ready"` and the
+rendered response is `audio/mpeg`. A `failed` status means the artifact is not
+deliverable; repeated or revised generation creates a new artifact.
 
-Sidecars are required recovery material, not acceptance substitutes. A final
-M4A that only has `.cover.png`, `.lyrics.txt`, or `.lrc` beside it must not be
-delivered until `audio review` reports `ready` or `ready_repaired`.
+Sidecars are required recovery material, not acceptance substitutes. Local
+`.cover.png`, `.lyrics.txt`, or `.lrc` files do not make an Audio Brief ready;
+only the backend artifact status does.
 
 Use `--no-repair` only for diagnostics. A `blocked` review verdict means the
 final file is not deliverable; fix the render inputs or sidecars, then rerun

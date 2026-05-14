@@ -43,6 +43,17 @@ describe("Combined Briefing Page template", () => {
     expect(scopeEl).not.toBeNull();
   });
 
+  it("uses explicit masthead grid areas so title and controls do not auto-place", () => {
+    const html = readFileSync(templatePath, "utf8");
+
+    expect(html).toContain("grid-template-areas:");
+    expect(html).toContain('"kicker title"');
+    expect(html).toContain('"deck title"');
+    expect(html).toContain('"meta meta"');
+    expect(html).toContain('"toggle toggle"');
+    expect(html).toContain("font-size: clamp(32px, 4.45vw, 58px)");
+  });
+
   it("has a newspaper section with grid layout", () => {
     const doc = loadTemplate();
 
@@ -167,6 +178,26 @@ describe("Combined Briefing Page template", () => {
 
     const narrativeLink = doc.querySelector("[data-mode-content='narrative'] a[href^='https://']");
     expect(narrativeLink).not.toBeNull();
+  });
+
+  it("keeps body sources compact and hover-revealed", () => {
+    const doc = loadTemplate();
+
+    const sourceCluster = doc.querySelector("[data-mode-content='newspaper'] .source-cluster");
+    expect(sourceCluster).not.toBeNull();
+    expect(sourceCluster!.querySelector(".source-chip img")).not.toBeNull();
+    expect(sourceCluster!.querySelector(".source-tooltip")).not.toBeNull();
+    expect(doc.querySelector("[data-mode-content='narrative'] .inline-citation .citation-tooltip")).not.toBeNull();
+  });
+
+  it("keeps narrative prose flowing without article separator rules", () => {
+    const html = readFileSync(templatePath, "utf8");
+
+    expect(html).toContain(".narrative-prose article");
+    expect(html).toContain("border-top: 0");
+    expect(html).toContain("padding-top: 0");
+    expect(html).not.toContain("Supported by");
+    expect(html).not.toContain("inline-source");
   });
 
   it("supports dark mode via prefers-color-scheme media query", () => {

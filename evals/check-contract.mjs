@@ -202,6 +202,65 @@ function checkHtmlStructure(file, html, structure) {
     );
   }
 
+  if (structure === "compact_source_icons") {
+    const newspaper = sectionHtml(html, "newspaper");
+    const pass = newspaper.includes('class="source-cluster"') &&
+      newspaper.includes('class="source-chip"') &&
+      newspaper.includes('class="source-tooltip"') &&
+      !/<span class="source-mark">\s*Sources?:/u.test(newspaper);
+    return result(
+      `html_checks:${file}:structure:${structure}`,
+      pass,
+      pass ? "" : "expected newspaper source marks to use compact icon clusters with hover tooltips, not visible source-title text",
+    );
+  }
+
+  if (structure === "inline_citation_popovers") {
+    const narrative = sectionHtml(html, "narrative");
+    const pass = narrative.includes('class="inline-citation"') &&
+      narrative.includes('class="citation-tooltip"') &&
+      !narrative.includes("Supported by");
+    return result(
+      `html_checks:${file}:structure:${structure}`,
+      pass,
+      pass ? "" : "expected narrative sources to be inline citation popovers without literal Supported by text",
+    );
+  }
+
+  if (structure === "generated_masthead_title") {
+    const h1 = html.match(/<h1>([\s\S]*?)<\/h1>/u)?.[1] ?? "";
+    const pass = h1.length > 0 && !/读取|总结|生成|页面给我|Summarize all|Create .*page/iu.test(h1);
+    return result(
+      `html_checks:${file}:structure:${structure}`,
+      pass,
+      pass ? "" : "expected masthead h1 to be an editorial briefing title, not the raw user request",
+    );
+  }
+
+  if (structure === "narrative_no_article_rules") {
+    const pass = /\.narrative-prose article\s*\{[\s\S]*?border-top:\s*0/u.test(html) &&
+      /\.narrative-prose article\s*\{[\s\S]*?padding-top:\s*0/u.test(html);
+    return result(
+      `html_checks:${file}:structure:${structure}`,
+      pass,
+      pass ? "" : "expected narrative paragraphs to flow without article separator rules",
+    );
+  }
+
+  if (structure === "stable_masthead_layout") {
+    const pass = html.includes("grid-template-areas:") &&
+      html.includes('"kicker title"') &&
+      html.includes('"deck title"') &&
+      html.includes('"meta meta"') &&
+      html.includes('"toggle toggle"') &&
+      /h1\s*\{[\s\S]*?font-size:\s*clamp\([^;]*58px\)/u.test(html);
+    return result(
+      `html_checks:${file}:structure:${structure}`,
+      pass,
+      pass ? "" : "expected explicit masthead grid areas and a bounded title font size",
+    );
+  }
+
   return result(`html_checks:${file}:structure:${structure}`, false, "unknown html structure check");
 }
 

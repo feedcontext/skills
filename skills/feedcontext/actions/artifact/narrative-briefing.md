@@ -6,8 +6,8 @@ Structured Synthesis, review, mode selection, delivery), see
 `combined-briefing.md`.
 
 The Narrative Briefing dissolves Artifact Topics into one continuous polished
-magazine-feature prose. The starting template is at
-`templates/combined-briefing.html`.
+magazine-feature prose. The agent writes structured text units and citation
+points; the server renderer owns the final HTML and CSS.
 
 ## Editorial Shape
 
@@ -53,9 +53,9 @@ bridges between topics, even when they span unrelated domains. Examples:
 - "The same week brought a different story from the regulatory front..."
 - "Shifting gears to platform news..."
 
-Open the first paragraph after each topic shift with a drop-cap (use the
-`.drop-cap` CSS class). The drop-cap signals "new topic" without breaking the
-reading flow.
+Mark the first text unit after each topic shift with a `drop_cap` or equivalent
+renderer intent. The drop-cap signals "new topic" without breaking the reading
+flow.
 
 ### Source Citations
 
@@ -64,9 +64,9 @@ separate source-mark block, weave attribution naturally:
 
 > Reporting from Stratechery suggests the shift began in early Q2...
 
-Use `<a>` tags with the supporting Feed Item's URL. Style with `.inline-source`
-for visual distinction. Every claim traceable to a Feed Item should carry at
-least one inline citation near the point of use.
+Use structured citation points with supporting Feed Item references. Every
+claim traceable to a Feed Item should carry at least one inline citation point
+near the point of use.
 
 ### Supplemental Items
 
@@ -80,9 +80,8 @@ least one inline citation near the point of use.
 ## Images
 
 Same guidance as Newspaper mode (see `briefing-page.md#images`). In Narrative
-mode, place figures between prose sections as editorial illustrations. Use
-`<figure>` with `<figcaption>`. Intersperse sparingly — the prose is the
-primary medium.
+mode, declare figure intent between prose sections as editorial illustrations.
+Intersperse sparingly; the prose is the primary medium.
 
 ## What to Avoid
 

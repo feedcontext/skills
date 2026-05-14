@@ -4,10 +4,10 @@ Use this action when the user asks for a digest, briefing, recap, roundup, or
 summary from FeedContext. This is the primary briefing page action; see
 `briefing-page.md` and `narrative-briefing.md` for mode-specific prose guidance.
 
-The output is a single-file local HTML page that contains both a **Newspaper
-Briefing** and a **Narrative Briefing** rendering, toggled by a header switch.
-The local HTML file is the complete user-facing artifact. Server delivery is an
-optional later submission step, not the point where the page becomes complete.
+The agent output is an Artifact Definition Bundle with separate reviewed
+**Newspaper Briefing** and **Narrative Briefing** DSL files derived from the
+same reviewed Structured Synthesis. `api` renders the single-file **Briefing
+Page** and exposes the private viewer URL after the render job is ready.
 
 ## Workflow
 
@@ -21,57 +21,47 @@ optional later submission step, not the point where the page becomes complete.
 4. Use `item get` for one item or `item get-many` for several selected Feed
    Items that materially support the page.
 5. Follow `structured-synthesis.md` to create, validate, and review a
-   Structured Synthesis sidecar JSON file before writing prose or HTML.
+   Structured Synthesis sidecar JSON file before deriving page DSL files.
 6. Curate the page around the user's request. If the user does not give a
    precise scope, choose a coherent recent theme from visible Feed Items, but
    record the selection rule in the Structured Synthesis.
-7. If the page uses images, create an `assets/` directory inside the artifact
-   session workspace and copy, download, or generate the image files there
-   before referencing them from the HTML.
-8. When a Skill Local Helper page renderer is available, use it to render the
-   reviewed Structured Synthesis into a complete standalone `.html` file inside
-   the artifact session workspace. The renderer should use the combined
-   briefing template and deterministic structure checks instead of asking the
-   agent to regenerate the full HTML and CSS as freeform output on every run.
-   The target command shape is:
+7. Write `briefing.newspaper.json` and `briefing.narrative.json` as separate
+   page Artifact Format DSL files. Both must reference the same reviewed
+   Structured Synthesis and must not introduce new Feed Item evidence.
+8. Write `briefing.newspaper-review.json` and `briefing.narrative-review.json`.
+   Do not submit the bundle unless both reviews and the Synthesis Review are
+   `ready`.
+9. Pack the reviewed synthesis, reviews, page DSL files, and render metadata
+   into `briefing.bundle.json`, then submit it:
 
    ```bash
-   node scripts/helper.mjs artifact render-page \
-     --synthesis-file /tmp/feedcontext/2026-05-12-daily-briefing/combined-briefing.synthesis.json \
-     --out /tmp/feedcontext/2026-05-12-daily-briefing/combined-briefing.html
+   feedcontext artifact submit-definition \
+     --artifact-type briefing_page \
+     --bundle-file /tmp/feedcontext/2026-05-12-daily-briefing/briefing.bundle.json \
+     --title "Daily Briefing" \
+     --confirm
    ```
-
-   If the helper renderer is not available yet, write one standalone `.html`
-   file with embedded CSS inside the artifact session workspace, using
-   `templates/combined-briefing.html` as the starting scaffold.
-9. Verify the complete local page before handoff: both mode containers exist,
-   the page has a header switch, rendered Artifact Topic modules match the
-   Structured Synthesis units, light and dark color schemes are declared, both
-   document-format markers exist (`magazine` and `longform`), each mode
-   contains at least one external source link when Feed Item evidence is
-   present, and the source index covers every material Feed Item evidence
-   reference.
+10. Report the returned artifact id, render status, and private viewer URL.
 
 ## Offline Fixture Path
 
 When a prompt supplies fixture Feed Items and requires direct output files,
-write the Structured Synthesis, Synthesis Review, rendered HTML, and command
-trace directly in the requested output directory. Use the provided helper path
-when present:
+write the Structured Synthesis, Synthesis Review, page DSL files, format
+reviews, Artifact Definition Bundle, and command trace directly in the requested
+output directory. Do not call the live API unless the prompt explicitly asks for
+server rendering.
 
 ```bash
 node /path/to/skills/feedcontext/scripts/helper.mjs version
 node /path/to/skills/feedcontext/scripts/helper.mjs synthesis validate --file briefing.synthesis.json
-node /path/to/skills/feedcontext/scripts/helper.mjs artifact render-page \
-  --synthesis-file briefing.synthesis.json \
-  --out briefing.html
 ```
 
 Do not run auth, `item list`, or live API commands for fixture-only prompts.
 
 ## Dual-Mode Output
 
-The combined briefing page contains two rendering modes in one file:
+The Briefing Page definition contains two page DSLs that api renders into one
+file:
 
 - **Newspaper Briefing**: See `briefing-page.md` for editorial shape and prose
   guidance. Renders Artifact Topics as independent modules in a multi-column
@@ -84,9 +74,9 @@ The combined briefing page contains two rendering modes in one file:
   section breaks between topic shifts. The HTML marks this reader-facing format
   as `longform`.
 
-Both modes share the same masthead, footer source index, and Structured
-Synthesis sidecar. A header toggle switch lets the reader flip between modes,
-persisting the preference in session storage.
+Both modes share the same Structured Synthesis and Traceable Evidence set. The
+server renderer owns the masthead, footer source index, toggle behavior, and
+HTML/CSS.
 
 ## Mode Selection
 
@@ -124,19 +114,16 @@ section with a drop-cap paragraph and a prose bridge (e.g., "Meanwhile, in the
 AI space..."). Inline source citations are woven naturally into the text as
 rich-text annotations. Follow `narrative-briefing.md` for editorial voice.
 
-## Starting Template
+## Renderer Contract
 
-Use `templates/combined-briefing.html` as the starting scaffold or renderer
-template. Adapt the template to the user's request: fill in the masthead theme,
-deck, and date; write Newspaper modules into `.newspaper-module` containers
-inside `[data-mode-content="newspaper"] > .grid`; write Narrative prose into
-`.narrative-prose` blocks inside `[data-mode-content="narrative"]`; and
-populate the shared footer source index.
+Do not write final HTML. The Artifact Definition Bundle must provide structured
+Newspaper and Narrative DSL fields for the server renderer: masthead metadata,
+topic ordering, module/headline/text atoms, source references, citation points,
+and source-index inputs. The server renderer owns HTML, CSS, toggle behavior,
+and source-index markup.
 
-If the user asks for a single-mode output (Newspaper-only or Narrative-only),
-keep the template's dual-mode structure but leave the unused mode's DOM empty
-with a placeholder comment. The toggle switch still appears but flips to a
-blank view — this is acceptable.
+If the user asks for a single-mode output, do not label it **Briefing Page**.
+The combined Briefing Page requires both reviewed page DSL files.
 
 ## Shared Components
 
@@ -156,13 +143,22 @@ does not change between modes.
 
 ## Delivery
 
-Deliver as `briefing_page` type via `feedcontext artifact deliver --artifact-type briefing_page`.
+Submit as `briefing_page` type via `feedcontext artifact submit-definition`.
 
 ```bash
-feedcontext artifact deliver \
+feedcontext artifact submit-definition \
   --artifact-type briefing_page \
-  --file /tmp/feedcontext/2026-05-12-daily-briefing/combined-briefing.html \
-  --synthesis-file /tmp/feedcontext/2026-05-12-daily-briefing/combined-briefing.synthesis.json \
+  --bundle-file /tmp/feedcontext/2026-05-12-daily-briefing/briefing.bundle.json \
   --title "Your Briefing Title" \
+  --confirm
+```
+
+After the returned artifact status is `ready`, delivery is a separate explicit
+confirmation:
+
+```bash
+feedcontext artifact deliver-rendered \
+  --id art_example \
+  --caption "Your Briefing Title" \
   --confirm
 ```

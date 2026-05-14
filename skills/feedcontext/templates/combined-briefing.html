@@ -74,16 +74,23 @@
 
     .masthead {
       display: grid;
-      grid-template-columns: minmax(0, 1fr) auto;
-      gap: 18px;
-      align-items: end;
+      grid-template-columns: minmax(128px, 170px) minmax(0, 1fr);
+      grid-template-areas:
+        "kicker title"
+        "deck title"
+        "meta meta"
+        "toggle toggle";
+      column-gap: clamp(24px, 5vw, 62px);
+      row-gap: 12px;
+      align-items: start;
       border-bottom: 2px solid var(--rule);
       padding-bottom: 20px;
       margin-bottom: 24px;
     }
 
     .kicker {
-      margin: 0 0 8px;
+      grid-area: kicker;
+      margin: 0;
       color: var(--accent);
       font: 700 12px/1.2 Charter, Georgia, serif;
       letter-spacing: 0.12em;
@@ -91,35 +98,42 @@
     }
 
     h1 {
+      grid-area: title;
       margin: 0;
-      max-width: 920px;
-      font-size: clamp(42px, 7vw, 88px);
-      line-height: 0.94;
+      max-width: 820px;
+      font-size: clamp(32px, 4.45vw, 58px);
+      line-height: 1.08;
       font-weight: 800;
       letter-spacing: 0;
+      overflow-wrap: anywhere;
+      text-wrap: balance;
     }
 
     .deck {
-      margin: 14px 0 0;
-      max-width: 720px;
+      grid-area: deck;
+      margin: 22px 0 0;
+      max-width: 170px;
       color: var(--muted);
-      font-size: 19px;
+      font-size: 17px;
+      line-height: 1.48;
     }
 
     .meta {
+      grid-area: meta;
       display: flex;
       justify-content: flex-start;
       gap: 18px;
       flex-wrap: wrap;
-      margin-top: 14px;
+      margin-top: 4px;
       font: 700 12px/1.2 Charter, Georgia, serif;
       letter-spacing: 0.08em;
       text-transform: uppercase;
     }
 
     .mode-toggle {
+      grid-area: toggle;
       display: flex;
-      justify-content: flex-end;
+      justify-content: flex-start;
       gap: 0;
       margin-bottom: 2px;
     }
@@ -193,9 +207,97 @@
     .source-mark {
       display: block;
       margin-top: 10px;
+      min-height: 24px;
       color: var(--accent);
-      font: 700 12px/1.35 Charter, Georgia, serif;
+    }
+
+    .source-cluster {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      min-width: 34px;
+      min-height: 24px;
+      isolation: isolate;
+    }
+
+    .source-chip {
+      position: relative;
+      z-index: calc(20 - var(--source-index));
+      display: inline-grid;
+      place-items: center;
+      width: 24px;
+      height: 24px;
+      margin-left: calc(var(--source-index) * -7px);
+      border: 1px solid var(--hairline);
+      border-radius: 50%;
+      background: var(--sheet);
+      box-shadow: 0 1px 0 rgba(29, 36, 48, 0.12);
+    }
+
+    .source-chip:first-child {
+      margin-left: 0;
+    }
+
+    .source-chip img {
+      width: 16px;
+      height: 16px;
+      border-radius: 3px;
+    }
+
+    .source-tooltip,
+    .citation-tooltip {
+      position: absolute;
+      z-index: 40;
+      left: 0;
+      bottom: calc(100% + 8px);
+      width: min(340px, calc(100vw - 48px));
+      padding: 10px 12px;
+      border: 1px solid var(--rule);
+      background: var(--sheet);
+      color: var(--ink);
+      box-shadow: 0 12px 24px rgba(29, 36, 48, 0.18);
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(4px);
+      transition: opacity 120ms ease, transform 120ms ease;
+    }
+
+    .source-cluster:hover .source-tooltip,
+    .source-cluster:focus-within .source-tooltip,
+    .inline-citation:hover .citation-tooltip,
+    .inline-citation:focus-within .citation-tooltip {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateY(0);
+    }
+
+    .source-tooltip-item,
+    .citation-tooltip a {
+      display: grid;
+      gap: 2px;
+      padding: 5px 0;
+      color: var(--ink);
+      text-decoration: none;
+      border-bottom: 1px solid var(--hairline);
+    }
+
+    .source-tooltip-item:last-child,
+    .citation-tooltip a:last-child {
+      border-bottom: 0;
+    }
+
+    .source-tooltip strong,
+    .citation-tooltip strong {
+      color: var(--accent);
+      font: 700 11px/1.2 Charter, Georgia, serif;
+      letter-spacing: 0.08em;
       text-transform: uppercase;
+    }
+
+    .source-tooltip span,
+    .citation-tooltip span {
+      font-size: 13px;
+      line-height: 1.25;
     }
 
     figure {
@@ -283,11 +385,42 @@
       color: var(--accent);
     }
 
-    .inline-source {
-      color: var(--link);
-      font-weight: 600;
-      text-decoration: underline;
-      text-decoration-thickness: 1px;
+    .narrative-prose article {
+      border-top: 0;
+      padding-top: 0;
+    }
+
+    .narrative-prose article + article {
+      margin-top: 1.4em;
+    }
+
+    .inline-citation {
+      position: relative;
+      display: inline-flex;
+      vertical-align: super;
+      margin-left: 0.18em;
+      font-size: 0.62em;
+      line-height: 1;
+      color: var(--accent);
+      cursor: help;
+    }
+
+    .citation-badge {
+      display: inline-grid;
+      place-items: center;
+      min-width: 1.55em;
+      height: 1.55em;
+      border: 1px solid var(--accent);
+      border-radius: 50%;
+      font-weight: 700;
+      background: var(--sheet);
+    }
+
+    .citation-tooltip {
+      left: auto;
+      right: 0;
+      bottom: calc(100% + 10px);
+      font-size: 14px;
     }
 
     @media (max-width: 860px) {
@@ -303,6 +436,17 @@
 
       .masthead {
         grid-template-columns: 1fr;
+        grid-template-areas:
+          "kicker"
+          "title"
+          "deck"
+          "meta"
+          "toggle";
+      }
+
+      .deck {
+        max-width: 100%;
+        margin-top: 4px;
       }
 
       .mode-toggle {
@@ -345,30 +489,30 @@
           <h2>Lead insight written like a front-page story</h2>
           <p>Summarize the most important synthesized point. Keep it grounded in visible Feed Items and explain why it matters now.</p>
           <p>Use a second paragraph when the nuance matters. Keep the prose dense, edited, and readable.</p>
-          <span class="source-mark">Sources: <a href="https://example.com/feed-item">Feed Name, Item Title</a>; <a href="https://example.com/feed-item-2">Feed Name, Item Title</a></span>
+          <span class="source-mark"><span class="source-cluster"><a class="source-chip" style="--source-index:0" href="https://example.com/feed-item"><img alt="" src="https://www.google.com/s2/favicons?domain=example.com&sz=32" /></a><span class="source-tooltip" role="tooltip"><span class="source-tooltip-item"><strong>Feed Name</strong><span>Item Title</span></span></span></span></span>
         </article>
 
         <article>
           <h3>Secondary module</h3>
           <p>Use this for an important supporting development, pattern, or contrast.</p>
-          <span class="source-mark">Source: <a href="https://example.com/feed-item">Feed Name, Item Title</a></span>
+          <span class="source-mark"><span class="source-cluster"><a class="source-chip" style="--source-index:0" href="https://example.com/feed-item"><img alt="" src="https://www.google.com/s2/favicons?domain=example.com&sz=32" /></a><span class="source-tooltip" role="tooltip"><span class="source-tooltip-item"><strong>Feed Name</strong><span>Item Title</span></span></span></span></span>
         </article>
 
         <aside>
           <p class="pullquote">A sharp quote, number, or synthesis can become a visual rhythm break.</p>
-          <span class="source-mark">Source: <a href="https://example.com/feed-item">Feed Name, Item Title</a></span>
+          <span class="source-mark"><span class="source-cluster"><a class="source-chip" style="--source-index:0" href="https://example.com/feed-item"><img alt="" src="https://www.google.com/s2/favicons?domain=example.com&sz=32" /></a><span class="source-tooltip" role="tooltip"><span class="source-tooltip-item"><strong>Feed Name</strong><span>Item Title</span></span></span></span></span>
         </aside>
 
         <article class="wide">
           <h3>Cross-feed pattern</h3>
           <p>Use wider modules for synthesis across several Feed Items rather than for a single item recap.</p>
-          <span class="source-mark">Sources: <a href="https://example.com/feed-item">Feed Name, Item Title</a>; <a href="https://example.com/feed-item-2">Feed Name, Item Title</a></span>
+          <span class="source-mark"><span class="source-cluster"><a class="source-chip" style="--source-index:0" href="https://example.com/feed-item"><img alt="" src="https://www.google.com/s2/favicons?domain=example.com&sz=32" /></a><a class="source-chip" style="--source-index:1" href="https://example.com/feed-item-2"><img alt="" src="https://www.google.com/s2/favicons?domain=example.com&sz=32" /></a><span class="source-tooltip" role="tooltip"><span class="source-tooltip-item"><strong>Feed Name</strong><span>Item Title</span></span><span class="source-tooltip-item"><strong>Feed Name</strong><span>Item Title 2</span></span></span></span></span>
         </article>
 
         <article>
           <h3>Brief</h3>
           <p>Small modules can capture concise items that deserve attention but not the lead position.</p>
-          <span class="source-mark">Source: <a href="https://example.com/feed-item">Feed Name, Item Title</a></span>
+          <span class="source-mark"><span class="source-cluster"><a class="source-chip" style="--source-index:0" href="https://example.com/feed-item"><img alt="" src="https://www.google.com/s2/favicons?domain=example.com&sz=32" /></a><span class="source-tooltip" role="tooltip"><span class="source-tooltip-item"><strong>Feed Name</strong><span>Item Title</span></span></span></span></span>
         </article>
       </section>
     </section>
@@ -376,7 +520,7 @@
     <section data-mode-content="narrative" data-document-format="longform" aria-label="Long-form briefing">
       <div class="narrative-prose">
         <article>
-          <p class="drop-cap">Open your narrative here with the lead story. Weave Feed Items across topics into one continuous polished magazine feature. Inline citations, such as <a class="inline-source" href="https://example.com/feed-item">Feed Name's source item</a>, connect claims to their sources naturally within the prose.</p>
+          <p class="drop-cap">Open your narrative here with the lead story. Weave Feed Items across topics into one continuous polished magazine feature. Inline citations connect claims to their sources naturally within the prose. <span class="inline-citation" tabindex="0"><span class="citation-badge">[1]</span><span class="citation-tooltip" role="tooltip"><a href="https://example.com/feed-item"><strong>Feed Name</strong><span>Source item</span></a></span></span></p>
           <p>Continue the narrative, transitioning between items and topics with prose bridges. When a topic shifts, use a drop-cap section break to signal the new focus while keeping the reading flow continuous.</p>
         </article>
       </div>

@@ -886,15 +886,15 @@ describe("FeedContext Structured Synthesis validation", () => {
         },
         units: [
           {
-            claim: "Platform teams are tightening their release workflows.",
+            claim: "Platform teams are tightening their release workflows by moving validation, review, and handoff signals closer to the artifact renderer instead of treating the final page as a loose export.",
             id: "platform-release",
             rendering_priority: "lead",
-            selection_rationale: "This is the most consequential cross-feed pattern.",
+            selection_rationale: "This is the most consequential cross-feed pattern because it changes what the agent must prove before the user sees the artifact.",
             supporting_evidence: [
               {
                 feed_item_id: "item_1",
                 kind: "feed_item",
-                reason: "Primary report on release workflow changes.",
+                reason: "Primary report on release workflow changes with concrete requirements for render-time checks and visible artifact traceability.",
                 relevance: "direct",
                 subscription_title: "Platform Feed",
                 title: "Release Workflow Changes",
@@ -906,15 +906,15 @@ describe("FeedContext Structured Synthesis validation", () => {
             type: "insight",
           },
           {
-            claim: "Tooling updates are clustering around agent handoff.",
+            claim: "Tooling updates are clustering around agent handoff, especially the transition from reviewed structured inputs into a readable page with compact citations and no audit-style interruptions.",
             id: "agent-handoff",
             rendering_priority: "main",
-            selection_rationale: "This supports the lead with a concrete tooling shift.",
+            selection_rationale: "This supports the lead with a concrete tooling shift that makes the handoff testable in both helper validation and behavior evals.",
             supporting_evidence: [
               {
                 feed_item_id: "item_2",
                 kind: "feed_item",
-                reason: "Shows a related tooling update.",
+                reason: "Shows a related tooling update that keeps source links available while preserving editorial reading flow.",
                 relevance: "supporting",
                 subscription_title: "Agent Feed",
                 title: "Agent Handoff Update",
@@ -946,9 +946,14 @@ describe("FeedContext Structured Synthesis validation", () => {
     expect(html).toContain('data-document-format="longform"');
     expect(html).toContain('data-unit-id="platform-release"');
     expect(html).toContain('data-unit-id="agent-handoff"');
+    expect(html).toContain('class="source-cluster"');
+    expect(html).toContain('class="source-chip"');
+    expect(html).toContain('class="source-tooltip"');
+    expect(html).toContain('class="inline-citation"');
+    expect(html).toContain('class="citation-tooltip"');
     expect(html).toContain('<a href="https://example.com/release">');
-    expect(html).toContain('<a class="inline-source" href="https://example.com/release">');
+    expect(html).not.toContain("Supported by");
+    expect(html).not.toContain('<span class="source-mark">Sources:');
     expect(html).toContain('<a href="https://example.com/handoff">');
-    expect(html).toContain('<a class="inline-source" href="https://example.com/handoff">');
   });
 });

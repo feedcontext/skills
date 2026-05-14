@@ -145,10 +145,10 @@ Keep these files together when practical:
 /tmp/feedcontext/2026-05-07-daily-audio/feedcontext-audio-brief-2026-05-07.script.json
 /tmp/feedcontext/2026-05-07-daily-audio/feedcontext-audio-brief-2026-05-07.script.md
 /tmp/feedcontext/2026-05-07-daily-audio/feedcontext-audio-brief-2026-05-07.segments.json
-/tmp/feedcontext/2026-05-07-daily-audio/feedcontext-audio-brief-2026-05-07.bing-edge.m4a
 /tmp/feedcontext/2026-05-07-daily-audio/feedcontext-audio-brief-2026-05-07.bing-edge.cover.png
 /tmp/feedcontext/2026-05-07-daily-audio/feedcontext-audio-brief-2026-05-07.bing-edge.lyrics.txt
 /tmp/feedcontext/2026-05-07-daily-audio/feedcontext-audio-brief-2026-05-07.bing-edge.render-manifest.json
+/tmp/feedcontext/2026-05-07-daily-audio/artifact-definition.json
 ```
 
 Use `schemas/show-script.schema.json` as the generated schema artifact. If a
