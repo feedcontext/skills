@@ -17,9 +17,15 @@ only when that stage is active.
 
 1. Decide capacity before scripting when the request is organized,
    synthesized, explanatory, or editorial and no reviewed `.synthesis.json`
-   already fixes the topic set. Offer 10, 20, 50, or 100 Artifact Topics, with
-   approximate runtimes of 5, 10, 25, or 50 minutes. If topic count and target
-   runtime conflict, confirm the trade-off before writing the script.
+   already fixes the topic set. If the user has not specified capacity, first
+   estimate the semantic topic count from the discovered candidate set using
+   titles, summaries, source distribution, timestamps, and obvious duplicate or
+   related-story clusters. Recommend the actual estimated count with an
+   approximate runtime at about 30 seconds per Artifact Topic, then wait for
+   user confirmation. Also offer useful alternatives such as a shorter priority
+   edition, an expanded edition, or a near-full stream when they fit the
+   request. If topic count and target runtime conflict, confirm the trade-off
+   before writing the script.
 2. Produce or reuse a reviewed Structured Synthesis sidecar. Follow
    `structured-synthesis.md` and `synthesis-review.md`. Do not start scripting
    unless the latest Synthesis Review verdict is `ready`.

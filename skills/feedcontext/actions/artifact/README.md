@@ -31,9 +31,16 @@ matches the requested output.
 4. For broad aggregation, create a Gather Sidecar with `gather.md` so all
    in-scope Summaries are reviewed before semantic selection.
 5. For organized, grouped, explanatory, or editorial artifacts, decide the
-   Artifact Topic capacity before synthesis. Offer 10, 20, 50, or 100 topics
-   when the user has not specified capacity. Skip this when an existing
-   Structured Synthesis sidecar already fixes the topic set.
+   Artifact Topic capacity before synthesis. If the user has not specified
+   capacity, first estimate the semantic topic count from the discovered
+   candidate set using titles, summaries, source distribution, timestamps, and
+   obvious duplicate or related-story clusters. Recommend the actual estimated
+   count, not a fixed default, and wait for user confirmation. The capacity
+   prompt must include the candidate count, recommended Artifact Topic count,
+   short rationale for that recommendation, useful alternatives, and whether a
+   complete Feed Item stream/source index will be preserved. Skip the prompt
+   only when an existing Structured Synthesis sidecar already fixes the topic
+   set or the user asked for a full Feed Item stream/listing/export.
 6. If the user only asks for full Feed Item display, export, or listing, keep a
    Feed Item stream instead of forcing Artifact Topic synthesis or review.
 7. Read supporting content with `item get` or `item get-many` when the selected
@@ -124,5 +131,12 @@ changes create a new artifact by submitting a new bundle.
   agent includes, excludes, groups, or down-ranks Feed Items.
 - Artifact Topic counts describe semantic topic units, not the number of Feed
   Items gathered or cited.
-- Treat 10, 20, 50, and 100 Artifact Topics as fixed recommended capacity
-  choices, not loose examples.
+- Do not use a fixed default such as 20 Artifact Topics for broad artifacts.
+  Recommend the count implied by the actual candidate set. For example, if 100
+  Feed Items cluster into about 43 meaningful topics, recommend 43 topics, then
+  offer alternatives such as a shorter 20-topic priority edition, a 50-topic
+  expanded edition, or a near-full 100-item stream when they fit the request.
+- "All updates" means full candidate coverage plus traceability. For organized
+  artifacts, ask for confirmation on the recommended topic synthesis count and
+  preserve the complete Feed Item stream/source index alongside the synthesized
+  units unless the user explicitly asks for a different coverage model.

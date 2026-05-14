@@ -21,8 +21,13 @@ fixture/offline, or `submit-definition` is blocked and the blocker is reported.
    local Feed Item fixture/export is provided, use it directly as the candidate
    set and do not call the live API.
 3. If the user asks for an organized, grouped, synthesized page but does not
-   specify capacity, ask how many Artifact Topics to include. Offer 10, 20, 50,
-   or 100 topics, recommending 20 for a broad briefing.
+   specify capacity, do not choose a fixed default. First perform a lightweight
+   topic estimate from the discovered candidates using titles, summaries,
+   sources, timestamps, and duplicate or related-story clusters. Ask the user to
+   confirm the recommended Artifact Topic count before synthesis. The prompt
+   should include the candidate count, the estimated topic count, a short basis
+   for the estimate, and alternatives such as a shorter priority edition,
+   expanded edition, or full Feed Item stream when appropriate.
 4. Use `item get` for one item or `item get-many` for several selected Feed
    Items that materially support the page.
 5. Follow `structured-synthesis.md` to create, validate, and review a
@@ -147,6 +152,11 @@ outside both `[data-mode-content]` sections. In Narrative mode, supplemental
 items appear as a brief "Also of note" paragraph near the end; low-information
 and out-of-scope items skip the prose entirely and appear only in the source
 index.
+
+For "all updates" page requests, treat "all" as full candidate coverage and
+traceability, not as permission to silently choose a smaller topic count. Ask
+the user to confirm the recommended topic synthesis count, then preserve the
+complete Feed Item stream/source index in the page bundle.
 
 ### Masthead
 

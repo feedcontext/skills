@@ -91,6 +91,12 @@ Structured Synthesis JSON sidecar before final prose or rendering, and preserve
 review notes beside the output. For audio briefs, create and validate a Show
 Script before generating audio.
 
+For organized page or audio artifacts, do not default the Artifact Topic count.
+After candidate discovery, estimate the semantic topic count from the actual
+Feed Items, recommend a count with evidence, and wait for user confirmation
+unless the user already specified capacity or the request is a full Feed Item
+stream/listing/export.
+
 When the user asks to generate a page, briefing page, digest page, roundup page,
 or HTML-like FeedContext artifact from live Feed Items, the default output is a
 server-rendered Artifact submitted through `feedcontext artifact
