@@ -7,7 +7,7 @@ normal workflows:
 - Read Feed Items through `feed-items.md`.
 - Manage Subscriptions through `subscriptions.md`.
 - Manage Telegram delivery through `integrations.md`.
-- Compose traceable local artifacts through `artifact/README.md`.
+- Compose traceable server-rendered artifacts through `artifact/README.md`.
 - Migrate or import existing subscriptions through `migration.md`.
 - Use OPML migration through `migration/opml.md` after an OPML or export file is available.
 - Recover from failures through `troubleshooting.md`.
@@ -49,8 +49,7 @@ Allowed raw write paths:
 - `DELETE /v1/subscriptions/{subscription_id}`
 - `POST /v1/integrations/telegram/binding-link`
 - `DELETE /v1/integrations/telegram`
-- `PUT /v1/uploads`
-- `POST /v1/artifacts`
+- `POST /v1/artifact-definitions`
 
 Example after host approval:
 
@@ -69,7 +68,7 @@ The public resources are:
 - Subscription
 - Feed Item
 - Telegram Integration
-- Artifact Delivery Submission
+- Artifact Definition Submission
 
 Do not expose internal source identifiers or internal storage models in user
 responses.

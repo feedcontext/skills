@@ -9,7 +9,7 @@ Default to server submission for live FeedContext artifact requests. A request
 such as "generate a page", "briefing page", "digest page", "roundup page", or
 "convert updates to a page" means: create the reviewed DSL bundle, run
 `feedcontext artifact submit-definition`, and report the artifact id, render
-status, and private viewer URL. Local HTML rendering is only appropriate when
+status, and public viewer URL. Local HTML rendering is only appropriate when
 the user explicitly requests a local-only file, the workflow is fixture/offline,
 or the live API/submit step is blocked and the blocker is reported.
 
@@ -93,15 +93,9 @@ the server-side Edge TTS Audio Renderer:
      --confirm
    ```
 
-Delivery remains explicit and user-approved after rendering is ready. Use the
-returned artifact id only after the render status is `ready`:
-
-   ```bash
-   feedcontext artifact deliver-rendered \
-     --id art_example \
-     --caption "Daily Briefing" \
-     --confirm
-   ```
+After submission, open the returned public viewer URL for the user. The normal
+page URL is `https://feedcontext.io/artifacts/{artifact_id}`. Audio Briefs
+provide playback and MP3 download from that public viewer.
 
 Do not submit Gather Sidecars, raw candidate lists, browser captures, provider
 logs, agent logs, chain-of-thought, unrelated local files, or locally rendered

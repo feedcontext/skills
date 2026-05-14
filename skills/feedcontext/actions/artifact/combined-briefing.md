@@ -7,7 +7,7 @@ summary from FeedContext. This is the primary briefing page action; see
 The agent output is an Artifact Definition Bundle with separate reviewed
 **Newspaper Briefing** and **Narrative Briefing** DSL files derived from the
 same reviewed Structured Synthesis. `api` renders the single-file **Briefing
-Page** and exposes the private viewer URL after the render job is ready.
+Page** and exposes the public viewer URL after the render job is ready.
 
 For live FeedContext items, this server-rendered path is mandatory. Do not
 answer a page request with only `helper.mjs artifact render-page` output unless
@@ -51,7 +51,8 @@ fixture/offline, or `submit-definition` is blocked and the blocker is reported.
      --title "Daily Briefing" \
      --confirm
    ```
-10. Report the returned artifact id, render status, and private viewer URL.
+10. Report the returned artifact id and render status, then open the returned
+    public viewer URL for the user.
 
 ## Offline Fixture Path
 
