@@ -32,6 +32,11 @@
           "data-mode-content=\"narrative\"",
           "data-document-format=\"magazine\"",
           "data-document-format=\"longform\"",
+          "data-layout-role=\"lead\"",
+          "data-display-format=\"analysis\"",
+          "data-body-role=\"lead_paragraph\"",
+          "data-body-role=\"detail_paragraph\"",
+          "data-body-role=\"context_paragraph\"",
           "color-scheme: light dark",
           "@media (prefers-color-scheme: dark)",
           "Source Index"

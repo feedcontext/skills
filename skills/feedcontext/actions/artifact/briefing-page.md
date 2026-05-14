@@ -42,24 +42,52 @@ pressure: lead modules for the most important topics, major sections for
 clusters, compact modules for smaller topics, and supplemental sections for
 lower-priority topics.
 
-Each Artifact Topic should declare its renderer role, such as `lead`, `wide`,
-`main`, `sidebar`, or `supplemental`, so the server renderer can place it in the
-newspaper layout deterministically.
+Each Artifact Topic should declare module-level renderer intent so the server
+renderer can place it deterministically without making fresh editorial
+judgments:
+
+- `layout_role`: `lead`, `major`, `standard`, or `brief`.
+- `display_format`: `story`, `analysis`, `bulletin`, or `quote`.
+- `rendering_priority`: a number used to order modules within equivalent
+  roles.
+
+Use exactly one `lead` module. If more than one topic feels lead-worthy, choose
+the strongest one from the reviewed Structured Synthesis and mark the rest as
+`major`.
 
 ## Module Prose
 
-Each Newspaper module is compact: a headline (h2 for lead, h3 for others), one
-or two dense paragraphs of synthesis, and a `.source-mark` listing the
-supporting Feed Items by feed name and item title. Write as an editor: cut
-fluff, keep density, and make every sentence earn its space.
+Each Newspaper module is a topic-scoped article block, not just a card. Write a
+headline plus `body_units` generated from the module's supporting evidence:
+
+- `lead_paragraph`: the topic lead, usually one paragraph.
+- `detail_paragraph`: factual expansion from the topic's supporting Feed Items.
+- `context_paragraph`: background, implication, or explanatory context.
+
+The `body_units` should make the topic read like a real newspaper item. Avoid a
+single short summary sentence when the topic has multiple related Feed Items.
+For legacy preview or fallback paths, a short `text` field may remain, but the
+server renderer must not expand it during SSR. The long-form prose belongs in
+`body_units`.
+
+Each `body_units[]` entry may include explicit `evidence_refs`. Use
+paragraph-level `evidence_refs` for strong claims, numbers, risk conclusions,
+or trend judgments. When a paragraph has no explicit `evidence_refs`, the
+module-level Sources affordance remains the traceability surface.
+
+Write as an editor: cut fluff, keep density, and make every sentence earn its
+space.
 
 ## Sources
 
-Use compact source marks inside modules, such as the feed name, publication
-date, and a short linked Feed Item title. Every Feed Item shown as evidence or
-as a listed item should link to its original URL when the Feed Item provides
-one. Add a complete source index at the bottom with every Feed Item that
-materially supports the page.
+Use compact source marks inside modules. The server renderer presents the
+module source control as a Sources popover and the footer source index grouped
+by Subscription/source. The DSL should provide source references; it should not
+hard-code UI grouping, popover markup, or visual icon implementation.
+
+Every Feed Item shown as evidence or as a listed item should link to its
+original URL when the Feed Item provides one. Add a complete source index at the
+bottom with every Feed Item that materially supports the page.
 
 Each major insight should cite supporting evidence from the Structured
 Synthesis. If an insight is the agent's synthesis across several items, say so
@@ -88,6 +116,9 @@ material, or generate images when the environment supports it. If no image
 clearly improves the page, rely on typography, borders, hierarchy, and captions
 instead of forcing an unrelated visual.
 
-When using images, include image intent and source references in the DSL rather
-than linking local files from final HTML. The server renderer decides whether a
-safe remote image, generated asset, or typography-only treatment is available.
+Lead modules should prefer a relevant image when one is available and safe to
+reference. When using images, include `image_url`, `image_alt`, image intent,
+and source references in the DSL rather than linking local files from final
+HTML. The server renderer decides whether a safe remote image, generated asset,
+or typography-only treatment is available. If no image is provided for the lead,
+the renderer may use a deterministic typography/source treatment as fallback.

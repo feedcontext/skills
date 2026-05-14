@@ -47,6 +47,16 @@ type StructuredSynthesis = {
   }>;
 };
 
+type BodyUnitRole = "context_paragraph" | "detail_paragraph" | "lead_paragraph";
+type DisplayFormat = "analysis" | "bulletin" | "quote" | "story";
+type LayoutRole = "brief" | "lead" | "major" | "standard";
+
+type NewspaperBodyUnit = {
+  evidence_refs: string[];
+  role: BodyUnitRole;
+  text: string;
+};
+
 function asRecord(value: unknown): JsonRecord {
   if (typeof value !== "object" || value === null || Array.isArray(value)) {
     throw new Error("Structured synthesis must be a JSON object.");
@@ -247,24 +257,70 @@ function classForUnit(unit: SynthesisUnit, index: number) {
   return "";
 }
 
+function layoutRoleForUnit(unit: SynthesisUnit, index: number): LayoutRole {
+  if (unit.rendering_priority === "lead" || index === 0) return "lead";
+  if (unit.rendering_priority === "main") return "major";
+  if (unit.rendering_priority === "collapsed") return "brief";
+  return "standard";
+}
+
+function displayFormatForUnit(unit: SynthesisUnit, index: number): DisplayFormat {
+  if (unit.rendering_priority === "collapsed") return "bulletin";
+  if (index === 0 || unit.selection_rationale.length > 140) return "analysis";
+  return "story";
+}
+
+function bodyUnitsForUnit(unit: SynthesisUnit, items: FeedItemEvidence[]): NewspaperBodyUnit[] {
+  const evidenceRefs = items.map((item) => item.feed_item_id);
+  const units: NewspaperBodyUnit[] = [
+    {
+      evidence_refs: evidenceRefs,
+      role: "lead_paragraph",
+      text: unit.claim,
+    },
+    {
+      evidence_refs: evidenceRefs,
+      role: "detail_paragraph",
+      text: unit.selection_rationale,
+    },
+  ];
+  const context = evidenceContext(unit, items);
+  if (context) {
+    units.push({
+      evidence_refs: evidenceRefs,
+      role: "context_paragraph",
+      text: context,
+    });
+  }
+  return units;
+}
+
+function renderNewspaperBody(unit: SynthesisUnit, items: FeedItemEvidence[]) {
+  return bodyUnitsForUnit(unit, items)
+    .map((bodyUnit) =>
+      `<p data-body-role="${bodyUnit.role}">${escapeHtml(bodyUnit.text)} <span class="source-mark">${sourceLinks(items)}</span></p>`,
+    )
+    .join("\n          ");
+}
+
 function renderNewspaper(synthesis: StructuredSynthesis) {
   return synthesis.units
     .map((unit, index) => {
       const tag = classForUnit(unit, index) ? ` class="${classForUnit(unit, index)}"` : "";
       const heading = index === 0 ? "h2" : "h3";
       const items = evidenceItems(unit);
+      const layoutRole = layoutRoleForUnit(unit, index);
+      const displayFormat = displayFormatForUnit(unit, index);
       const visual = index === 0
         ? `<figure>
             <div class="photo">Editorial Briefing</div>
             <figcaption>${escapeHtml(unit.selection_rationale)}</figcaption>
           </figure>`
         : "";
-      return `<article${tag} data-unit-id="${escapeAttribute(unit.id)}">
+      return `<article${tag} data-display-format="${displayFormat}" data-layout-role="${layoutRole}" data-rendering-priority="${synthesis.units.length - index}" data-unit-id="${escapeAttribute(unit.id)}">
           ${visual}
           <${heading}>${escapeHtml(unit.title)}</${heading}>
-          <p>${escapeHtml(unit.claim)}</p>
-          <p>${escapeHtml(unit.selection_rationale)}</p>
-          <span class="source-mark">${sourceLinks(items)}</span>
+          ${renderNewspaperBody(unit, items)}
         </article>`;
     })
     .join("\n\n        ");
