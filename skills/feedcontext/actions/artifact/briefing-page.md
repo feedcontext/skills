@@ -64,6 +64,24 @@ server renderer owns HTML, CSS, masthead, toggles, layout, and source-index UI.
 It must not infer inline citation anchor text from `evidence_refs`; the DSL
 must provide natural linked phrases.
 
+Evidence links are part of the prose, not an audit appendix. When one Artifact
+Topic uses several Feed Items, distribute the linked phrases through the topic
+body as the facts appear. Do not write a normal paragraph and then append a
+list such as "related reports include..." or a row of linked Feed Item titles.
+Each linked phrase should be a natural factual phrase already doing editorial
+work in the sentence, for example a named action, number, product change,
+regulatory step, or market move. Keep the topic-local source summary or source
+index as backup traceability, but do not rely on it as the only place where
+supporting Feed Items are visible.
+
+Visible page prose must be reader-facing news copy only. Do not include
+workflow, validation, or prompt-engineering notes such as "these sentences
+preserve evidence," "this topic keeps links," "sizing passed," "source
+coverage is complete," or similar meta commentary. If a sizing range is too
+short, deepen the actual news material with concrete reported details or adjust
+the synthesis unit's `type`/`rendering_priority`; never pad the page with
+process explanations.
+
 The Artifact Sizing Review should measure the prose assigned to each synthesis
 unit after page DSL generation. If a `lead` unit validates as too short, deepen
 the factual setup and evidence-backed consequence. If a `collapsed` unit
