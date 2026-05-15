@@ -12,8 +12,8 @@ FeedContext Skill helps agents:
 - read RSS/Atom feed items;
 - manage subscriptions with approval;
 - migrate or import subscriptions from existing RSS readers and OPML files;
-- turn feed context into reviewed server-rendered artifact definitions,
-  including briefing pages and audio briefs;
+- submit server-side artifact composition requests for briefing pages and
+  audio briefs;
 - check Telegram binding readiness.
 
 It is not a feed reader UI or a product console. It is a skill for agents that
@@ -44,19 +44,18 @@ After installation, use the skill instructions in `skills/feedcontext/SKILL.md`.
 
 - **Subscription**: a user's relationship to an RSS or Atom feed.
 - **Feed Item**: one visible content entry from a subscription.
-- **Briefing**: an agent-composed Artifact Definition Bundle grounded in
-  visible Feed Items and rendered by FeedContext.
-- **Audio Brief**: an agent-composed audio artifact definition generated from a
-  reviewed Show Script and rendered by FeedContext.
+- **Briefing**: a server-composed artifact grounded in visible Feed Items and
+  rendered by FeedContext.
+- **Audio Brief**: a server-composed podcast-style artifact rendered by
+  FeedContext.
 - **Telegram Integration**: account-level Telegram binding status. v1 does not
   expose a CLI artifact delivery command.
 
 Briefings should keep important insights traceable to their supporting Feed
 Items without turning the reading experience into an audit interface.
 
-Canonical artifact DSL schemas are served by `api` at
-`https://api.feedcontext.io/schemas/`. The skill helper fetches those schemas
-on each validation run instead of shipping offline schema copies.
+Artifact composition is owned by `api`. The skill helper does not generate or
+validate local artifact DSL files.
 
 ## FAQ
 

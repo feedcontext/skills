@@ -2,21 +2,8 @@
 import { fileURLToPath } from "node:url";
 import { Command } from "commander";
 import { getVersionStatus } from "./helper/version";
-import {
-  printArtifactSizingSchema,
-  printShowScriptSchema,
-  printSynthesisSchema,
-  validateArtifactSizingFile,
-  validateShowScriptFile,
-  validateSynthesisFile,
-} from "./helper/validation";
 
 export { buildVersionStatus, getVersionStatus } from "./helper/version";
-export {
-  validateArtifactSizing,
-  validateShowScript,
-  validateStructuredSynthesis,
-} from "./helper/validation";
 
 async function printVersionStatus() {
   console.log(JSON.stringify(await getVersionStatus()));
@@ -30,39 +17,6 @@ async function main(argv = process.argv) {
     .command("version")
     .description("Print installed revision, latest revision, and upgrade status")
     .action(printVersionStatus);
-
-  const synthesis = program.command("synthesis").description("Validate Structured Synthesis files");
-  synthesis
-    .command("validate")
-    .description("Validate a Structured Synthesis JSON file")
-    .requiredOption("--file <path>", "Structured Synthesis JSON file to validate")
-    .action((options) => validateSynthesisFile(options.file));
-  synthesis
-    .command("schema")
-    .description("Print the FeedContext Structured Synthesis JSON Schema")
-    .action(printSynthesisSchema);
-
-  const showScript = program.command("show-script").description("Validate Show Script files");
-  showScript
-    .command("validate")
-    .description("Validate a Show Script JSON file")
-    .requiredOption("--file <path>", "Show Script JSON file to validate")
-    .action((options) => validateShowScriptFile(options.file));
-  showScript
-    .command("schema")
-    .description("Print the FeedContext Show Script JSON Schema")
-    .action(printShowScriptSchema);
-
-  const sizing = program.command("sizing").description("Validate Artifact Sizing Review files");
-  sizing
-    .command("validate")
-    .description("Validate an Artifact Sizing Review JSON file")
-    .requiredOption("--file <path>", "Artifact Sizing Review JSON file to validate")
-    .action((options) => validateArtifactSizingFile(options.file));
-  sizing
-    .command("schema")
-    .description("Print the FeedContext Artifact Sizing Review JSON Schema")
-    .action(printArtifactSizingSchema);
 
   await program.parseAsync(argv);
 }

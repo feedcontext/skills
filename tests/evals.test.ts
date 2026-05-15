@@ -22,7 +22,7 @@ describe("FeedContext Skill behavior eval contracts", () => {
   it("keeps deterministic expected contract gates separate from rubric grading", () => {
     expect(expectedContractSchema.required).toEqual(["schema_version", "hard_gates"]);
     expect(expectedContractSchema.properties.hard_gates.properties).toHaveProperty("required_files");
-    expect(expectedContractSchema.properties.hard_gates.properties).toHaveProperty("schema_validations");
+    expect(expectedContractSchema.properties.hard_gates.properties).toHaveProperty("json_path_checks");
     expect(expectedContractSchema.properties.hard_gates.properties).toHaveProperty("artifact_boundaries");
     expect(expectedContractSchema.properties).toHaveProperty("rubric");
   });
@@ -43,58 +43,26 @@ describe("FeedContext Skill behavior eval contracts", () => {
     });
   });
 
-  it("checks a Structured Synthesis golden output contract", async () => {
+  it("checks an Artifact Composition Request golden output contract", async () => {
     await mkdir(join("evals", "runs"), { recursive: true });
     const directory = await mkdtemp(join("evals", "runs", "test-contract-"));
     await mkdir(directory, { recursive: true });
     await writeFile(
-      join(directory, "briefing.synthesis.json"),
+      join(directory, "composition-request.json"),
       JSON.stringify({
-        schema_version: "1",
+        artifact_type: "briefing_page",
+        user_request: "local self-verification for FeedContext Skill",
+        language: "zh-CN",
         scope: {
-          request: "local self-verification for FeedContext Skill",
-          selection_rule: "Group the fixture Feed Items by artifact workflow responsibility.",
-          used_contextual_evidence: false,
+          item_ids: ["item_local_renderers"],
+          query: "artifact workflow responsibility",
         },
-        units: [
-          {
-            id: "local-rendering",
-            type: "insight",
-            title: "Local artifacts stay repeatable",
-            claim: "Reviewed Structured Synthesis can drive repeatable artifact definition bundles.",
-            supporting_evidence: [
-              {
-                kind: "feed_item",
-                feed_item_id: "item_local_renderers",
-                url: "https://example.com/local-renderers",
-                subscription_title: "FeedContext Engineering",
-                title: "Local renderers make briefing pages repeatable",
-                relevance: "direct",
-                reason: "Directly describes deterministic local rendering.",
-              },
-            ],
-            selection_rationale: "This is the shared base path for page generation.",
-            rendering_priority: "lead",
-          },
-        ],
-        secondary_items: [
-          {
-            feed_item_id: "item_eval_loop",
-            url: "https://example.com/behavior-evals",
-            title: "Behavior evals should replay independent agent runs",
-            subscription_title: "Agent Quality Weekly",
-            group: "supplemental",
-            reason: "Relevant to the eval loop but not the lead artifact topic.",
-          },
-        ],
-      }),
-    );
-    await writeFile(
-      join(directory, "synthesis-review.json"),
-      JSON.stringify({
-        verdict: "ready",
-        required_edits: [],
-        ready_for_artifact: true,
+        capacity: {
+          target_topics: 2,
+        },
+        user_preference_context: {
+          notes: ["keep it concise"],
+        },
       }),
     );
     await writeFile(
@@ -103,10 +71,8 @@ describe("FeedContext Skill behavior eval contracts", () => {
         schema_version: "1",
         commands: [
           { command: "node skills/feedcontext/scripts/helper.mjs version" },
-          {
-            command:
-              "node skills/feedcontext/scripts/helper.mjs synthesis validate --file briefing.synthesis.json",
-          },
+          { command: "feedcontext auth status" },
+          { command: "feedcontext artifact compose --artifact-type briefing_page --request \"local self-verification for FeedContext Skill\" --item-id item_local_renderers --target-topics 2 --confirm" },
         ],
       }),
     );

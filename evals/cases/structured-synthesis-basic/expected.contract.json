@@ -2,43 +2,41 @@
   "schema_version": "1",
   "hard_gates": {
     "required_files": [
-      "briefing.synthesis.json",
-      "synthesis-review.json",
+      "composition-request.json",
       "command-trace.json"
-    ],
-    "schema_validations": [
-      {
-        "file": "briefing.synthesis.json",
-        "schema": "structured-synthesis"
-      }
-    ],
-    "review_verdicts": [
-      {
-        "file": "synthesis-review.json",
-        "verdict": "ready"
-      }
     ],
     "command_order": [
       "version",
-      "synthesis validate"
+      "auth status",
+      "artifact compose"
     ],
     "json_path_checks": [
       {
-        "file": "briefing.synthesis.json",
-        "path": "$.scope.request",
+        "file": "composition-request.json",
+        "path": "$.artifact_type",
+        "expected": "briefing_page"
+      },
+      {
+        "file": "composition-request.json",
+        "path": "$.user_request",
         "expected": {
           "includes": "local self-verification"
         }
       },
       {
-        "file": "synthesis-review.json",
-        "path": "$.ready_for_artifact",
-        "expected": true
+        "file": "composition-request.json",
+        "path": "$.scope.item_ids",
+        "expected": {
+          "min_length": 1
+        }
       }
     ],
     "forbidden_patterns": [
       "洞见一",
-      "不是.*而是"
+      "不是.*而是",
+      "synthesis validate",
+      "show-script validate",
+      "sizing validate"
     ],
     "artifact_boundaries": [
       "no_skill_repo_writes",

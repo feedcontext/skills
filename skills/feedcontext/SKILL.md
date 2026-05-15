@@ -66,32 +66,19 @@ page by default. Use `item list --all` when the user asks for all matching Feed
 Items.
 
 When composing summaries, roundups, insights, briefing pages, or audio briefs,
-follow `actions/artifact/README.md`: create reviewed structured files, then
-submit an Artifact Definition Bundle with `feedcontext artifact
-submit-definition`. For audio briefs, create and validate a Show Script before
-submission. For briefing pages and audio briefs, create and validate an
-Artifact Sizing Review with `node scripts/helper.mjs sizing validate --file
-<artifact-sizing.json>` before bundle submission. Do not generate local HTML,
-podcast/audio files, or audio segment manifests.
-
-Artifact DSL schemas are owned by `api` under
-`https://api.feedcontext.io/schemas/`. Local helper validation fetches the
-canonical schema on every run; the installed skill must not rely on bundled
-offline schema JSON.
-
-For organized page or audio artifacts, do not default the Artifact Topic count.
-After candidate discovery, estimate the semantic topic count from the actual
-Feed Items, recommend a count with evidence, and wait for user confirmation
-unless the user already specified capacity or the request is a full Feed Item
-stream/listing/export.
+follow `actions/artifact/README.md`: submit an Artifact Composition Request
+with `feedcontext artifact compose`. The backend owns data retrieval, topic
+grouping, per-stage review, Artifact Definition generation, rendering, and
+public artifact status. Do not create local Structured Synthesis, Show Script,
+sizing review, artifact definition JSON, HTML, podcast/audio files, or audio
+segment manifests.
 
 When the user asks to generate a page, briefing page, digest page, roundup page,
 or HTML-like FeedContext artifact from live Feed Items, the default output is a
-server-rendered Artifact submitted through `feedcontext artifact
-submit-definition`. The skill must not render or return local HTML files for
-Briefing Pages. If live FeedContext API access or `submit-definition` is
-unavailable, report the blocker and preserve the reviewed definition bundle;
-do not fall back to local HTML output.
+server-owned artifact started through `feedcontext artifact compose`. The skill
+must not render or return local HTML files for Briefing Pages. If live
+FeedContext API access or composition submission is unavailable, report the
+blocker and stop; do not fall back to local artifact generation.
 
 When the user asks to send a generated page or audio brief to Telegram, follow
 `actions/integrations.md` to confirm Telegram is linked. v1 does not expose a
@@ -99,7 +86,6 @@ CLI delivery command; do not invent one, and do not upload local final files or
 sidecars from the skill.
 
 This repository publishes the installable skill from `skills/feedcontext`.
-Service interaction uses the published `feedcontext` CLI. Local helpers are for
-deterministic local-only mechanics, such as schema validation and review
-preflight. They must not render Briefing Page HTML or produce local final page
-artifacts.
+Service interaction uses the published `feedcontext` CLI. The local helper is
+limited to deterministic skill maintenance commands such as `version`; artifact
+composition is a server-side workflow concept.
