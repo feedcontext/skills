@@ -78,9 +78,8 @@ A representative live multi-turn short-input case is:
    `feed-items.snapshot.json`, then writes Structured Synthesis and Synthesis
    Review files.
 3. User asks for an Audio Brief from that Briefing. The agent reads the
-   reviewed synthesis, writes Show Script and Script Review files, and stops at
-   the segment manifest unless the case explicitly enables audio provider
-   access.
+   reviewed synthesis, writes Show Script and Script Review files, and submits
+   or preserves the reviewed bundle according to the case permissions.
 
 The contract should fail if a later turn silently re-fetches data, skips the
 prior artifact, or produces final prose/scripts without the staged review files.
@@ -229,36 +228,36 @@ on ordered agent behavior:
 2. Create and validate Structured Synthesis before final artifact prose,
    scripts, pages, or audio.
 3. Run Synthesis Review before artifact-specific rendering or scripting.
-4. Create and validate Show Script before audio generation.
-5. Run Script Review before script-only handoff or audio rendering.
+4. Create and validate Show Script before server-rendered Audio Brief submission.
+5. Run Script Review before script-only handoff or bundle submission.
 
 The first local self-verification loop should be an `offline` lane with golden
 traces and deterministic checks only. It should not require live FeedContext API
-calls, a real audio provider, or repeated model sampling.
+calls, server audio rendering, or repeated model sampling.
 
 Cover three golden traces first:
 
 1. `Structured Synthesis` only: produce a `.synthesis.json` file, validate it
    against the generated schema, and preserve a Synthesis Review contract.
-2. `Briefing Page`: render a complete `.html` file from a reviewed
-   `.synthesis.json` file and check that the dual-mode page structure, source
-   index, and expected files exist.
+2. `Briefing Page`: produce a reviewed Artifact Definition Bundle from a
+   `.synthesis.json` file and check that the dual-mode page DSL structure,
+   source index inputs, and expected files exist.
 3. `Audio Brief`: create and validate a Show Script from a reviewed
-   `.synthesis.json` file, preserve a Script Review contract, and create the
-   segment manifest. Treat Final Audio Review as a contract fixture until a
-   live or manual lane owns real audio rendering.
+   `.synthesis.json` file, preserve a Script Review contract, and produce the
+   bundle submission inputs. Server rendering remains a live or manual
+   acceptance concern.
 
 Golden traces should record verifiable behavior, not hidden reasoning or exact
 model wording. Keep:
 
 - the input prompt and fixture Feed Items;
-- the expected command order, including `version`, validation, rendering, and
-  segment-preparation commands;
+- the expected command order, including `version`, validation, and bundle
+  preparation commands;
 - key output file paths plus small file summaries;
 - review contracts with `ready`, `revise`, or `blocked` verdicts and required
   edits;
-- final output contracts, such as expected files, valid schemas, page
-  structure, source index, segment manifest, and forbidden content checks;
+- final output contracts, such as expected files, valid schemas, definition
+  bundle structure, source index inputs, and forbidden content checks;
 - one maintainer-approved reference trace that demonstrates the intended path.
 
 Do not require exact natural-language matches, preserve hidden chain-of-thought,
@@ -270,18 +269,16 @@ The first full offline behavior suite covers the installable skill's main
 action surfaces:
 
 - `structured-synthesis-basic`: shared **Structured Synthesis** base output.
-- `combined-briefing-page`: reviewed synthesis to complete dual-mode
-  **Briefing Page**.
-- `audio-brief-script`: reviewed synthesis to **Show Script**, Script Review,
-  and segment manifest, stopping before provider rendering.
+- `audio-brief-script`: reviewed synthesis to **Show Script** and Script
+  Review, stopping before server audio rendering or any local audio output.
 - `auth-anonymous-routing`: version/status/anonymous-first auth routing and
   formal-login exceptions.
 - `feed-items-workflow`: Feed Item discovery, `--all` pagination, and
   `get-many` reading for artifacts.
 - `subscriptions-write-safety`: Subscription list/add/delete safety and
   `--confirm` write boundary.
-- `integrations-delivery`: Telegram status check and final-artifact delivery
-  boundary.
+- `integrations-delivery`: Telegram status check and unavailable delivery
+  command boundary.
 - `migration-opml-safety`: OPML import safety, explicit file path, and
   `--confirm` write boundary.
 - `api-boundary`: documented `/v1` raw API boundary and no internal source/token
@@ -299,7 +296,7 @@ real dedicated eval account:
 - `live-multiturn-brief-to-audio`: recent news -> Briefing -> Audio Brief
   script over explicit files across turns.
 
-Real Telegram binding, write actions, and real audio provider rendering remain
+Real Telegram binding, write actions, and server audio rendering remain
 separate opt-in `live` or manual acceptance coverage because they need external
 services, explicit approval, and cleanup.
 
@@ -321,5 +318,5 @@ Audio Brief sounds like a show rather than read-aloud source material.
 Live Write action evals are allowed only in the dedicated test account. Use
 identifiable test data, clean up created Subscriptions when practical, preserve
 diagnostic output when cleanup fails, and keep the Write safety contract intact:
-host approval plus helper `--confirm`. Evals should verify that contract rather
+host approval plus CLI `--confirm`. Evals should verify that contract rather
 than bypass it.

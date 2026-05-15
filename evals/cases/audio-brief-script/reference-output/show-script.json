@@ -8,7 +8,7 @@
   "format": "two_host",
   "title": "Audio Brief Workflow Check",
   "listening_context": "short workflow briefing",
-  "target_duration_seconds": 90,
+  "target_duration_seconds": 180,
   "hosts": [
     {
       "id": "host_a",
@@ -33,7 +33,7 @@
     {
       "id": "opening",
       "title": "Opening",
-      "target_duration_seconds": 20,
+      "target_duration_seconds": 30,
       "synthesis_unit_ids": [
         "story-setup-and-host-dynamic"
       ],
@@ -69,7 +69,7 @@
     {
       "id": "story-setup",
       "title": "Story Setup Before Analysis",
-      "target_duration_seconds": 40,
+      "target_duration_seconds": 90,
       "synthesis_unit_ids": [
         "story-setup-and-host-dynamic"
       ],
@@ -117,18 +117,18 @@
       ]
     },
     {
-      "id": "segment-manifest",
-      "title": "Reviewed Script To Segments",
-      "target_duration_seconds": 30,
+      "id": "server-render-handoff",
+      "title": "Reviewed Script To Server Render",
+      "target_duration_seconds": 60,
       "synthesis_unit_ids": [
-        "reviewed-script-to-segment-manifest"
+        "reviewed-script-to-server-render"
       ],
       "turns": [
         {
           "speaker": "host_b",
-          "text": "Once the review says the script is ready, the next local step is mechanical: turn these spoken turns into a segment manifest.",
+          "text": "Once the review says the script is ready, the local work stops at the bundle inputs. The audio rendering work belongs to the server.",
           "synthesis_unit_ids": [
-            "reviewed-script-to-segment-manifest"
+            "reviewed-script-to-server-render"
           ],
           "evidence_ids": [
             "item_segments"
@@ -139,9 +139,9 @@
         },
         {
           "speaker": "host_a",
-          "text": "That manifest keeps each turn resumable for a future provider run. It carries the speaker, the text, the voice metadata, and the evidence links, while stopping before provider rendering, assembly, or final audio review.",
+          "text": "The submitted definition carries the speaker, text, voice metadata, and evidence links. Api derives render segments after submission, then handles retry, assembly, metadata, storage, and delivery.",
           "synthesis_unit_ids": [
-            "reviewed-script-to-segment-manifest"
+            "reviewed-script-to-server-render"
           ],
           "evidence_ids": [
             "item_segments"
@@ -157,6 +157,6 @@
     "multi_voice": true,
     "long_form": false,
     "segment_generation": true,
-    "preferred_output_format": "m4a"
+    "preferred_output_format": "mp3"
   }
 }

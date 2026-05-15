@@ -1,0 +1,23 @@
+{
+  "schema_version": "1",
+  "artifact_type": "audio_brief",
+  "language": "latin",
+  "units": [
+    {
+      "synthesis_unit_id": "story-setup-and-host-dynamic",
+      "type": "briefing_section",
+      "rendering_priority": "lead",
+      "medium": "podcast",
+      "target_duration_seconds": 120,
+      "notes": "Lead unit receives the opening and main story setup sections."
+    },
+    {
+      "synthesis_unit_id": "reviewed-script-to-server-render",
+      "type": "briefing_section",
+      "rendering_priority": "main",
+      "medium": "podcast",
+      "target_duration_seconds": 60,
+      "notes": "Main unit receives the server-render handoff section."
+    }
+  ]
+}

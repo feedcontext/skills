@@ -9,19 +9,19 @@
     "node": ">=20"
   },
   "scripts": {
-    "build": "pnpm run build:schema && pnpm run build:helper && git diff --exit-code -- skills/feedcontext/schemas/structured-synthesis.schema.json skills/feedcontext/schemas/show-script.schema.json skills/feedcontext/scripts/helper.mjs",
+    "build": "pnpm run build:helper && git diff --exit-code -- skills/feedcontext/scripts/helper.mjs",
     "build:helper": "bun build src/feedcontext.ts --format esm --packages bundle --target node --minify --outfile skills/feedcontext/scripts/helper.mjs",
-    "build:schema": "mkdir -p skills/feedcontext/schemas && cp src/structured-synthesis.schema.json skills/feedcontext/schemas/structured-synthesis.schema.json && cp src/show-script.schema.json skills/feedcontext/schemas/show-script.schema.json",
     "eval:contract": "failed=0; for case_dir in evals/cases/*; do if [ -d \"$case_dir/reference-output\" ]; then node evals/check-contract.mjs --contract \"$case_dir/expected.contract.json\" --output-dir \"$case_dir/reference-output\" || failed=1; fi; done; exit $failed",
     "eval:diagnostic": "promptfoo eval -c promptfooconfig.diagnostic.yaml",
     "eval:live": "promptfoo eval -c promptfooconfig.live.yaml",
     "eval:offline": "promptfoo eval -c promptfooconfig.yaml",
-    "lint": "eslint \"src/**/*.{ts,json}\" \"tests/**/*.ts\" vitest.config.ts \"skills/feedcontext/schemas/**/*.json\"",
+    "lint": "eslint \"src/**/*.{ts,json}\" \"tests/**/*.ts\" vitest.config.ts",
     "prepare": "husky",
     "test": "vitest run tests/*.test.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "ajv": "^8.20.0",
     "commander": "^14.0.2",
     "feedsmith": "^2.9.4",
     "ws": "^8.20.0"
@@ -32,8 +32,6 @@
     "@types/node": "^20.19.37",
     "@types/ws": "^8.18.1",
     "eslint": "^10.3.0",
-    "eslint-plugin-json-schema-validator": "^6.2.0",
-    "eslint-plugin-jsonc": "^3.1.2",
     "husky": "^9.1.7",
     "jsdom": "^29.1.1",
     "promptfoo": "^0.121.11",

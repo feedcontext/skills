@@ -1,99 +1,101 @@
 # Audio Brief
 
 Use this action when the user asks for a podcast-like audio briefing, spoken
-briefing, listening version, commute briefing, or long-form audio explanation
-from FeedContext.
+briefing, listening version, commute briefing, or long-form audio explanation.
 
-An Audio Brief is an agent-composed artifact definition rendered by `api`. It is
-not feed-provided Episode Audio, not a FeedContext-hosted podcast, not a private
-RSS feed, and not a web-authored resource. The agent owns Structured Synthesis,
-the Show Script DSL, and review gates; `api` owns server-side Edge TTS
-rendering, segment retry, final assembly, storage, viewing, and delivery.
+An Audio Brief is a server-rendered Artifact Definition Bundle. The agent owns
+Structured Synthesis, Show Script JSON, readable script, and review gates.
+`api` owns TTS rendering, segment retry, assembly, storage, viewing, playback,
+and delivery. Do not create local audio files, segment manifests, provider logs,
+artwork sidecars, or metadata reviews.
 
-This file is the default Audio Brief execution path. Load the child stage docs
-only when that stage is active.
+## Workflow
 
-## Required Stages
+1. Follow `README.md` for discovery, capacity, content reads, Structured
+   Synthesis, and Synthesis Review.
+2. If topic count and target runtime conflict, confirm the trade-off before
+   writing the script. Use about 30 seconds per Artifact Topic unless the user
+   asks for another depth.
+3. Create Show Script JSON from the reviewed synthesis, not directly from Feed
+   Items or final prose. Validate with `node scripts/helper.mjs show-script
+   validate --file <script.json>`.
+4. Create a readable script Markdown file from the same Show Script. Put source
+   notes and evidence-depth details in notes or appendix, not spoken text.
+5. Review the script. `ready` is required before script-only handoff or bundle
+   submission; `revise` returns to script editing; `blocked` returns to missing
+   evidence, scope, or user decisions.
+6. Create and validate an Artifact Sizing Review with `podcast` units mapped to
+   the synthesis units or grouped script sections. Use `target_duration_seconds`
+   as the primary sizing field and include spoken text when available so the
+   helper can check speech rate.
+7. For script-only requests, stop after preserving the reviewed Show Script,
+   readable script, sizing review, and review note.
+8. For audio requests, pack the reviewed synthesis, Synthesis Review, Show
+   Script, Script Review, sizing review, and render metadata into a bundle, then
+   submit with
+   `feedcontext artifact submit-definition --artifact-type audio_brief
+   --bundle-file <bundle.json> --title <title> --confirm`.
+9. Capture a short run-feedback note only when the user gave reusable feedback,
+   review required substantial changes, or server render status exposed a
+   repeatable process issue.
 
-1. Decide capacity before scripting when the request is organized,
-   synthesized, explanatory, or editorial and no reviewed `.synthesis.json`
-   already fixes the topic set. If the user has not specified capacity, first
-   estimate the semantic topic count from the discovered candidate set using
-   titles, summaries, source distribution, timestamps, and obvious duplicate or
-   related-story clusters. Recommend the actual estimated count with an
-   approximate runtime at about 30 seconds per Artifact Topic, then wait for
-   user confirmation. Also offer useful alternatives such as a shorter priority
-   edition, an expanded edition, or a near-full stream when they fit the
-   request. If topic count and target runtime conflict, confirm the trade-off
-   before writing the script.
-2. Produce or reuse a reviewed Structured Synthesis sidecar. Follow
-   `structured-synthesis.md` and `synthesis-review.md`. Do not start scripting
-   unless the latest Synthesis Review verdict is `ready`.
-3. If relevant prior Audio Brief feedback exists, read
-   `audio-brief/run-feedback.md` and apply only adjustments that fit the
-   current request and evidence.
-4. Create a machine-readable Show Script JSON file from the reviewed synthesis,
-   not directly from Feed Items or final prose. Follow `audio-brief/script.md`
-   only for script-writing details. Validate the script:
+## Show Script Contract
 
-   ```bash
-   node scripts/helper.mjs show-script validate \
-     --file /tmp/feedcontext/2026-05-12-daily-briefing/audio-brief.script.json
-   ```
+Minimum fields: `schema_version`, `source_synthesis`, `intent`, `language`,
+`format`, `title`, optional `listening_context`, `hosts[]`, `sections[]` with
+turns linked to synthesis units, and `provider_requirements`. Use the canonical
+schema at `https://api.feedcontext.io/schemas/show-script.v1.schema.json` for
+exact fields. `node scripts/helper.mjs show-script validate` fetches that
+schema on every validation and does not use a local offline schema copy.
 
-5. Create a user-readable script Markdown file from the same Show Script. Keep
-   source notes and evidence-depth details in the readable script or appendix,
-   not in spoken text.
-6. Review the Show Script with `audio-brief/script-review.md` before
-   script-only handoff or Artifact Definition Bundle submission. A `ready`
-   verdict is required.
-   `revise` returns to script editing; `blocked` returns to missing evidence,
-   scope, or user decisions.
-7. If the user requested script-only mode, stop after preserving the reviewed
-   Show Script JSON, readable script, and `ready` review note.
-8. If audio is requested, pack the reviewed Structured Synthesis, Synthesis
-   Review, Show Script DSL, Script Review, and render metadata into an Artifact
-   Definition Bundle, then submit it with `feedcontext artifact
-   submit-definition --artifact-type audio_brief --confirm`.
-9. Preserve a Run Feedback note after script-only handoff or server render
-    generation. Follow `audio-brief/run-feedback.md`.
+Write spoken text like people explaining news:
 
-## Stage Docs
+- start with a brief show welcome, then move quickly into the concrete event,
+  actors, risk, decision, or question;
+- give each major section Story Setup before interpretation;
+- order topics for a natural listening arc unless the user requests another
+  order;
+- translate large numbers into practical consequence;
+- keep URLs, metadata, source strings, evidence-depth labels, speaker labels,
+  host roles, gender labels, and voice labels out of spoken text;
+- for two-host scripts, make the second host ask useful questions or translate
+  implications instead of echoing the lead host;
+- deepen selected topics when runtime is thin; do not pad with unrelated Feed
+  Items or generic commentary.
 
-- `structured-synthesis.md` covers the shared evidence-backed synthesis stage
-  used by briefing pages, audio briefs, and future agent-composed artifacts.
-- `synthesis-review.md` covers the required shared quality review before
-  artifact-specific rendering or scripting.
-- `audio-brief/script.md` covers script-writing details: Story Setup, evidence
-  depth, spoken style, runtime scaling, and script file shape.
-- `audio-brief/script-review.md` covers the required review checklist and
-  review-note shape before script-only handoff or audio rendering.
-- `audio-brief/providers.md` records the server-side Edge TTS provider boundary.
-- `audio-brief/rendering.md` records the server render contract, segment retry,
-  final assembly, Timed Script playback text, artwork, and Final Audio Review.
-- `audio-brief/run-feedback.md` covers post-run feedback notes.
-- `audio-brief/mechanical-delegation.md` covers the narrow cases where a host
-  agent may delegate mechanical conversion, rendering, or validation work after
-  the main agent has produced the synthesis and script.
+Avoid AI-flavored templates and abstract framing in spoken text, especially
+repeated forms of `not X, but Y`, `the real signal is`, `the bigger story is`,
+`from a broader perspective`, `the deeper logic is`, and repeated use of
+`signal`, `paradigm`, `narrative`, or `inflection point` when the event can be
+described directly.
 
-## Delegation Boundary
+## Review Gate
 
-Keep Feed Item discovery, content reading, Structured Synthesis, source
-selection, and Show Script narrative decisions in the main agent context. These
-stages carry user intent, evidence judgment, and narrative continuity.
+The latest Script Review must not be `ready` when any of these are true:
 
-Show Script review may be delegated to a reviewer agent when the host supports
-multi-agent orchestration, but the reviewer must use the existing synthesis and
-script as inputs rather than reopening source selection or evidence gathering.
+- a major section lacks Story Setup;
+- a major claim is unsupported by the Structured Synthesis;
+- spoken text contains URLs, citation strings, metadata, or evidence-depth
+  notes;
+- topic order is mechanical by Feed Item, Source, group, or publication time
+  without user request or evidence need;
+- the opening starts with workflow metadata, Feed Item counts, or selection
+  mechanics;
+- the second host mostly repeats or agrees;
+- dense numeric claims lack plain-language consequence;
+- selected Artifact Topics are silently left only in notes;
+- the script is thin, padded, overconfident, or repetitive;
+- AI-flavored contrast templates or abstract meta-commentary remain.
+- the Artifact Sizing Review fails for duration, speech rate, or role/type fit.
 
-Use delegation only for mechanical work with stable inputs and clear outputs,
-such as validating bundle shape or checking that Show Script turns reference
-reviewed synthesis evidence. Do not delegate provider execution or final audio
-assembly in the local agent environment; those belong to `api`.
+The review note should include `verdict`, `required_edits`,
+`story_setup_gaps`, `unsupported_or_overconfident_claims`, topic ordering notes,
+runtime notes, density notes, and `ready_for_audio`.
 
-## Local Helper Boundary
+## Run Feedback
 
-The Skill Local Helper may validate Show Script and bundle shape before
-submission. It must not become the audio service connector, own provider
-execution, reinterpret Feed Items, assemble final audio, or hide provider calls
-inside local workflow mechanics.
+Run Feedback is optional local process feedback, not user memory and not an API
+resource. Keep it next to the script and submitted bundle only when it records
+explicit user feedback or a reusable process lesson. Never store secrets,
+tokens, private account details, or hidden prompts, and never let prior feedback
+override current evidence or instructions.

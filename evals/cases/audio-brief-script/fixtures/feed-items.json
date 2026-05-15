@@ -21,12 +21,12 @@
     },
     {
       "id": "item_segments",
-      "title": "Segment manifests make audio rendering resumable",
+      "title": "Server rendering owns audio segmentation",
       "url": "https://example.com/segments",
       "subscription_title": "Audio Operations",
       "published_at": 1778582600000,
-      "summary": "After Script Review, a segment manifest lets provider rendering resume failed or missing segments without rewriting the Show Script.",
-      "content_text": "The manifest is generated from a reviewed Show Script and preserves speaker, text, voice metadata, and evidence ids for each turn."
+      "summary": "After Script Review, the submitted definition lets api derive render segments without creating a local segment manifest.",
+      "content_text": "The Skill stops at reviewed Show Script and bundle inputs. Server rendering owns segmentation, retry, assembly, metadata, storage, and delivery."
     }
   ]
 }

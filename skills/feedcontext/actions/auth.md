@@ -36,7 +36,7 @@ feedcontext auth anonymous
 
 Do not prompt for browser login merely because no session exists. Anonymous
 Skill Sessions reduce first-run friction while still authenticating public `/v1`
-reads, writes, and artifact delivery calls through the CLI.
+reads, writes, and artifact definition submissions through the CLI.
 
 ## Anonymous Limits
 

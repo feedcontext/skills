@@ -1,6 +1,5 @@
 import { readFile } from "node:fs/promises";
-import showScriptSchema from "@/show-script.schema.json" assert { type: "json" };
-import structuredSynthesisSchema from "@/structured-synthesis.schema.json" assert { type: "json" };
+import Ajv2020, { type AnySchema, type ErrorObject } from "ajv/dist/2020";
 import type { JsonRecord } from "./types";
 
 const evidenceRelevanceValues = new Set(["direct", "supporting", "background"]);
@@ -14,6 +13,86 @@ const showScriptIntents = new Set([
 ]);
 const showScriptFormats = new Set(["single_host", "two_host", "sectioned"]);
 const audioOutputFormats = new Set(["mp3", "wav", "m4a"]);
+const artifactTypes = new Set(["briefing_page", "audio_brief"]);
+const artifactSizingLanguages = new Set(["cjk", "latin"]);
+const artifactSizingMedia = new Set(["newspaper", "podcast"]);
+
+type ArtifactSizingLanguage = "cjk" | "latin";
+type SynthesisUnitType = "insight" | "item_roundup" | "briefing_section";
+type RenderingPriority = "lead" | "main" | "secondary" | "collapsed";
+
+type LengthRange = {
+  cjk: [number, number];
+  latin: [number, number];
+};
+
+const newspaperRanges: Record<RenderingPriority, Partial<Record<SynthesisUnitType, LengthRange>>> =
+  {
+    lead: {
+      insight: { cjk: [800, 1500], latin: [450, 800] },
+      item_roundup: { cjk: [600, 1200], latin: [350, 650] },
+      briefing_section: { cjk: [600, 1200], latin: [350, 650] },
+    },
+    main: {
+      insight: { cjk: [500, 900], latin: [280, 500] },
+      item_roundup: { cjk: [350, 700], latin: [200, 400] },
+      briefing_section: { cjk: [350, 700], latin: [200, 400] },
+    },
+    secondary: {
+      insight: { cjk: [180, 350], latin: [100, 220] },
+      item_roundup: { cjk: [180, 350], latin: [100, 220] },
+      briefing_section: { cjk: [180, 350], latin: [100, 220] },
+    },
+    collapsed: {
+      insight: { cjk: [40, 120], latin: [25, 80] },
+      item_roundup: { cjk: [40, 120], latin: [25, 80] },
+      briefing_section: { cjk: [40, 120], latin: [25, 80] },
+    },
+  };
+
+const podcastDurationRanges: Record<RenderingPriority, [number, number]> = {
+  lead: [120, 300],
+  main: [60, 180],
+  secondary: [30, 90],
+  collapsed: [10, 30],
+};
+
+const spokenRateRanges: Record<ArtifactSizingLanguage, [number, number]> = {
+  cjk: [220, 320],
+  latin: [130, 160],
+};
+
+const canonicalSchemaPaths = {
+  artifactSizing: "/schemas/artifact-sizing-review.v1.schema.json",
+  showScript: "/schemas/show-script.v1.schema.json",
+  structuredSynthesis: "/schemas/structured-synthesis.v1.schema.json",
+} as const;
+
+function schemaBaseUrl() {
+  return process.env.FEEDCONTEXT_SCHEMA_BASE_URL ?? "https://api.feedcontext.io";
+}
+
+async function fetchCanonicalSchema(path: string) {
+  const response = await fetch(new URL(path, schemaBaseUrl()));
+  if (!response.ok) {
+    throw new Error(`Could not fetch canonical schema ${path}: HTTP ${response.status}`);
+  }
+  return await response.json();
+}
+
+function formatJsonSchemaError(error: ErrorObject) {
+  const path = error.instancePath ? error.instancePath.replaceAll("/", ".").replace(/^\./, "") : "$";
+  return `${path}: ${error.message ?? "does not match schema"}`;
+}
+
+function validateWithJsonSchema(schema: unknown, value: unknown) {
+  const ajv = new Ajv2020({ allErrors: true, strict: false });
+  const validate = ajv.compile(schema as AnySchema);
+  if (validate(value)) {
+    return [];
+  }
+  return (validate.errors ?? []).map(formatJsonSchemaError);
+}
 
 function synthesisPathOf(path: string[]) {
   return path.length ? path.join(".") : "$";
@@ -91,6 +170,90 @@ function optionalBoolean(record: JsonRecord, key: string, path: string[], errors
   const value = record[key];
   if (value !== undefined && typeof value !== "boolean") {
     errors.push(`${synthesisPathOf([...path, key])}: must be a boolean`);
+  }
+}
+
+function countTextUnits(text: string, language: ArtifactSizingLanguage) {
+  if (language === "cjk") {
+    return Array.from(text.replace(/\s+/g, "")).length;
+  }
+  return text.trim().split(/[\s\u2014-]+/u).filter(Boolean).length;
+}
+
+function asSynthesisUnitType(value: string): SynthesisUnitType | null {
+  return synthesisUnitTypes.has(value) ? (value as SynthesisUnitType) : null;
+}
+
+function asRenderingPriority(value: string): RenderingPriority | null {
+  return renderingPriorities.has(value) ? (value as RenderingPriority) : null;
+}
+
+function validateNewspaperSizingUnit(
+  unit: JsonRecord,
+  path: string[],
+  language: ArtifactSizingLanguage,
+  errors: string[],
+) {
+  const text = requireSynthesisString(unit, "text", path, errors);
+  const type = typeof unit.type === "string" ? asSynthesisUnitType(unit.type) : null;
+  const priority =
+    typeof unit.rendering_priority === "string"
+      ? asRenderingPriority(unit.rendering_priority)
+      : null;
+
+  if (text === null || type === null || priority === null) return;
+
+  const range = newspaperRanges[priority][type]?.[language];
+  if (!range) {
+    errors.push(`${synthesisPathOf(path)}: has no newspaper sizing range`);
+    return;
+  }
+
+  const count = countTextUnits(text, language);
+  const [minimum, maximum] = range;
+  if (count < minimum || count > maximum) {
+    const unitName = language === "cjk" ? "characters" : "words";
+    errors.push(
+      `${synthesisPathOf([...path, "text"])}: ${count} ${unitName} does not fit ${priority}/${type} newspaper range ${minimum}-${maximum}`,
+    );
+  }
+}
+
+function validatePodcastSizingUnit(
+  unit: JsonRecord,
+  path: string[],
+  language: ArtifactSizingLanguage,
+  errors: string[],
+) {
+  const priority =
+    typeof unit.rendering_priority === "string"
+      ? asRenderingPriority(unit.rendering_priority)
+      : null;
+  if (priority === null) return;
+
+  const duration = unit.target_duration_seconds;
+  if (typeof duration !== "number" || !Number.isInteger(duration) || duration < 1) {
+    errors.push(`${synthesisPathOf([...path, "target_duration_seconds"])}: must be a positive integer`);
+    return;
+  }
+
+  const [minimum, maximum] = podcastDurationRanges[priority];
+  if (duration < minimum || duration > maximum) {
+    errors.push(
+      `${synthesisPathOf([...path, "target_duration_seconds"])}: ${duration}s does not fit ${priority} podcast range ${minimum}-${maximum}s`,
+    );
+  }
+
+  if (typeof unit.text === "string" && unit.text.trim() !== "") {
+    const count = countTextUnits(unit.text, language);
+    const wordsPerMinute = count / (duration / 60);
+    const [minimumRate, maximumRate] = spokenRateRanges[language];
+    if (wordsPerMinute < minimumRate || wordsPerMinute > maximumRate) {
+      const unitName = language === "cjk" ? "characters" : "words";
+      errors.push(
+        `${synthesisPathOf([...path, "text"])}: ${Math.round(wordsPerMinute)} ${unitName}/minute does not fit ${minimumRate}-${maximumRate} ${unitName}/minute spoken range`,
+      );
+    }
   }
 }
 
@@ -352,7 +515,72 @@ export function validateShowScript(showScript: unknown) {
   return errors;
 }
 
+function validateArtifactSizingUnit(
+  unit: unknown,
+  index: number,
+  artifactType: string,
+  language: ArtifactSizingLanguage,
+  errors: string[],
+) {
+  const path = ["units", String(index)];
+  if (!requireSynthesisRecord(unit, path, errors)) return;
+
+  requireSynthesisString(unit, "synthesis_unit_id", path, errors);
+  requireSynthesisEnum(unit, "type", synthesisUnitTypes, path, errors);
+  requireSynthesisEnum(unit, "rendering_priority", renderingPriorities, path, errors);
+  requireSynthesisEnum(unit, "medium", artifactSizingMedia, path, errors);
+  if (unit.notes !== undefined) {
+    requireSynthesisString(unit, "notes", path, errors);
+  }
+
+  if (artifactType === "briefing_page" && unit.medium !== "newspaper") {
+    errors.push(`${synthesisPathOf([...path, "medium"])}: must be newspaper for briefing_page`);
+    return;
+  }
+  if (artifactType === "audio_brief" && unit.medium !== "podcast") {
+    errors.push(`${synthesisPathOf([...path, "medium"])}: must be podcast for audio_brief`);
+    return;
+  }
+
+  if (unit.medium === "newspaper") {
+    validateNewspaperSizingUnit(unit, path, language, errors);
+  }
+  if (unit.medium === "podcast") {
+    validatePodcastSizingUnit(unit, path, language, errors);
+  }
+}
+
+export function validateArtifactSizing(sizing: unknown) {
+  const errors: string[] = [];
+
+  if (!requireSynthesisRecord(sizing, [], errors)) return errors;
+
+  if (sizing.schema_version !== "1") {
+    errors.push('schema_version: must be "1"');
+  }
+  requireSynthesisEnum(sizing, "artifact_type", artifactTypes, [], errors);
+  requireSynthesisEnum(sizing, "language", artifactSizingLanguages, [], errors);
+
+  const language =
+    typeof sizing.language === "string" && artifactSizingLanguages.has(sizing.language)
+      ? (sizing.language as ArtifactSizingLanguage)
+      : null;
+  const artifactType = typeof sizing.artifact_type === "string" ? sizing.artifact_type : null;
+
+  if (!Array.isArray(sizing.units) || sizing.units.length === 0) {
+    errors.push("units: must include at least one sizing unit");
+  } else if (language !== null && artifactType !== null && artifactTypes.has(artifactType)) {
+    sizing.units.forEach((unit, index) =>
+      validateArtifactSizingUnit(unit, index, artifactType, language, errors),
+    );
+  }
+
+  return errors;
+}
+
 export async function validateSynthesisFile(file: string) {
+  const schema = await fetchCanonicalSchema(canonicalSchemaPaths.structuredSynthesis);
+
   let parsed: unknown;
   try {
     parsed = JSON.parse(await readFile(file, "utf8"));
@@ -363,7 +591,10 @@ export async function validateSynthesisFile(file: string) {
     );
   }
 
-  const errors = validateStructuredSynthesis(parsed);
+  const errors = [
+    ...validateWithJsonSchema(schema, parsed),
+    ...validateStructuredSynthesis(parsed),
+  ];
   if (errors.length > 0) {
     console.error(`Structured synthesis validation failed for ${file}:`);
     for (const error of errors) {
@@ -376,11 +607,13 @@ export async function validateSynthesisFile(file: string) {
   console.log(`Structured synthesis is valid: ${file}`);
 }
 
-export function printSynthesisSchema() {
-  console.log(JSON.stringify(structuredSynthesisSchema, null, 2));
+export async function printSynthesisSchema() {
+  console.log(JSON.stringify(await fetchCanonicalSchema(canonicalSchemaPaths.structuredSynthesis), null, 2));
 }
 
 export async function validateShowScriptFile(file: string) {
+  const schema = await fetchCanonicalSchema(canonicalSchemaPaths.showScript);
+
   let parsed: unknown;
   try {
     parsed = JSON.parse(await readFile(file, "utf8"));
@@ -391,7 +624,10 @@ export async function validateShowScriptFile(file: string) {
     );
   }
 
-  const errors = validateShowScript(parsed);
+  const errors = [
+    ...validateWithJsonSchema(schema, parsed),
+    ...validateShowScript(parsed),
+  ];
   if (errors.length > 0) {
     console.error(`Show Script validation failed for ${file}:`);
     for (const error of errors) {
@@ -404,6 +640,39 @@ export async function validateShowScriptFile(file: string) {
   console.log(`Show Script is valid: ${file}`);
 }
 
-export function printShowScriptSchema() {
-  console.log(JSON.stringify(showScriptSchema, null, 2));
+export async function printShowScriptSchema() {
+  console.log(JSON.stringify(await fetchCanonicalSchema(canonicalSchemaPaths.showScript), null, 2));
+}
+
+export async function validateArtifactSizingFile(file: string) {
+  const schema = await fetchCanonicalSchema(canonicalSchemaPaths.artifactSizing);
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(await readFile(file, "utf8"));
+  } catch (error) {
+    throw new Error(
+      `Could not read or parse ${file}: ${error instanceof Error ? error.message : String(error)}`,
+      { cause: error },
+    );
+  }
+
+  const errors = [
+    ...validateWithJsonSchema(schema, parsed),
+    ...validateArtifactSizing(parsed),
+  ];
+  if (errors.length > 0) {
+    console.error(`Artifact sizing validation failed for ${file}:`);
+    for (const error of errors) {
+      console.error(`- ${error}`);
+    }
+    process.exitCode = 1;
+    return;
+  }
+
+  console.log(`Artifact sizing is valid: ${file}`);
+}
+
+export async function printArtifactSizingSchema() {
+  console.log(JSON.stringify(await fetchCanonicalSchema(canonicalSchemaPaths.artifactSizing), null, 2));
 }

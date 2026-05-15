@@ -1,141 +1,112 @@
 # Agent-Composed Artifacts
 
-Use these actions when the user asks FeedContext to turn visible Feed Items into
-a server-rendered artifact. Artifacts are defined locally by the agent from the
-user's visible Feed Items, then submitted to `api` as reviewed Artifact
-Definition Bundles for rendering, viewing, and delivery.
+Use this action when the user asks FeedContext to turn visible Feed Items into
+a reviewed, server-rendered artifact: briefing page, digest, roundup, audio
+brief, or a full Feed Item stream.
 
-Default to server submission for live FeedContext artifact requests. A request
-such as "generate a page", "briefing page", "digest page", "roundup page", or
-"convert updates to a page" means: create the reviewed DSL bundle, run
-`feedcontext artifact submit-definition`, and report the artifact id, render
-status, and public viewer URL. Local HTML rendering is only appropriate when
-the user explicitly requests a local-only file, the workflow is fixture/offline,
-or the live API/submit step is blocked and the blocker is reported.
+Default live path: discover Feed Items, create reviewed structured files, submit
+an Artifact Definition Bundle with `feedcontext artifact submit-definition`, and
+report the artifact id, render status, and public viewer URL. Do not render
+local Briefing Page HTML or local audio as a fallback.
 
-Read this shared workflow first, then load only the artifact-specific doc that
-matches the requested output.
+Read this file first, then load only the one artifact-specific doc needed:
+
+- `structured-synthesis.md`: evidence-backed units and broad coverage handling.
+- `synthesis-review.md`: shared review gate before any page or audio output.
+- `briefing-page.md`: Briefing Page DSL, Newspaper mode, Narrative mode, and
+  server submission.
+- `audio-brief.md`: Show Script DSL, audio review gates, and server submission.
 
 ## Shared Workflow
 
 1. Run `version` first if this is the first FeedContext action in the session.
-2. When a file is needed, create one unique session workspace under the host
-   system temp root, for example `/tmp/feedcontext/2026-05-12-daily-briefing/`
-   or `$TMPDIR/feedcontext/2026-05-12-daily-briefing/`. Do not write generated
-   artifact files into the repo or a repo-local `./tmp` directory.
-3. Discover candidates with `item list` or `item list --all`. If the user,
-   host, or eval prompt provides a local Feed Item fixture/export, treat that
-   file as the discovered candidate set and do not call the live API. Use
-   structured filters such as time range, Subscription id, item ids, or keyword
-   filters whenever possible.
-4. For broad aggregation, create a Gather Sidecar with `gather.md` so all
-   in-scope Summaries are reviewed before semantic selection.
-5. For organized, grouped, explanatory, or editorial artifacts, decide the
-   Artifact Topic capacity before synthesis. If the user has not specified
-   capacity, first estimate the semantic topic count from the discovered
-   candidate set using titles, summaries, source distribution, timestamps, and
-   obvious duplicate or related-story clusters. Recommend the actual estimated
-   count, not a fixed default, and wait for user confirmation. The capacity
-   prompt must include the candidate count, recommended Artifact Topic count,
-   short rationale for that recommendation, useful alternatives, and whether a
-   complete Feed Item stream/source index will be preserved. Skip the prompt
-   only when an existing Structured Synthesis sidecar already fixes the topic
-   set or the user asked for a full Feed Item stream/listing/export.
-6. If the user only asks for full Feed Item display, export, or listing, keep a
-   Feed Item stream instead of forcing Artifact Topic synthesis or review.
-7. Read supporting content with `item get` or `item get-many` when the selected
+2. Use one unique workspace under the host temp root, such as
+   `$TMPDIR/feedcontext/<run>/`. Do not write generated artifact files into the
+   repo or a repo-local `./tmp` directory.
+3. Discover candidates with `item list` or `item list --all`. If a local Feed
+   Item fixture/export is provided, use it directly and do not call the live
+   API.
+4. For broad candidate sets, preserve discovery coverage in Structured
+   Synthesis notes: total candidates, reviewed summaries, selected units, and
+   visible items that became supplemental, low-information-gain, or out of
+   scope.
+5. For organized, grouped, explanatory, or editorial artifacts, decide Artifact
+   Topic capacity before synthesis. If the user did not specify capacity,
+   estimate the semantic topic count from the candidates, recommend that count
+   with rationale and alternatives, and wait for confirmation. Skip only when
+   an existing synthesis fixes the topic set or the request is a full Feed Item
+   stream/listing/export.
+6. Read supporting content with `item get` or `item get-many` when selected
    Feed Items materially support the artifact.
-8. Create and validate a Structured Synthesis sidecar with
-   `structured-synthesis.md`, then run `synthesis-review.md`. Do not derive
-   artifact-specific DSL files unless the latest Synthesis Review verdict is
-   `ready`.
-9. Create artifact-specific DSL files and matching Artifact Format Review files
-   before submission. Keep the reviewed Structured Synthesis, reviews, DSL
-   files, and final Artifact Definition Bundle together in the session
-   workspace.
-   For Briefing Pages, the Newspaper DSL should carry module-level layout
-   intent and topic-scoped long-form text (`layout_role`, `display_format`,
-   `rendering_priority`, `body_units`, `rich_text` Evidence Links, source refs,
-   and optional image fields) rather than relying on web SSR to expand short
-   summaries or infer inline citations.
-10. For live artifact requests, submit the reviewed bundle with
-    `feedcontext artifact submit-definition`. Do not replace this with
-    `helper.mjs artifact render-page` unless the user explicitly asked for a
-    local-only file, the workflow is fixture/offline, or submission is blocked.
+7. Create and validate Structured Synthesis, then run Synthesis Review. Do not
+   create page DSL or Show Script files until the latest review is `ready`.
+8. Create the artifact-specific DSL/review files.
+9. Create an Artifact Sizing Review JSON file and validate it with `node
+   scripts/helper.mjs sizing validate --file <artifact-sizing.json>`. If it
+   fails, revise the topic role mix, prose/script depth, or runtime allocation
+   and run validation again before submission.
+10. Pack the reviewed synthesis, reviews, sizing review, artifact DSL files,
+   and render metadata into an Artifact Definition Bundle.
+11. Submit live artifacts with `feedcontext artifact submit-definition
+   --artifact-type <briefing_page|audio_brief> --bundle-file <bundle.json>
+   --title <title> --confirm`.
 
-## Artifact Router
+## Sizing Review
 
-- `gather.md`: local Gather Sidecars before semantic Feed Item aggregation.
-- `structured-synthesis.md`: shared evidence-backed synthesis stage.
-- `synthesis-review.md`: required review before artifact-specific output.
-- `combined-briefing.md`: dual-DSL Briefing Page definition and submission.
-- `briefing-page.md`: Newspaper Briefing prose reference, only when needed.
-- `narrative-briefing.md`: Narrative Briefing prose reference, only when
-  needed.
-- `audio-brief.md`: Audio Brief Show Script DSL, review, and server-render
-  submission.
+Sizing is schema-driven. Use `units[].type` and `units[].rendering_priority`
+from Structured Synthesis as the primary contract. Use Show Script
+`sections[].target_duration_seconds` for podcast sizing. The canonical review
+schema is
+`https://api.feedcontext.io/schemas/artifact-sizing-review.v1.schema.json`.
+The helper fetches it on every `sizing validate` run and does not use a local
+offline schema copy. It then validates the generated Artifact Sizing Review
+against these defaults:
 
-## Delivery
+- Newspaper `lead + insight`: 800-1500 CJK characters or 450-800 English words.
+- Newspaper `lead + item_roundup|briefing_section`: 600-1200 CJK characters or
+  350-650 English words.
+- Newspaper `main + insight`: 500-900 CJK characters or 280-500 English words.
+- Newspaper `main + item_roundup|briefing_section`: 350-700 CJK characters or
+  200-400 English words.
+- Newspaper `secondary + any type`: 180-350 CJK characters or 100-220 English
+  words.
+- Newspaper `collapsed + any type`: 40-120 CJK characters or 25-80 English
+  words.
+- Podcast `lead`: 2-5 minutes; `main`: 1-3 minutes; `secondary`: 30-90 seconds;
+  `collapsed`: 10-30 seconds.
+- Podcast speech-rate check when text is present: 220-320 CJK characters/minute
+  or 130-160 English words/minute.
 
-Submit reviewed Artifact Definition Bundles for server rendering:
+These ranges are review gates, not writing prompts. They catch thin leads,
+padded collapsed topics, impossible podcast runtimes, and mismatched role/type
+assignments.
 
-   ```bash
-   feedcontext artifact submit-definition \
-     --artifact-type briefing_page \
-     --bundle-file /tmp/feedcontext/2026-05-12-daily-briefing/briefing.bundle.json \
-     --title "Daily Briefing" \
-     --confirm
-   ```
+## Boundaries
 
-For Audio Briefs, submit the reviewed bundle and let `api` render audio through
-the server-side Edge TTS Audio Renderer:
-
-   ```bash
-   feedcontext artifact submit-definition \
-     --artifact-type audio_brief \
-     --bundle-file /tmp/feedcontext/2026-05-12-daily-briefing/daily-audio.bundle.json \
-     --title "Daily Audio Brief" \
-     --confirm
-   ```
-
-After submission, open the returned public viewer URL for the user. The normal
-page URL is `https://feedcontext.io/artifacts/{artifact_id}`. Audio Briefs
-provide playback and MP3 download from that public viewer.
-
-Do not submit Gather Sidecars, raw candidate lists, browser captures, provider
-logs, agent logs, chain-of-thought, unrelated local files, or locally rendered
-final HTML/audio files.
-
-Do not treat local helper render output as the final answer for a live Briefing
-Page request. If local rendering is also useful for validation, keep it beside
-the sidecars, then still submit the reviewed DSL bundle unless one of the
-local-only exceptions above applies.
-
-Do not request a server re-render for an existing artifact. Each submitted
-Artifact Definition Bundle creates one artifact; repeated generation or DSL
-changes create a new artifact by submitting a new bundle.
+- Do not submit Gather Sidecars, raw candidate lists, browser captures,
+  provider logs, agent logs, chain-of-thought, unrelated local files, or locally
+  rendered final HTML/audio files.
+- Do not create local podcast/audio files, local segment manifests, provider
+  retry manifests, assembled audio files, artwork sidecars, or audio metadata
+  reviews.
+- Telegram delivery is not a CLI command in v1. If the user asks for external
+  delivery, check `actions/integrations.md`, then report that local upload or
+  delivery commands are not available in the current CLI/API surface.
+- Each submitted Artifact Definition Bundle creates one artifact. Do not request
+  server re-render of an existing artifact; submit a new bundle for changes.
 
 ## Evidence Rules
 
 - Default evidence is `kind: "feed_item"`.
-- Use `kind: "contextual"` only for evidence already present in the current
-  agent context or explicitly supplied by the user.
+- Use `kind: "contextual"` only for evidence already present in context or
+  explicitly supplied by the user.
 - Use `kind: "external_url"` only when the user asked to combine FeedContext
   with external material.
-- Important artifact claims should remain traceable in the Structured Synthesis
-  sidecar even when the final artifact exposes sources lightly.
-- Relevance labels are coarse: `direct`, `supporting`, or `background`. Do not
+- Keep important artifact claims traceable in Structured Synthesis even when
+  the final artifact exposes sources lightly.
+- Relevance labels are coarse: `direct`, `supporting`, or `background`; do not
   invent numeric citation scores.
-- Semantic selections need a real `selection_rationale`, especially when the
-  agent includes, excludes, groups, or down-ranks Feed Items.
-- Artifact Topic counts describe semantic topic units, not the number of Feed
-  Items gathered or cited.
-- Do not use a fixed default such as 20 Artifact Topics for broad artifacts.
-  Recommend the count implied by the actual candidate set. For example, if 100
-  Feed Items cluster into about 43 meaningful topics, recommend 43 topics, then
-  offer alternatives such as a shorter 20-topic priority edition, a 50-topic
-  expanded edition, or a near-full 100-item stream when they fit the request.
-- "All updates" means full candidate coverage plus traceability. For organized
-  artifacts, ask for confirmation on the recommended topic synthesis count and
-  preserve the complete Feed Item stream/source index alongside the synthesized
-  units unless the user explicitly asks for a different coverage model.
+- Semantic selections need a real `selection_rationale`.
+- "All updates" means full candidate coverage plus traceability; preserve the
+  full stream/source index alongside synthesized units unless the user requests
+  a different coverage model.

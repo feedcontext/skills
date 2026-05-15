@@ -8,7 +8,6 @@
       "synthesis-review.json",
       "show-script.json",
       "script-review.json",
-      "segments.json",
       "command-trace.json"
     ],
     "schema_validations": [
@@ -36,8 +35,7 @@
       "auth status",
       "item list",
       "synthesis validate",
-      "show-script validate",
-      "audio segments"
+      "show-script validate"
     ],
     "json_path_checks": [
       {
@@ -75,11 +73,6 @@
         "path": "$.ready_for_audio",
         "expected": true
       },
-      {
-        "file": "segments.json",
-        "path": "$.segments",
-        "expected": { "min_length": 1 }
-      }
     ],
     "forbidden_patterns": ["access_token|refresh_token|password|auth login|auth anonymous|auth logout|--confirm|洞见一|不是.*而是"],
     "artifact_boundaries": [

@@ -26,6 +26,11 @@
       {
         "file": "integrations-plan.json",
         "path": "$.uses_structured_synthesis_sidecar",
+        "expected": false
+      },
+      {
+        "file": "integrations-plan.json",
+        "path": "$.reports_delivery_command_unavailable",
         "expected": true
       }
     ],

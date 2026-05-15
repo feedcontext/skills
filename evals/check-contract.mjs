@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { execFile } from "node:child_process";
 import { mkdir, readFile } from "node:fs/promises";
+import { createServer } from "node:http";
 import { dirname, join, resolve } from "node:path";
 import { promisify } from "node:util";
 import {
@@ -29,13 +30,40 @@ function validateExpectedContract(contract) {
   return errors;
 }
 
-async function helperValidate(schema, file) {
+async function startSchemaServer() {
+  const server = createServer((request, response) => {
+    response.setHeader("content-type", "application/schema+json");
+    response.end(JSON.stringify({$id: request.url, schema_version: "1"}));
+  });
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+  const address = server.address();
+  if (!address || typeof address === "string") {
+    throw new Error("Could not start schema test server");
+  }
+  return {
+    baseUrl: `http://127.0.0.1:${address.port}`,
+    close: () => new Promise((resolve, reject) =>
+      server.close((error) => error ? reject(error) : resolve()),
+    ),
+  };
+}
+
+async function helperValidate(schema, file, schemaBaseUrl) {
   const helper = join(repoRoot, "skills/feedcontext/scripts/helper.mjs");
-  const args =
-    schema === "structured-synthesis"
-      ? ["synthesis", "validate", "--file", file]
-      : ["show-script", "validate", "--file", file];
-  await execFileAsync("node", [helper, ...args], { cwd: repoRoot });
+  const argsBySchema = {
+    "artifact-sizing": ["sizing", "validate", "--file", file],
+    "show-script": ["show-script", "validate", "--file", file],
+    "structured-synthesis": ["synthesis", "validate", "--file", file],
+  };
+  const args = argsBySchema[schema];
+  if (!args) throw new Error(`unknown schema validation: ${schema}`);
+  await execFileAsync("node", [helper, ...args], {
+    cwd: repoRoot,
+    env: {
+      ...process.env,
+      FEEDCONTEXT_SCHEMA_BASE_URL: schemaBaseUrl,
+    },
+  });
 }
 
 function result(id, pass, details = "") {
@@ -55,11 +83,14 @@ async function checkRequiredFiles(outputDir, files) {
 
 async function checkSchemaValidations(outputDir, validations) {
   const results = [];
+  const schemaServer = validations?.length > 0
+    ? await startSchemaServer()
+    : null;
   for (const validation of validations ?? []) {
     const target = resolveFrom(outputDir, validation.file);
     assertInside(outputDir, target, "schema validation file");
     try {
-      await helperValidate(validation.schema, target);
+      await helperValidate(validation.schema, target, schemaServer.baseUrl);
       results.push(result(`schema_validations:${validation.file}:${validation.schema}`, true));
     } catch (error) {
       results.push(
@@ -71,6 +102,7 @@ async function checkSchemaValidations(outputDir, validations) {
       );
     }
   }
+  await schemaServer?.close();
   return results;
 }
 
@@ -281,7 +313,7 @@ async function checkForbiddenPatterns(outputDir, patterns) {
     "synthesis-review.json",
     "show-script.json",
     "script-review.json",
-    "segments.json",
+    "artifact-sizing.json",
     "auth-plan.json",
     "api-boundary-plan.json",
     "feed-items-plan.json",

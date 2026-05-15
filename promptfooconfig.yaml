@@ -14,11 +14,6 @@ tests:
       - type: equals
         value: pass
   - vars:
-      case_id: combined-briefing-page
-    assert:
-      - type: equals
-        value: pass
-  - vars:
       case_id: audio-brief-script
     assert:
       - type: equals

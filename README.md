@@ -12,9 +12,9 @@ FeedContext Skill helps agents:
 - read RSS/Atom feed items;
 - manage subscriptions with approval;
 - migrate or import subscriptions from existing RSS readers and OPML files;
-- turn feed context into traceable local artifacts, including briefing pages and
-  audio briefs;
-- deliver completed briefing pages and audio briefs to linked Telegram chats.
+- turn feed context into reviewed server-rendered artifact definitions,
+  including briefing pages and audio briefs;
+- check Telegram binding readiness.
 
 It is not a feed reader UI or a product console. It is a skill for agents that
 work alongside FeedContext.
@@ -44,16 +44,19 @@ After installation, use the skill instructions in `skills/feedcontext/SKILL.md`.
 
 - **Subscription**: a user's relationship to an RSS or Atom feed.
 - **Feed Item**: one visible content entry from a subscription.
-- **Briefing**: an agent-composed local artifact grounded in visible Feed Items.
-- **Audio Brief**: an agent-composed local audio artifact generated from a Show
-  Script and grounded in Structured Synthesis. Final renders may embed Timed
-  Script playback text for audio players when the output format supports it.
-- **Artifact Delivery**: an explicit user-approved upload of a completed local
-  artifact and its Structured Synthesis sidecar to FeedContext for Telegram
-  delivery.
+- **Briefing**: an agent-composed Artifact Definition Bundle grounded in
+  visible Feed Items and rendered by FeedContext.
+- **Audio Brief**: an agent-composed audio artifact definition generated from a
+  reviewed Show Script and rendered by FeedContext.
+- **Telegram Integration**: account-level Telegram binding status. v1 does not
+  expose a CLI artifact delivery command.
 
 Briefings should keep important insights traceable to their supporting Feed
 Items without turning the reading experience into an audit interface.
+
+Canonical artifact DSL schemas are served by `api` at
+`https://api.feedcontext.io/schemas/`. The skill helper fetches those schemas
+on each validation run instead of shipping offline schema copies.
 
 ## FAQ
 

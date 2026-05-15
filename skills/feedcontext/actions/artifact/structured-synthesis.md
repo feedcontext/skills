@@ -1,135 +1,58 @@
 # Structured Synthesis
 
-Use this shared stage before rendering any agent-composed artifact that
-organizes, groups, synthesizes, explains, or editorially structures FeedContext
-items. Structured Synthesis is the evidence-backed intermediate artifact for
-briefing pages, audio scripts, and other local outputs.
+Use this shared stage before any artifact that organizes, groups, synthesizes,
+explains, or editorially structures FeedContext items. Skip it only when the
+user asks for a full Feed Item display, export, or listing as a raw stream.
 
-Structured Synthesis is not required when the user only asks for full Feed Item
-display, export, or listing as a Feed Item stream.
+Structured Synthesis is the evidence-backed intermediate artifact for briefing
+pages, audio scripts, and other server-rendered artifact definitions. Do not
+write final prose, page DSL, or Show Script first.
 
-For v1, do not add a separate Artifact Topic field to the schema. Treat each
-topic-level `units[]` entry as the Artifact Topic when the synthesis is for an
-organized page or Audio Brief.
+For v1, each topic-level `units[]` entry is the Artifact Topic. Do not add a
+separate Artifact Topic schema field.
 
-Do not generate a briefing, digest, summary, insight set, script, roundup, or
-visual summary as final prose first. First create a Structured Synthesis JSON
-sidecar that captures the units to render and the evidence that supports each
-unit.
+## Flow
 
-## Shared Flow
+Feed Items -> optional broad coverage notes -> Feed Item reads -> Structured
+Synthesis -> Synthesis Review -> artifact-specific DSL or script.
 
-```text
-Feed Items
-   |
-   v
-Feed Item reads
-   |
-   v
-Structured Synthesis <--------------------.
-   |                                      |
-   v                                      |
-Synthesis Review gate --revise------------'
-   |
-   v
-Reviewed Structured Synthesis
-   |
-   v
-Artifact-specific rendering or scripting
-```
-
-`blocked` returns to the main agent for missing evidence, scope, content reads,
-or user decisions. `revise` returns to Structured Synthesis editing. `ready`
-allows the workflow to continue into the artifact-specific stage.
+`blocked` returns to missing evidence, scope, content reads, or user decisions.
+`revise` returns to synthesis editing. `ready` allows the next stage.
 
 ## Inputs
 
-- The explicit user request, including topic, time range, language, audience,
-  exclusions, and output mode.
-- Candidate Feed Items from `item list` or `item list --all`.
-- Feed Item details from `item get` or `item get-many` when the item materially
-  supports the artifact.
-- The Gather Sidecar or item discovery notes when a broad candidate set was
-  processed.
-- Contextual or external evidence only when supplied in the current context or
-  explicitly requested by the user.
+- explicit user request, time range, language, audience, exclusions, and output
+  mode;
+- candidate Feed Items from `item list` or `item list --all`;
+- Feed Item details from `item get` or `item get-many` when materially
+  supporting a claim;
+- broad coverage notes when many candidates were processed;
+- contextual or external evidence only when supplied in context or explicitly
+  requested.
 
-Use `item get-many` for bounded concurrent detail reads when several selected
-Feed Items need content:
-
-```bash
-feedcontext item get-many --id item_1 --id item_2 --id item_3
-```
+For broad aggregation, preserve enough local coverage state to prove all
+in-scope summaries were reviewed before semantic selection: total candidates,
+selected units, supplemental items, low-information-gain items, out-of-scope
+items, and the selection rule. This replaces a separate Gather Sidecar doc.
 
 ## Creation
 
-Use `schemas/structured-synthesis.schema.json` as the generated schema artifact.
-If a local schema helper is available, use it only as a deterministic local
-validation aid. Validate with the available local helper command:
+Use the canonical schema at
+`https://api.feedcontext.io/schemas/structured-synthesis.v1.schema.json`.
+Validate with `node scripts/helper.mjs synthesis validate --file
+<synthesis.json>`; the helper fetches the canonical schema on every validation
+and does not use a local offline schema copy.
 
-```bash
-node scripts/helper.mjs synthesis validate \
-  --file /tmp/feedcontext/2026-05-06-daily-briefing/feedcontext-briefing-2026-05-06.synthesis.json
-```
+Keep the synthesis JSON next to the related review, DSL, and bundle files in
+the temp workspace. Minimum contract:
 
-Keep the JSON sidecar next to the generated artifact when practical:
+- `schema_version`;
+- `scope` with request/time/candidate metadata and `selection_rule`;
+- evidence-backed `units[]` with claim, rationale, priority, and supporting
+  evidence;
+- optional `secondary_items[]` for visible items outside the main units.
 
-```text
-/tmp/feedcontext/2026-05-06-daily-briefing/feedcontext-briefing-2026-05-06.html
-/tmp/feedcontext/2026-05-06-daily-briefing/feedcontext-briefing-2026-05-06.synthesis.json
-```
-
-Minimum shape:
-
-```json
-{
-  "schema_version": "1",
-  "scope": {
-    "request": "today's briefing",
-    "time_range": {
-      "published_after": 1777996800000,
-      "label": "Beijing time 2026-05-06"
-    },
-    "candidate_count": 95,
-    "active_subscription_count": 10,
-    "selection_rule": "Grouped today's visible Feed Items by theme, then selected high-information items with direct evidence for the main insights.",
-    "used_contextual_evidence": false
-  },
-  "units": [
-    {
-      "id": "market-structure-shift",
-      "type": "insight",
-      "title": "Market structure is shifting",
-      "claim": "Several related stories point to a change in how the market is organized.",
-      "supporting_evidence": [
-        {
-          "kind": "feed_item",
-          "feed_item_id": "item_123",
-          "url": "https://example.com/story",
-          "subscription_title": "Example Feed",
-          "title": "Example story",
-          "published_at": 1777996800000,
-          "relevance": "direct",
-          "reason": "Reports the concrete change that directly supports the claim."
-        }
-      ],
-      "selection_rationale": "This is the lead because multiple Feed Items point to the same underlying shift.",
-      "rendering_priority": "lead"
-    }
-  ],
-  "secondary_items": [
-    {
-      "feed_item_id": "item_456",
-      "url": "https://example.com/brief",
-      "title": "Example secondary item",
-      "subscription_title": "Example Feed",
-      "published_at": 1777996800000,
-      "group": "low_information_gain",
-      "reason": "Relevant but mostly repeats the lead evidence."
-    }
-  ]
-}
-```
+Use the canonical schema for exact field names.
 
 ## Evidence Rules
 
@@ -138,28 +61,17 @@ Minimum shape:
   agent context or explicitly supplied by the user.
 - Use `kind: "external_url"` only when the user asked to combine FeedContext
   with external material.
-- If contextual or external evidence is used, disclose that lightly in the final
-  artifact's scope note or sidecar notes.
-- Important artifact claims should remain traceable in the Structured Synthesis
-  sidecar even when the final artifact exposes sources lightly.
-- Relevance labels are coarse: `direct`, `supporting`, or `background`. Do not
+- Mark contextual or external evidence so the final artifact can disclose it
+  lightly.
+- Important claims should remain traceable even when final sources are light.
+- Relevance labels are coarse: `direct`, `supporting`, or `background`; do not
   invent numeric citation scores.
-- Deterministic selections still need a lightweight `selection_rule`, such as
-  "latest five visible Feed Items by publication time."
-- Semantic selections need a real `selection_rationale`, especially when the
-  agent includes, excludes, groups, or down-ranks Feed Items.
-
-For broad briefings from many candidate Feed Items, account for items outside
-the main units in `secondary_items` when useful. Groups are:
-
-- `supplemental`: useful additional reading that did not shape the main unit;
-- `low_information_gain`: repetitive, promotional, too narrow, or otherwise
-  weak material;
-- `out_of_scope`: visible in the candidate set but weakly related to the
-  requested scope.
+- Semantic selections need `selection_rationale`, especially when including,
+  excluding, grouping, or down-ranking Feed Items.
+- For broad briefings, account for items outside the main units with
+  `supplemental`, `low_information_gain`, or `out_of_scope` groups when useful.
 
 ## Review
 
-Run `synthesis-review.md` after validation and before artifact-specific
-rendering, page writing, or script writing for organized or synthesized
-artifacts. Continue only when the latest review verdict is `ready`.
+Run `synthesis-review.md` after validation and before page DSL or Show Script
+work. Continue only when the latest review verdict is `ready`.

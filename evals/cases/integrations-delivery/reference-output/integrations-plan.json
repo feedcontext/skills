@@ -6,9 +6,8 @@
   "requires_user_approval_for_delivery": true,
   "commands": [
     "feedcontext version",
-    "feedcontext integration telegram status",
-    "feedcontext artifact deliver --artifact-type briefing_page --file /tmp/feedcontext/integrations-delivery/final-briefing.html --synthesis-file /tmp/feedcontext/integrations-delivery/final-briefing.synthesis.json --title \"Final Briefing\" --confirm",
-    "feedcontext artifact deliver --artifact-type briefing_page --file /tmp/feedcontext/integrations-delivery/final-briefing.html --synthesis-file /tmp/feedcontext/integrations-delivery/final-briefing.synthesis.json --title \"Final Briefing\" --confirm"
+    "feedcontext integration telegram status"
   ],
-  "uses_structured_synthesis_sidecar": true
+  "reports_delivery_command_unavailable": true,
+  "uses_structured_synthesis_sidecar": false
 }

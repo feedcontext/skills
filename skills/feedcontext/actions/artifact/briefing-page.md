@@ -1,126 +1,99 @@
-# Newspaper Briefing — Prose Reference
+# Briefing Page
 
-This is a prose-style reference for the **Newspaper Briefing** rendering mode
-within a combined Briefing Page. For the primary workflow (discovery,
-Structured Synthesis, review, mode selection, delivery), see
-`combined-briefing.md`.
+Use this action when the user asks for a digest, briefing page, roundup,
+newspaper page, narrative briefing, or HTML-like FeedContext artifact.
 
-The Newspaper Briefing renders Artifact Topics as independent modules in a
-multi-column editorial grid. The agent writes structured DSL fields; the server
-renderer owns the final HTML and CSS.
+The agent creates a Briefing Page Artifact Definition Bundle from reviewed
+Structured Synthesis. `api` renders the final single-file page and returns the
+public viewer URL. Do not write or return local HTML for live FeedContext page
+requests.
 
-## Editorial Shape
+## Workflow
 
-A traditional newspaper reading experience:
+1. Follow `README.md` for discovery, capacity, content reads, Structured
+   Synthesis, and Synthesis Review.
+2. Produce page DSL files only after Synthesis Review is `ready`.
+3. For the default combined page, write two DSL views from the same synthesis:
+   Newspaper Briefing and Narrative Briefing.
+4. Write short page format reviews. Do not submit unless Synthesis Review and
+   both page reviews are `ready`.
+5. Create and validate an Artifact Sizing Review with one `newspaper` unit per
+   rendered Artifact Topic. The review must use the synthesis unit's `type` and
+   `rendering_priority`, include the unit prose text, and pass `sizing
+   validate`.
+6. Pack the reviewed synthesis, reviews, page DSL files, sizing review, source
+   index, and
+   render metadata into a bundle.
+7. Submit with `feedcontext artifact submit-definition --artifact-type
+   briefing_page --bundle-file <bundle.json> --title <title> --confirm`.
+8. Report the artifact id and render status, then open the returned public
+   viewer URL.
 
-- a masthead at the top with the page title, date, theme, and scope;
-- a hero or lead module for the most important story or synthesized insight;
-- editorial sections or columns that group multiple Artifact Topics into a
-  small number of content areas, rather than a flat list of topics;
-- mixed module sizes arranged by importance, not a uniform card list;
-- dense but readable columns, rules, captions, sidebars, and pull quotes;
-- old-money editorial styling: restrained palette, serif typography, generous
-  margins, precise borders, and no app-dashboard chrome;
-- a footer area with a complete source index.
-- lightweight evidence affordances that do not make the page feel like an audit
-  report.
+For fixture-only eval prompts, write the requested structured files in the
+provided output directory and skip live API calls unless the prompt explicitly
+asks for server rendering.
 
-The layout should feel like a complex editorial waterfall: large, medium, and
-small modules interlock according to importance. Avoid generic SaaS cards,
-marketing hero sections, and plain Markdown exported as HTML.
+## Mode Selection
 
-When a page has many Artifact Topics, derive a few section headings from the
-content, such as product and platform changes, market and company moves, policy
-and risk, or supplemental reading. These headings are a page-rendering decision,
-not a separate Structured Synthesis schema field. Preserve the complete source
-index even when the reading path is grouped into sections.
+- Newspaper mode: use when the user asks for grid, layout, visual, columns,
+  newspaper, magazine, or a dense editorial page.
+- Narrative mode: use when the user asks for narrative, long-form, story,
+  prose, flowing, or article.
+- If the user just asks for a briefing page, produce the combined page with
+  both modes unless they choose one mode.
 
-If the user selects a large page capacity such as 50 or 100 Artifact Topics, do
-not silently collapse the artifact to a small highlight list. Give every
-selected Artifact Topic a place in the page, using hierarchy to manage reading
-pressure: lead modules for the most important topics, major sections for
-clusters, compact modules for smaller topics, and supplemental sections for
-lower-priority topics.
+## Newspaper DSL
 
-Each Artifact Topic should declare module-level renderer intent so the server
-renderer can place it deterministically without making fresh editorial
-judgments:
+Newspaper mode renders Artifact Topics as independent editorial modules in a
+multi-column page. The DSL should provide deterministic renderer intent:
 
-- `layout_role`: `lead`, `major`, `standard`, or `brief`.
-- `display_format`: `story`, `analysis`, `bulletin`, or `quote`.
-- `rendering_priority`: a number used to order modules within equivalent
-  roles.
+Canonical schema:
+`https://api.feedcontext.io/schemas/newspaper-briefing.v1.schema.json`.
 
-Use exactly one `lead` module. If more than one topic feels lead-worthy, choose
-the strongest one from the reviewed Structured Synthesis and mark the rest as
-`major`.
-
-## Module Prose
-
-Each Newspaper module is a topic-scoped article block, not just a card. Write a
-headline plus `body_units` generated from the module's supporting evidence:
-
-- `lead_paragraph`: the topic lead, usually one paragraph.
-- `detail_paragraph`: factual expansion from the topic's supporting Feed Items.
-- `context_paragraph`: background, implication, or explanatory context.
-
-The `body_units` should make the topic read like a real newspaper item. Avoid a
-single short summary sentence when the topic has multiple related Feed Items.
-For legacy preview or fallback paths, a short `text` field may remain, but the
-server renderer must not expand it during SSR. The long-form prose belongs in
-`body_units`.
-
-Each `body_units[]` entry may include `rich_text` spans with `evidence_ref` on
-short natural-language phrases. Use those Evidence Links for strong claims,
-numbers, risk conclusions, or trend judgments. Keep `evidence_refs` for
-provenance and validation; renderers must not infer inline links from
-`evidence_refs`.
-
-Write as an editor: cut fluff, keep density, and make every sentence earn its
-space.
-
-## Sources
-
-Do not use compact source marks inside modules. The server renderer presents one
-footer source index grouped by Subscription/source. The DSL should provide
-source references and rich-text Evidence Links; it should not hard-code UI
-grouping, popover markup, or visual icon implementation.
-
-Every Feed Item shown as evidence or as a listed item should link to its
-original URL when the Feed Item provides one. Add a complete source index at the
-bottom with every Feed Item that materially supports the page.
-
-Each major insight should cite supporting evidence from the Structured
-Synthesis. If an insight is the agent's synthesis across several items, say so
-through the framing and include the supporting items in the source index.
-
-Expose explainability lightly:
-
-- Evidence Links should use natural phrases in the prose, not pasted article
-  titles;
-- use coarse labels such as `direct`, `supporting`, or `background`;
-- use inline rich-text spans for strong claims, numbers, risk conclusions, or
+- one `lead` module, with additional important topics marked `major`;
+- `layout_role`: `lead`, `major`, `standard`, or `brief`;
+- `display_format`: `story`, `analysis`, `bulletin`, or `quote`;
+- `rendering_priority` for ordering within equivalent roles;
+- topic-scoped `body_units` such as lead, detail, and context paragraphs;
+- `rich_text` Evidence Links for strong claims, numbers, risk conclusions, and
   trend judgments;
-- avoid visible numeric relevance scores;
-- do not turn the page into an AI audit interface.
+- source refs and optional safe image fields.
 
-When the user asks for a broad briefing and candidate Feed Items are filtered
-out of the main presentation, include a collapsed or secondary section for
-supplemental, low-information-gain, or out-of-scope Feed Items. This section
-should preserve user access to original URLs without competing with the main
-editorial reading flow.
+Write the module prose like a compact newspaper item, not a card summary. The
+server renderer owns HTML, CSS, masthead, toggles, layout, and source-index UI.
+It must not infer inline citation anchor text from `evidence_refs`; the DSL
+must provide natural linked phrases.
 
-## Images
+The Artifact Sizing Review should measure the prose assigned to each synthesis
+unit after page DSL generation. If a `lead` unit validates as too short, deepen
+the factual setup and evidence-backed consequence. If a `collapsed` unit
+validates as too long, demote its prose into source-index or roundup treatment.
 
-Images are editorial visuals for the page, not automatic per-item media copies.
-The agent may use relevant available images, compose imagery from the source
-material, or generate images when the environment supports it. If no image
-clearly improves the page, rely on typography, borders, hierarchy, and captions
-instead of forcing an unrelated visual.
+## Narrative DSL
 
-Lead modules should prefer a relevant image when one is available and safe to
-reference. When using images, include `image_url`, `image_alt`, image intent,
-and source references in the DSL rather than linking local files from final
-HTML. The server renderer decides whether a safe remote image, generated asset,
-or typography-only treatment is available. If no image is provided for the lead,
-the renderer may use a deterministic typography/source treatment as fallback.
+Narrative mode dissolves Artifact Topics into one polished magazine-style prose
+piece. Use reviewed synthesis order and `rendering_priority` for sequence:
+lead topics open with the deepest coverage, main topics carry the middle, and
+secondary topics appear later or in a brief "also of note" section.
+
+Canonical schema:
+`https://api.feedcontext.io/schemas/narrative-briefing.v1.schema.json`.
+
+Write for silent reading, not spoken delivery. Avoid host turns, pacing marks,
+direct audience address, transcript rhythm, and section headers. Use natural
+prose bridges between topic shifts and inline `rich_text` Evidence Links where
+they read cleanly. The footer source index still preserves all materially
+supporting Feed Items.
+
+## Coverage
+
+For broad or "all updates" requests, do not silently collapse the artifact to a
+small highlight list. Ask for confirmation on the estimated Artifact Topic
+count, then preserve the complete Feed Item stream/source index in the bundle.
+Lower-priority items may be compact or source-index-only, but they should remain
+traceable.
+
+Images are optional editorial assets. Prefer relevant safe remote or generated
+images only when they improve the page; otherwise rely on typography and
+hierarchy. The DSL should describe image intent and alt text, not local final
+HTML image wiring.

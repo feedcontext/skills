@@ -5,8 +5,8 @@ Scope:
 - Produce a Synthesis Review contract.
 - Produce a machine-readable Show Script JSON.
 - Produce a Script Review contract.
-- Produce an audio segment manifest.
-- Stop before provider rendering, assembly, or Final Audio Review.
+- Stop before server rendering, local segment manifests, local provider
+  rendering, local assembly, or local audio metadata review.
 - Do not call the live FeedContext API.
 - Do not call any audio provider.
 
@@ -31,11 +31,9 @@ Required output files in the eval output directory:
    - JSON review contract with `verdict: "ready"`.
    - Include empty `required_edits`.
 
-5. `segments.json`
-   - Generate with the local helper `audio segments`.
-
-6. `command-trace.json`
+5. `command-trace.json`
    - First command is helper `version`.
-   - Include `synthesis validate`, `show-script validate`, and `audio segments`.
+   - Include `synthesis validate` and `show-script validate`.
+   - Do not include local `audio` helper commands.
 
 Use the installed skill docs and helper only. Write all outputs directly in the eval output directory.

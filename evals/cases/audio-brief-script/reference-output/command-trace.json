@@ -5,7 +5,7 @@
       "command": "node /Users/sorcererxw/repo/sorcererxw/feedcontext/packages/skills/skills/feedcontext/scripts/helper.mjs version"
     },
     {
-      "command": "rg -n \"audio brief|Show Script|Skill Behavior|segments|synthesis validate\" /Users/sorcererxw/.codex/memories/MEMORY.md"
+      "command": "rg -n \"audio brief|Show Script|Skill Behavior|synthesis validate\" /Users/sorcererxw/.codex/memories/MEMORY.md"
     },
     {
       "command": "sed -n '1,240p' /Users/sorcererxw/repo/sorcererxw/feedcontext/packages/skills/skills/feedcontext/SKILL.md"
@@ -29,10 +29,7 @@
       "command": "sed -n '1,320p' /Users/sorcererxw/repo/sorcererxw/feedcontext/packages/skills/skills/feedcontext/actions/artifact/synthesis-review.md"
     },
     {
-      "command": "sed -n '1,420p' /Users/sorcererxw/repo/sorcererxw/feedcontext/packages/skills/skills/feedcontext/actions/artifact/audio-brief/script.md"
-    },
-    {
-      "command": "sed -n '1,300p' /Users/sorcererxw/repo/sorcererxw/feedcontext/packages/skills/skills/feedcontext/actions/artifact/audio-brief/script-review.md"
+      "command": "sed -n '1,220p' /Users/sorcererxw/repo/sorcererxw/feedcontext/packages/skills/skills/feedcontext/actions/artifact/audio-brief.md"
     },
     {
       "command": "node /Users/sorcererxw/repo/sorcererxw/feedcontext/packages/skills/skills/feedcontext/scripts/helper.mjs synthesis validate --help"
@@ -41,16 +38,19 @@
       "command": "node /Users/sorcererxw/repo/sorcererxw/feedcontext/packages/skills/skills/feedcontext/scripts/helper.mjs show-script validate --help"
     },
     {
-      "command": "node /Users/sorcererxw/repo/sorcererxw/feedcontext/packages/skills/skills/feedcontext/scripts/helper.mjs audio segments --help"
+      "command": "node /Users/sorcererxw/repo/sorcererxw/feedcontext/packages/skills/skills/feedcontext/scripts/helper.mjs sizing validate --help"
     },
     {
       "command": "find /Users/sorcererxw/repo/sorcererxw/feedcontext/packages/skills/skills/feedcontext -path '*schema*' -maxdepth 5 -type f -print"
     },
     {
-      "command": "sed -n '1,260p' /Users/sorcererxw/repo/sorcererxw/feedcontext/packages/skills/skills/feedcontext/schemas/structured-synthesis.schema.json"
+      "command": "node /Users/sorcererxw/repo/sorcererxw/feedcontext/packages/skills/skills/feedcontext/scripts/helper.mjs synthesis schema"
     },
     {
-      "command": "sed -n '1,340p' /Users/sorcererxw/repo/sorcererxw/feedcontext/packages/skills/skills/feedcontext/schemas/show-script.schema.json"
+      "command": "node /Users/sorcererxw/repo/sorcererxw/feedcontext/packages/skills/skills/feedcontext/scripts/helper.mjs show-script schema"
+    },
+    {
+      "command": "node /Users/sorcererxw/repo/sorcererxw/feedcontext/packages/skills/skills/feedcontext/scripts/helper.mjs sizing schema"
     },
     {
       "command": "find . -maxdepth 1 -type f -print"
@@ -62,10 +62,10 @@
       "command": "node /Users/sorcererxw/repo/sorcererxw/feedcontext/packages/skills/skills/feedcontext/scripts/helper.mjs show-script validate --file /Users/sorcererxw/repo/sorcererxw/feedcontext/packages/skills/evals/runs/audio-brief-script/2026-05-12T13-04-11-159Z/show-script.json"
     },
     {
-      "command": "node /Users/sorcererxw/repo/sorcererxw/feedcontext/packages/skills/skills/feedcontext/scripts/helper.mjs audio segments --script-file /Users/sorcererxw/repo/sorcererxw/feedcontext/packages/skills/evals/runs/audio-brief-script/2026-05-12T13-04-11-159Z/show-script.json --out /Users/sorcererxw/repo/sorcererxw/feedcontext/packages/skills/evals/runs/audio-brief-script/2026-05-12T13-04-11-159Z/segments.json"
+      "command": "node /Users/sorcererxw/repo/sorcererxw/feedcontext/packages/skills/skills/feedcontext/scripts/helper.mjs sizing validate --file /Users/sorcererxw/repo/sorcererxw/feedcontext/packages/skills/evals/runs/audio-brief-script/2026-05-12T13-04-11-159Z/artifact-sizing.json"
     },
     {
-      "command": "node -e \"const fs=require('fs'); const dir=process.cwd(); const required=['briefing.synthesis.json','synthesis-review.json','show-script.json','script-review.json','segments.json','command-trace.json']; const missing=required.filter(f=>!fs.existsSync(f)); const synth=JSON.parse(fs.readFileSync('briefing.synthesis.json','utf8')); const script=JSON.parse(fs.readFileSync('show-script.json','utf8')); const review=JSON.parse(fs.readFileSync('synthesis-review.json','utf8')); const sreview=JSON.parse(fs.readFileSync('script-review.json','utf8')); const trace=JSON.parse(fs.readFileSync('command-trace.json','utf8')); const spoken=script.sections.flatMap(s=>s.turns.map(t=>t.text)).join(' '); console.log(JSON.stringify({missing, units:synth.units.length, request:synth.scope.request, synthesisVerdict:review.verdict, readyForArtifact:review.ready_for_artifact, intent:script.intent, format:script.format, hosts:script.hosts.length, spokenHasUrl:/https?:\\\\/\\\\//.test(spoken), scriptVerdict:sreview.verdict, requiredEdits:sreview.required_edits.length, firstTraceCommand:trace.commands[0].command, traceIncludes:{synthesisValidate:trace.commands.some(c=>c.command.includes('synthesis validate')), showScriptValidate:trace.commands.some(c=>c.command.includes('show-script validate')), audioSegments:trace.commands.some(c=>c.command.includes('audio segments'))}},null,2));\""
+      "command": "node -e \"const fs=require('fs'); const required=['briefing.synthesis.json','synthesis-review.json','show-script.json','script-review.json','artifact-sizing.json','command-trace.json']; const missing=required.filter(f=>!fs.existsSync(f)); const synth=JSON.parse(fs.readFileSync('briefing.synthesis.json','utf8')); const script=JSON.parse(fs.readFileSync('show-script.json','utf8')); const review=JSON.parse(fs.readFileSync('synthesis-review.json','utf8')); const sreview=JSON.parse(fs.readFileSync('script-review.json','utf8')); const sizing=JSON.parse(fs.readFileSync('artifact-sizing.json','utf8')); const trace=JSON.parse(fs.readFileSync('command-trace.json','utf8')); const spoken=script.sections.flatMap(s=>s.turns.map(t=>t.text)).join(' '); const forbiddenLocalAudio=trace.commands.some(c=>/\\\\bhelper\\\\.mjs\\\\s+audio\\\\b/.test(c.command)); console.log(JSON.stringify({missing, units:synth.units.length, sizingUnits:sizing.units.length, request:synth.scope.request, synthesisVerdict:review.verdict, readyForArtifact:review.ready_for_artifact, intent:script.intent, format:script.format, hosts:script.hosts.length, spokenHasUrl:/https?:\\\\/\\\\//.test(spoken), scriptVerdict:sreview.verdict, requiredEdits:sreview.required_edits.length, firstTraceCommand:trace.commands[0].command, traceIncludes:{synthesisValidate:trace.commands.some(c=>c.command.includes('synthesis validate')), showScriptValidate:trace.commands.some(c=>c.command.includes('show-script validate')), sizingValidate:trace.commands.some(c=>c.command.includes('sizing validate')), forbiddenLocalAudio}},null,2));\""
     }
   ]
 }

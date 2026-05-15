@@ -61,7 +61,7 @@ describe("FeedContext Skill behavior eval contracts", () => {
             id: "local-rendering",
             type: "insight",
             title: "Local artifacts stay repeatable",
-            claim: "Reviewed Structured Synthesis can drive repeatable local artifact rendering.",
+            claim: "Reviewed Structured Synthesis can drive repeatable artifact definition bundles.",
             supporting_evidence: [
               {
                 kind: "feed_item",

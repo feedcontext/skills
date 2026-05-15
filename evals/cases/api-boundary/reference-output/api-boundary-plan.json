@@ -14,7 +14,6 @@
   "allowed_write_paths": [
     "/v1/subscriptions",
     "/v1/integrations/telegram/binding-link",
-    "/v1/uploads",
-    "/v1/artifacts"
+    "/v1/artifact-definitions"
   ]
 }

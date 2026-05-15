@@ -29,7 +29,7 @@
       "command": "sed -n '1,220p' /Users/sorcererxw/repo/sorcererxw/feedcontext/packages/skills/skills/feedcontext/actions/api.md"
     },
     {
-      "command": "rg -n \"artifact (upload|deliver)|uploads|/v1/uploads|/v1/artifacts\" /Users/sorcererxw/repo/sorcererxw/feedcontext/packages/skills /Users/sorcererxw/repo/sorcererxw/feedcontext/packages/cli"
+      "command": "rg -n \"artifact (upload|deliver|get)|uploads|/v1/uploads|/v1/artifacts|deliver-rendered\" /Users/sorcererxw/repo/sorcererxw/feedcontext/packages/skills /Users/sorcererxw/repo/sorcererxw/feedcontext/packages/cli"
     },
     {
       "command": "sed -n '1,180p' /Users/sorcererxw/repo/sorcererxw/feedcontext/packages/skills/evals/cases/integrations-delivery/expected.contract.json"

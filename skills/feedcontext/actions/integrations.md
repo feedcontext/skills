@@ -1,7 +1,8 @@
 # FeedContext Integration Actions
 
 Use this action doc when the user asks to connect, inspect, or disconnect an
-external delivery tool. v1 supports Telegram delivery.
+external integration. v1 supports Telegram binding status and binding links;
+artifact delivery commands are not exposed in the CLI.
 
 Run `version` first if this is the first FeedContext action in the session:
 
@@ -18,7 +19,8 @@ linked:
 feedcontext integration telegram status
 ```
 
-If `connected` is false and the user wants delivery, create a binding link:
+If `connected` is false and the user wants future Telegram delivery, create a
+binding link:
 
 ```bash
 feedcontext integration telegram binding-link
@@ -51,4 +53,4 @@ Disconnecting Telegram is a write action and requires host approval:
 feedcontext integration telegram disconnect --confirm
 ```
 
-Do not disconnect unless the user explicitly asked to remove Telegram delivery.
+Do not disconnect unless the user explicitly asked to remove Telegram binding.

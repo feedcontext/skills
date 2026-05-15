@@ -6,7 +6,7 @@
       "synthesis-review.json",
       "show-script.json",
       "script-review.json",
-      "segments.json",
+      "artifact-sizing.json",
       "command-trace.json"
     ],
     "schema_validations": [
@@ -17,6 +17,10 @@
       {
         "file": "show-script.json",
         "schema": "show-script"
+      },
+      {
+        "file": "artifact-sizing.json",
+        "schema": "artifact-sizing"
       }
     ],
     "review_verdicts": [
@@ -33,7 +37,7 @@
       "version",
       "synthesis validate",
       "show-script validate",
-      "audio segments"
+      "sizing validate"
     ],
     "json_path_checks": [
       {
@@ -59,9 +63,9 @@
         "expected": true
       },
       {
-        "file": "segments.json",
-        "path": "$.schema_version",
-        "expected": "1"
+        "file": "artifact-sizing.json",
+        "path": "$.units.0.target_duration_seconds",
+        "expected": 120
       }
     ],
     "forbidden_patterns": [

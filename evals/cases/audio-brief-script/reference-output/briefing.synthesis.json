@@ -9,7 +9,7 @@
     },
     "candidate_count": 3,
     "active_subscription_count": 3,
-    "selection_rule": "Grouped the fixture Feed Items into exactly two Artifact Topic units: one for show-style story setup and two-host structure, and one for post-review segment manifest readiness.",
+    "selection_rule": "Grouped the fixture Feed Items into exactly two Artifact Topic units: one for show-style story setup and two-host structure, and one for post-review server-render readiness.",
     "used_contextual_evidence": false
   },
   "units": [
@@ -40,27 +40,27 @@
           "reason": "The item says the second host should act as a listener proxy and translate dense claims into spoken meaning."
         }
       ],
-      "selection_rationale": "This is the lead unit because it defines the editorial behavior the Show Script must demonstrate before any audio rendering is considered.",
+      "selection_rationale": "This is the lead unit because it defines the editorial behavior the Show Script must demonstrate before any server-rendered audio submission is considered.",
       "rendering_priority": "lead"
     },
     {
-      "id": "reviewed-script-to-segment-manifest",
+      "id": "reviewed-script-to-server-render",
       "type": "briefing_section",
-      "title": "Reviewed scripts become resumable segment manifests",
-      "claim": "After Script Review is ready, the local helper can convert the Show Script into a segment manifest that preserves speaker, text, voice metadata, and evidence links for later rendering.",
+      "title": "Reviewed scripts become server-rendered audio definitions",
+      "claim": "After Script Review is ready, the Skill submits the reviewed Show Script bundle to api instead of creating local segment manifests or local audio files.",
       "supporting_evidence": [
         {
           "kind": "feed_item",
           "feed_item_id": "item_segments",
           "url": "https://example.com/segments",
           "subscription_title": "Audio Operations",
-          "title": "Segment manifests make audio rendering resumable",
+          "title": "Server rendering owns audio segmentation",
           "published_at": 1778582600000,
           "relevance": "direct",
-          "reason": "The item explains that segment manifests are generated from reviewed Show Scripts and make provider rendering resumable."
+          "reason": "The item explains that api derives render segments after submission and owns retry, assembly, metadata, storage, and delivery."
         }
       ],
-      "selection_rationale": "This unit is included because the requested path stops at the script-only and segment-manifest boundary, before provider rendering or assembly.",
+      "selection_rationale": "This unit is included because the requested path stops at the reviewed script and bundle-input boundary before server rendering.",
       "rendering_priority": "main"
     }
   ],

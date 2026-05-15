@@ -1,6 +1,6 @@
 ---
 name: feedcontext
-description: Provides first-party FeedContext workflows for authentication, Feed Item reading, RSS/Atom Subscription management, and traceable local artifacts. Use when the user asks to connect FeedContext, inspect feeds, read Feed Items, manage Subscriptions, or create feed-backed briefings or audio briefs.
+description: Provides first-party FeedContext workflows for authentication, Feed Item reading, RSS/Atom Subscription management, and traceable server-rendered artifacts. Use when the user asks to connect FeedContext, inspect feeds, read Feed Items, manage Subscriptions, or create feed-backed briefings or audio briefs.
 ---
 
 # FeedContext Skill
@@ -11,47 +11,29 @@ workflow; do not load every action doc by default.
 
 ## CLI Invocation
 
-Prefer the local `feedcontext` binary when it exists on `PATH`. If it is not
-available, use `npx -y feedcontext@latest` as a best-effort fallback for the
-same command:
+Run a version check before other FeedContext actions:
 
 ```bash
 feedcontext version || npx -y feedcontext@latest version
 ```
 
-Apply the same fallback to other FeedContext CLI commands documented by this
-skill. For example, `feedcontext item list` becomes
-`npx -y feedcontext@latest item list` when the local binary is unavailable.
-This fallback is a convenience path, not a guaranteed runtime contract: it
-depends on npm registry access, a working Node/npm/npx installation, and sandbox
-permission to write npm cache and temporary files. If both the local CLI and the
-`npx` fallback fail, report that FeedContext CLI execution is unavailable in the
-current environment and ask the user to install the CLI with
-`npm install -g feedcontext`.
+Prefer the local `feedcontext` binary. If it is missing, apply the same
+`npx -y feedcontext@latest` fallback to documented CLI commands. If both fail,
+report that CLI execution is unavailable and ask the user to install
+`feedcontext` with `npm install -g feedcontext`.
 
-Before any other FeedContext action in an agent session, run the version check:
-
-```bash
-feedcontext version || npx -y feedcontext@latest version
-```
-
-The version action prints JSON with CLI package metadata. Use it as the first
-tool check before authenticated FeedContext CLI actions.
-
-When the host prompt provides an explicit local helper path for validation or
-rendering, use that exact path for local-only helper commands. The first helper
-command in a local artifact workflow should still be `version`, for example:
+When the host prompt provides an explicit local helper path for validation, use
+that exact path for local-only helper commands. The first helper command in a
+local artifact workflow should still be `version`, for example:
 
 ```bash
 node /path/to/skills/feedcontext/scripts/helper.mjs version
 ```
 
-Then run `feedcontext auth status` before auth-sensitive workflows. If there is
-no local Skill Session, do not ask the user to log in by default; run
-`feedcontext auth anonymous` to create an anonymous Skill Session for local
-Skill + CLI use. Ask the user to run formal login only when they want durable
-storage, cross-device sync, account switching, or an integration that requires a
-formal account.
+Run `feedcontext auth status` before auth-sensitive workflows. If there is no
+local Skill Session, run `feedcontext auth anonymous` by default. Ask for formal
+login only when the user wants durable storage, cross-device sync, account
+switching, or an integration that requires a formal account.
 
 Use `feedcontext auth login` for formal login. Use `feedcontext auth logout`
 when the user asks to sign out, switch accounts, or clear a stale local session.
@@ -64,8 +46,7 @@ when the user asks to sign out, switch accounts, or clear a stale local session.
   `get-many` for selected items.
 - `actions/subscriptions.md`: Subscription list, approved add, and approved
   delete.
-- `actions/integrations.md`: Telegram binding status and final artifact
-  delivery readiness.
+- `actions/integrations.md`: Telegram binding status and integration readiness.
 - `actions/api.md`: public `/v1` boundary and raw calls when high-level CLI
   commands are not enough.
 - `actions/artifact/README.md`: shared artifact workflow for briefings,
@@ -84,12 +65,19 @@ When reading Feed Items, remember that `item list` is paginated and returns one
 page by default. Use `item list --all` when the user asks for all matching Feed
 Items.
 
-When composing summaries, roundups, insights, briefings, briefing pages, or
-audio briefs, follow `actions/artifact/README.md`. Artifact workflows are
-file-backed: use one per-session system temporary directory workspace, create a
-Structured Synthesis JSON sidecar before final prose or rendering, and preserve
-review notes beside the output. For audio briefs, create and validate a Show
-Script before generating audio.
+When composing summaries, roundups, insights, briefing pages, or audio briefs,
+follow `actions/artifact/README.md`: create reviewed structured files, then
+submit an Artifact Definition Bundle with `feedcontext artifact
+submit-definition`. For audio briefs, create and validate a Show Script before
+submission. For briefing pages and audio briefs, create and validate an
+Artifact Sizing Review with `node scripts/helper.mjs sizing validate --file
+<artifact-sizing.json>` before bundle submission. Do not generate local HTML,
+podcast/audio files, or audio segment manifests.
+
+Artifact DSL schemas are owned by `api` under
+`https://api.feedcontext.io/schemas/`. Local helper validation fetches the
+canonical schema on every run; the installed skill must not rely on bundled
+offline schema JSON.
 
 For organized page or audio artifacts, do not default the Artifact Topic count.
 After candidate discovery, estimate the semantic topic count from the actual
@@ -100,19 +88,18 @@ stream/listing/export.
 When the user asks to generate a page, briefing page, digest page, roundup page,
 or HTML-like FeedContext artifact from live Feed Items, the default output is a
 server-rendered Artifact submitted through `feedcontext artifact
-submit-definition`. Do not stop after local helper rendering unless the user
-explicitly asks for a local-only HTML file, the prompt supplies an offline
-fixture/export, or live FeedContext API access is unavailable. Local helper
-rendering is a validation and offline-output path, not a substitute for the
-server DSL submission path.
+submit-definition`. The skill must not render or return local HTML files for
+Briefing Pages. If live FeedContext API access or `submit-definition` is
+unavailable, report the blocker and preserve the reviewed definition bundle;
+do not fall back to local HTML output.
 
 When the user asks to send a generated page or audio brief to Telegram, follow
-`actions/integrations.md` to confirm Telegram is linked, then follow
-`actions/artifact/README.md` to upload and deliver the final artifact with its
-Structured Synthesis sidecar.
+`actions/integrations.md` to confirm Telegram is linked. v1 does not expose a
+CLI delivery command; do not invent one, and do not upload local final files or
+sidecars from the skill.
 
 This repository publishes the installable skill from `skills/feedcontext`.
 Service interaction uses the published `feedcontext` CLI. Local helpers are for
-deterministic local-only mechanics, such as schema validation, offline fixture
-outputs, and explicit local-only artifact rendering from reviewed structured
-sidecars.
+deterministic local-only mechanics, such as schema validation and review
+preflight. They must not render Briefing Page HTML or produce local final page
+artifacts.

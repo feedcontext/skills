@@ -26,5 +26,5 @@ Turn 3, "再给我音频简报":
 - Do not produce plain narration directly.
 - Write and validate `show-script.json`.
 - Write `script-review.json` with `verdict: "ready"` and `ready_for_audio: true`.
-- Run the local helper `audio segments` and write `segments.json`.
-- Stop before real audio provider rendering.
+- Stop before local segment manifests, local provider rendering, local assembly,
+  or local audio metadata review. Do not create local podcast/audio files.

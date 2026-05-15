@@ -3,21 +3,21 @@
   "items": [
     {
       "id": "item_local_renderers",
-      "title": "Local renderers make briefing pages repeatable",
+      "title": "Server-rendered bundles make briefing pages repeatable",
       "url": "https://example.com/local-renderers",
       "subscription_title": "FeedContext Engineering",
       "published_at": 1778580000000,
-      "summary": "A local helper renderer turns reviewed Structured Synthesis into repeatable Briefing Pages without making web or api own artifact generation.",
-      "content_text": "The renderer accepts reviewed structured inputs, writes a complete local HTML artifact, and keeps source citations in a footer index. It should not call the FeedContext API."
+      "summary": "Reviewed Structured Synthesis feeds an Artifact Definition Bundle that api stores and the public viewer renders.",
+      "content_text": "The workflow accepts reviewed structured inputs, submits an Artifact Definition Bundle, and keeps source citations available through the server-rendered viewer. The skill must not write a complete local HTML artifact."
     },
     {
       "id": "item_audio_segments",
-      "title": "Audio Briefs move through script and segment manifests",
+      "title": "Audio Briefs move through script before server rendering",
       "url": "https://example.com/audio-segments",
       "subscription_title": "Agent Audio Notes",
       "published_at": 1778580300000,
-      "summary": "Audio Brief generation now requires a reviewed Show Script before segment manifests and final audio review.",
-      "content_text": "The recommended path is Structured Synthesis, Synthesis Review, Show Script, Script Review, segment manifest, provider rendering, final assembly, and Final Audio Review."
+      "summary": "Audio Brief generation requires a reviewed Show Script before submitting a server-rendered definition.",
+      "content_text": "The recommended path is Structured Synthesis, Synthesis Review, Show Script, Script Review, then server-rendered Artifact Definition submission. The Skill must not create local segment manifests or local audio files."
     },
     {
       "id": "item_eval_loop",
